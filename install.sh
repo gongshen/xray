@@ -235,8 +235,8 @@ function domain_check() {
     wg-quick down wgcf >/dev/null 2>&1
     print_ok "已关闭 wgcf-warp"
   fi
-  local_ipv4=$(curl -s4m8 https://ip.gs)
-  local_ipv6=$(curl -s6m8 https://ip.gs)
+  local_ipv4=$(curl -s4m8 ip.gs)
+  local_ipv6=$(curl -s6m8 ip.gs)
   if [[ -z ${local_ipv4} && -n ${local_ipv6} ]]; then
     # 纯IPv6 VPS，自动添加DNS64服务器以备acme.sh申请证书使用
     echo -e nameserver 2a01:4f8:c2c:123f::1 > /etc/resolv.conf
@@ -359,7 +359,7 @@ function modify_port() {
 }
 
 function configure_xray() {
-  cd /usr/local/etc/xray && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/config/xray_xtls-rprx-direct.json
+  cd /usr/local/etc/xray && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/xray/main/config.json
   modify_UUID
   modify_port
 }
@@ -660,8 +660,8 @@ function install_xray() {
   nginx_install
   configure_nginx
   configure_web
-  generate_certificate
-  ssl_judge_and_install
+#  generate_certificate
+#  ssl_judge_and_install
   restart_all
   basic_information
 }
