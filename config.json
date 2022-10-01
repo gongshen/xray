@@ -19,11 +19,11 @@
         "decryption":"none",
         "fallbacks":[
           {
-            "dest":60000,
+            "dest":8001,
             "xver":1
           },
           {
-            "dest":60001,
+            "dest":8002,
             "alpn":"h2",
             "xver":1
           }
