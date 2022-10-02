@@ -1,14 +1,73 @@
 {
+  "policy":{
+    "levels":{
+      "0":{
+        "statsUserUplink":true,
+        "statsUserDownlink":true
+      }
+    },
+    "system":{
+      "statsInboundUplink":true,
+      "statsInboundDownlink":true,
+      "statsOutboundUplink":true,
+      "statsOutboundDownlink":true
+    }
+  },
+  "stats":{
+
+  },
   "log":{
-    "access":"/var/log/xray/access.log",
-    "error":"/var/log/xray/error.log",
-    "loglevel":"warning"
+    "loglevel":"debug"
+  },
+  "routing":{
+    "domainStrategy":"AsIs",
+    "rules":[
+      {
+        "type":"field",
+        "inboundTag":[
+          "api"
+        ],
+        "outboundTag":"api"
+      },
+      {
+        "type":"field",
+        "ip":[
+          "geoip:private"
+        ],
+        "outboundTag":"block"
+      },
+      {
+        "type":"field",
+        "domain":[
+          "geosite:category-ads-all"
+        ],
+        "outboundTag":"block"
+      },
+      {
+        "type":"field",
+        "protocol":[
+          "bittorrent"
+        ],
+        "outboundTag":"block"
+      }
+    ]
   },
   "inbounds":[
     {
+      "port":11111,
+      "protocol":"dokodemo-door",
+      "tag":"api",
+      "settings":{
+        "address":"127.0.0.1"
+      },
+      "listen":"127.0.0.1"
+    },
+    {
+      "listen":"0.0.0.0",
       "port":443,
       "protocol":"vless",
       "settings":{
+        "decryption":"none",
         "clients":[
           {
             "id":"",
@@ -16,7 +75,6 @@
             "email":"love@v2fly.org"
           }
         ],
-        "decryption":"none",
         "fallbacks":[
           {
             "dest":8001,
@@ -45,19 +103,21 @@
             }
           ]
         }
-      },
-      "sniffing":{
-        "enabled":true,
-        "destOverride":[
-          "http",
-          "tls"
-        ]
       }
     }
   ],
   "outbounds":[
     {
-      "protocol":"freedom"
+      "protocol":"freedom",
+      "settings":{
+
+      }
     }
-  ]
+  ],
+  "api":{
+    "tag":"api",
+    "services":[
+      "StatsService"
+    ]
+  }
 }
