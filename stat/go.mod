@@ -1,4 +1,4 @@
-module github.com/gongshen/xray
+module github.com/gongshen/xray/stat
 
 go 1.17
 

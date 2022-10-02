@@ -1,8 +1,8 @@
 package dao
 
 import (
-	"github.com/gongshen/xray/conn"
-	"github.com/gongshen/xray/models"
+	"github.com/gongshen/xray/stat/conn"
+	"github.com/gongshen/xray/stat/models"
 	"gorm.io/gorm"
 )
 

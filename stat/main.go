@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/gongshen/xray/business"
-	"github.com/gongshen/xray/conn"
+	"github.com/gongshen/xray/stat/business"
+	"github.com/gongshen/xray/stat/conn"
 )
 
 func main() {

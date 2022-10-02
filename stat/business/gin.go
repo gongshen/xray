@@ -2,8 +2,8 @@ package business
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gongshen/xray/dao"
-	"github.com/gongshen/xray/models"
+	"github.com/gongshen/xray/stat/dao"
+	"github.com/gongshen/xray/stat/models"
 	"github.com/xtls/xray-core/common/net"
 	"net/http"
 )

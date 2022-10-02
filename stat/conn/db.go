@@ -1,7 +1,7 @@
 package conn
 
 import (
-	"github.com/gongshen/xray/models"
+	"github.com/gongshen/xray/stat/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
