@@ -83,13 +83,14 @@ func GetTraffic(c *gin.Context) {
 		}
 		traffic.Used += stat.Value
 	}
+
 	var output bytes.Buffer
 	for _, traffic := range tagTrafficMap {
 		output.WriteString(fmt.Sprintf("用户:%s\n使用流量:%s\n", traffic.Tag, format(traffic.Used)))
 		output.WriteString("-----------------------------------------------------------------------")
 	}
 
-	c.JSON(200, output.Bytes())
+	c.JSON(200, output.String())
 }
 
 func format(used int64) string {
