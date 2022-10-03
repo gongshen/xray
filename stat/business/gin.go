@@ -1,11 +1,16 @@
 package business
 
 import (
+	"bytes"
+	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gongshen/xray/stat/dao"
 	"github.com/gongshen/xray/stat/models"
+	statsservice "github.com/xtls/xray-core/app/stats/command"
 	"github.com/xtls/xray-core/common/net"
+	"google.golang.org/grpc"
 	"net/http"
+	"time"
 )
 
 type GinServer struct {
@@ -28,8 +33,10 @@ func (g *GinServer) Start() error {
 		Addr:    "127.0.0.1:8080",
 		Handler: engine,
 	}
+	// 获取流量统计信息
 	engine.GET("/stat/get", GetTraffic)
-	engine.GET("/stat/new", NewTraffic)
+	engine.GET("/tag/new", NewTag)
+	engine.GET("/tag/del", DelTag)
 
 	go srv.Serve(listener)
 	return nil
@@ -40,21 +47,55 @@ func (g *GinServer) Close() {
 }
 
 func GetTraffic(c *gin.Context) {
-	ans, err := dao.GetTraffics()
+	cc, err := grpc.Dial(TrafficTarget, grpc.WithInsecure())
 	if err != nil {
 		c.JSON(500, err)
-	} else {
-		c.JSON(200, ans)
+		return
 	}
+	defer cc.Close()
+
+	client := statsservice.NewStatsServiceClient(cc)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	request := &statsservice.QueryStatsRequest{
+		Reset_: false,
+	}
+	resp, err := client.QueryStats(ctx, request)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	tagTrafficMap := map[string]*models.Traffic{}
+	for _, stat := range resp.GetStat() {
+		matchs := trafficRegex.FindStringSubmatch(stat.Name)
+		isUser := matchs[1] == "user"
+		tag := matchs[2]
+		//isDown := matchs[3] == "downlink"
+		if tag == "api" || !isUser {
+			continue
+		}
+		traffic, ok := tagTrafficMap[tag]
+		if !ok {
+			traffic = &models.Traffic{
+				Tag: tag,
+			}
+			tagTrafficMap[tag] = traffic
+		}
+		traffic.Used += stat.Value
+	}
+	var output bytes.Buffer
+	for _, traffic := range tagTrafficMap {
+		output.WriteString(fmt.Sprintf("用户:%s\n使用流量:%s\n", traffic.Tag, format(traffic.Used)))
+		output.WriteString("-----------------------------------------------------------------------")
+	}
+
+	c.JSON(200, output.Bytes())
 }
 
-func NewTraffic(c *gin.Context) {
-	tag := c.Query("tag")
-	if err := dao.SaveTraffic(&models.Traffic{
-		Tag: tag,
-	}); err != nil {
-		c.JSON(500, err)
+func format(used int64) string {
+	if used < GB {
+		return fmt.Sprintf("%.2fMB", float64(used)/MB)
 	} else {
-		c.JSON(200, "OK")
+		return fmt.Sprintf("%.2fGB", float64(used)/GB)
 	}
 }

@@ -18,5 +18,3 @@ bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
 ```
 
 x-ui地址: http://74.211.97.251:64001/gongshen/
-
-编译：GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-linux-musl-gcc CGO_LDFLAGS="-static" go build -a -o stat *.go

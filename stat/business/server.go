@@ -5,25 +5,26 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 type Server struct {
 	ginServer *GinServer
-	jobServer *JobServer
+	//jobServer *JobServer
 }
 
 func NewServer() *Server {
 	return &Server{
 		ginServer: NewGinServer(),
-		jobServer: NewJobServer(),
+		//jobServer: NewJobServer(),
 	}
 }
 
 func (s *Server) Start() {
-	if err := s.jobServer.Start(); err != nil {
-		log.Println(err)
-		return
-	}
+	//if err := s.jobServer.Start(); err != nil {
+	//	log.Println(err)
+	//	return
+	//}
 	if err := s.ginServer.Start(); err != nil {
 		log.Println(err)
 		return
@@ -32,9 +33,10 @@ func (s *Server) Start() {
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-c
 	s.Close()
+	time.Sleep(1 * time.Second)
 }
 
 func (s *Server) Close() {
-	s.jobServer.Close()
+	//s.jobServer.Close()
 	s.ginServer.Close()
 }

@@ -23,10 +23,8 @@ func (j *JobServer) Start() error {
 	go func() {
 		time.Sleep(time.Second * 5)
 		// 每 10 秒统计一次流量，首次启动延迟 5 秒，与重启 xray 的时间错开
-		c.AddJob("@every 10s", NewTrafficService())
+		c.AddJob("@every 10s", nil)
 	}()
 	return nil
 }
-func (j *JobServer) Close() {
-	j.c.Stop()
-}
+func (j *JobServer) Close() {}
