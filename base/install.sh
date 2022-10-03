@@ -20,12 +20,12 @@ OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 
 # 变量
-stat_dir = "/use/local/bin/stat"
-stat_service_dir = "/etc/systemd/system/stat.service"
-xray_conf_dir ="/usr/local/etc/xray"
-website_dir = "/www/xray_web/"
-xray_access_log = "/var/log/xray/access.log"
-xray_error_log = "/var/log/xray/error.log"
+stat_dir="/use/local/bin/stat"
+stat_service_dir="/etc/systemd/system/stat.service"
+xray_conf_dir="/usr/local/etc/xray"
+website_dir="/www/xray_web/"
+xray_access_log="/var/log/xray/access.log"
+xray_error_log="/var/log/xray/error.log"
 
 VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 
