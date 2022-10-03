@@ -3,6 +3,7 @@ package business
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gongshen/xray/stat/models"
@@ -37,6 +38,8 @@ func (g *GinServer) Start() error {
 	engine.GET("/stat/get", GetTraffic)
 	engine.GET("/tag/new", NewTag)
 	engine.GET("/tag/del", DelTag)
+	engine.GET("/share/link", ShareLink)
+	engine.GET("/share/qr", ShareQr)
 
 	go srv.Serve(listener)
 	return nil
@@ -44,6 +47,24 @@ func (g *GinServer) Start() error {
 
 func (g *GinServer) Close() {
 	g.l.Close()
+}
+
+func ShareLink(c *gin.Context) {
+	tag := c.Query("tag")
+	if tag == "" {
+		c.JSON(500, errors.New("参数错误"))
+		return
+	}
+
+}
+
+func ShareQr(c *gin.Context) {
+	tag := c.Query("tag")
+	if tag == "" {
+		c.JSON(500, errors.New("参数错误"))
+		return
+	}
+	
 }
 
 func GetTraffic(c *gin.Context) {

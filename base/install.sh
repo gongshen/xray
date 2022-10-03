@@ -367,13 +367,22 @@ function restart_all() {
   judge "Stat 启动"
 }
 
+function basic_information() {
+  UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
+  PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
+  EMAIL=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].email | tr -d '"')
+  echo -e "${Blue}uuid:${Font} $UUID"
+  echo -e "${Blue}port:${Font} $PORT"
+  echo -e "${Blue}email:${Font} $EMAIL"
+}
+
 function vless_xtls-rprx-direct_link() {
   UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
   PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
   FLOW=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].flow | tr -d '"')
 
   print_ok "URL 链接 (VLESS + TCP + TLS)"
-  print_ok "vless://$UUID@$DOMAIN:$PORT?security=tls&flow=$FLOW#TLS_wulabing-$DOMAIN"
+  print_ok "vless://$UUID@$DOMAIN:$PORT?security=tls&flow=$FLOW#dino"
 
   print_ok "URL 链接 (VLESS + TCP + XTLS)"
   print_ok "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS_wulabing-$DOMAIN"
@@ -419,6 +428,7 @@ function install_xray1() {
   configure_web
   install_stat
   restart_all
+  basic_information
 }
 
 function install_xray2() {
@@ -430,6 +440,7 @@ function install_xray2() {
   configure_xray2
   install_stat
   restart_all
+  basic_information
 }
 menu() {
   echo -e "\t Xray 安装管理脚本 ${Red}${Font}"
