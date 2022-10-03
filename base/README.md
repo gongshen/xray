@@ -17,4 +17,6 @@ xray api stats --name="user>>>love@v2fly.org>>>traffic>>>uplink" --server=127.0.
 bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
 ```
 
+安装脚本
+wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/gongshen/xray/main/base/install.sh" && chmod +x install.sh && bash install.sh
 x-ui地址: http://74.211.97.251:64001/gongshen/

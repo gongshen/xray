@@ -56,15 +56,6 @@
   },
   "inbounds":[
     {
-      "port":11111,
-      "protocol":"dokodemo-door",
-      "tag":"api",
-      "settings":{
-        "address":"127.0.0.1"
-      },
-      "listen":"127.0.0.1"
-    },
-    {
       "listen":"0.0.0.0",
       "port":443,
       "protocol":"vless",
@@ -106,6 +97,15 @@
           ]
         }
       }
+    },
+    {
+      "port":11111,
+      "protocol":"dokodemo-door",
+      "tag":"api",
+      "settings":{
+        "address":"127.0.0.1"
+      },
+      "listen":"127.0.0.1"
     }
   ],
   "outbounds":[
