@@ -35,6 +35,30 @@ type XrayConfigStreamSettings struct {
 	Network     string                 `json:"network,omitempty"`
 	Security    string                 `json:"security,omitempty"`
 	TlsSettings *XrayConfigTlsSettings `json:"tlsSettings,omitempty"`
+	TcpSettings *XrayConfigTcpSettings `json:"tcpSettings,omitempty"`
+}
+
+type XrayConfigTcpSettings struct {
+	Header *XrayConfigTcpSettingsHeader `json:"header,omitempty"`
+}
+
+type XrayConfigTcpSettingsHeader struct {
+	Typ      string                               `json:"type,omitempty"`
+	Response *XrayConfigTcpSettingsHeaderResponse `json:"response,omitempty"`
+}
+
+type XrayConfigTcpSettingsHeaderResponse struct {
+	Version string                                      `json:"version,omitempty"`
+	Status  string                                      `json:"status,omitempty"`
+	Reason  string                                      `json:"reason,omitempty"`
+	Headers *XrayConfigTcpSettingsHeaderResponseHeaders `json:"headers,omitempty"`
+}
+
+type XrayConfigTcpSettingsHeaderResponseHeaders struct {
+	ContentType      []string `json:"Content-Type,omitempty"`
+	TransferEncoding []string `json:"Transfer-Encoding,omitempty"`
+	Connection       []string `json:"Connection,omitempty"`
+	Pragma           string   `json:"pragma,omitempty"`
 }
 
 type XrayConfigTlsSettings struct {
@@ -55,9 +79,10 @@ type XrayConfigSettingsFallback struct {
 }
 
 type XrayConfigSettingsClient struct {
-	Id    string `json:"id,omitempty"`
-	Level int64  `json:"level"`
-	Email string `json:"email,omitempty"`
+	Id      string `json:"id,omitempty"`
+	Level   int64  `json:"level"`
+	Email   string `json:"email,omitempty"`
+	AlterId int64  `json:"alterId,omitempty"`
 }
 
 type XrayConfigApi struct {
@@ -81,6 +106,8 @@ type XrayConfigRouterRule struct {
 
 type XrayConfigLog struct {
 	LogLevel string `json:"loglevel,omitempty"`
+	Access   string `json:"access,omitempty"`
+	Error    string `json:"error,omitempty"`
 }
 
 type XrayConfigStats struct{}

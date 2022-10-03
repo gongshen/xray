@@ -20,16 +20,11 @@ OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 
 # 变量
-shell_version="1.3.11"
-github_branch="main"
+stat_dir = "/use/local/bin/stat"
 xray_conf_dir="/usr/local/etc/xray"
 website_dir="/www/xray_web/"
 xray_access_log="/var/log/xray/access.log"
 xray_error_log="/var/log/xray/error.log"
-cert_dir="/usr/local/etc/xray"
-domain_tmp_dir="/usr/local/etc/xray"
-cert_group="nobody"
-random_num=$((RANDOM % 12 + 4))
 
 VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 
@@ -117,10 +112,6 @@ function system_check() {
   else
     print_error "当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内"
     exit 1
-  fi
-
-  if [[ $(grep "nogroup" /etc/group) ]]; then
-    cert_group="nogroup"
   fi
 
   $INS dbus
@@ -277,40 +268,6 @@ function port_exist_check() {
     sleep 1
   fi
 }
-function update_sh() {
-  ol_version=$(curl -L -s https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/install.sh | grep "shell_version=" | head -1 | awk -F '=|"' '{print $3}')
-  if [[ "$shell_version" != "$(echo -e "$shell_version\n$ol_version" | sort -rV | head -1)" ]]; then
-    print_ok "存在新版本，是否更新 [Y/N]?"
-    read -r update_confirm
-    case $update_confirm in
-    [yY][eE][sS] | [yY])
-      wget -N --no-check-certificate https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/install.sh
-      print_ok "更新完成"
-      print_ok "您可以通过 bash $0 执行本程序"
-      exit 0
-      ;;
-    *) ;;
-    esac
-  else
-    print_ok "当前版本为最新版本"
-    print_ok "您可以通过 bash $0 执行本程序"
-  fi
-}
-
-function xray_tmp_config_file_check_and_use() {
-  if [[ -s ${xray_conf_dir}/config_tmp.json ]]; then
-    mv -f ${xray_conf_dir}/config_tmp.json ${xray_conf_dir}/config.json
-  else
-    print_error "xray 配置文件修改异常"
-  fi
-}
-
-function modify_UUID() {
-  [ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
-  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config_tmp.json
-  xray_tmp_config_file_check_and_use
-  judge "Xray TCP UUID 修改"
-}
 
 function configure_nginx() {
   nginx_conf="/etc/nginx/nginx.conf"
@@ -330,13 +287,18 @@ function modify_port() {
     exit 1
   fi
   port_exist_check $PORT
-  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config_tmp.json
-  xray_tmp_config_file_check_and_use
+  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config.json
   judge "Xray 端口 修改"
 }
 
 function configure_xray() {
-  cd /usr/local/etc/xray && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/xray/main/base/config.json
+  cd  ${xray_conf_dir} && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/xray/main/base/config.json
+  modify_UUID
+  modify_port
+}
+
+function configure_xray2() {
+  cd  ${xray_conf_dir} && rm -f config.json && wget -O config.json https://raw.githubusercontent.com/gongshen/xray/main/base/config2.json
   modify_UUID
   modify_port
 }
@@ -382,16 +344,6 @@ function xray_uninstall() {
     ;;
   *) ;;
   esac
-  print_ok "是否卸载acme.sh [Y/N]?"
-  read -r uninstall_acme
-  case $uninstall_acme in
-  [yY][eE][sS] | [yY])
-    "$HOME"/.acme.sh/acme.sh --uninstall
-    rm -rf /root/.acme.sh
-    rm -rf /ssl/
-    ;;
-  *) ;;
-  esac
   print_ok "卸载完成"
   exit 0
 }
@@ -401,13 +353,14 @@ function restart_all() {
   judge "Nginx 启动"
   systemctl restart xray
   judge "Xray 启动"
+  systemctl restart stat
+  judge "Stat 启动"
 }
 
 function vless_xtls-rprx-direct_link() {
   UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
   PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
   FLOW=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].flow | tr -d '"')
-  DOMAIN=$(cat ${domain_tmp_dir}/domain)
 
   print_ok "URL 链接 (VLESS + TCP + TLS)"
   print_ok "vless://$UUID@$DOMAIN:$PORT?security=tls&flow=$FLOW#TLS_wulabing-$DOMAIN"
@@ -420,29 +373,6 @@ function vless_xtls-rprx-direct_link() {
 
   print_ok "URL 二维码 (VLESS + TCP + XTLS) （请在浏览器中访问）"
   print_ok "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=vless://$UUID@$DOMAIN:$PORT?security=xtls%26flow=$FLOW%23XTLS_wulabing-$DOMAIN"
-}
-
-function vless_xtls-rprx-direct_information() {
-  UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
-  PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
-  FLOW=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].flow | tr -d '"')
-  DOMAIN=$(cat ${domain_tmp_dir}/domain)
-
-  echo -e "${Red} Xray 配置信息 ${Font}"
-  echo -e "${Red} 地址（address）:${Font}  $DOMAIN"
-  echo -e "${Red} 端口（port）：${Font}  $PORT"
-  echo -e "${Red} 用户 ID（UUID）：${Font} $UUID"
-  echo -e "${Red} 流控（flow）：${Font} $FLOW"
-  echo -e "${Red} 加密方式（security）：${Font} none "
-  echo -e "${Red} 传输协议（network）：${Font} tcp "
-  echo -e "${Red} 伪装类型（type）：${Font} none "
-  echo -e "${Red} 底层传输安全：${Font} xtls 或 tls"
-}
-
-function basic_information() {
-  print_ok "VLESS+TCP+XTLS+Nginx 安装成功"
-  vless_xtls-rprx-direct_information
-  vless_xtls-rprx-direct_link
 }
 
 function show_access_log() {
@@ -458,7 +388,14 @@ function bbr_boost_sh() {
   wget -N --no-check-certificate "https://raw.githubusercontent.com/ylx2016/Linux-NetSpeed/master/tcp.sh" && chmod +x tcp.sh && ./tcp.sh
 }
 
-function install_xray() {
+function install_stat() {
+  wget -O stat https://github.com/gongshen/xray/releases/download/v1.0.0/stat && chmod +x stat && mv stat /usr/local/bin/stat
+  wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv stat.service /etc/systemd/system/stat.service
+  systemctl daemon-reload
+  systemctl enable stat
+}
+
+function install_xray1() {
   is_root
   system_check
   dependency_install
@@ -470,56 +407,55 @@ function install_xray() {
   nginx_install
   configure_nginx
   configure_web
+  install_stat
   restart_all
-  basic_information
+}
+
+function install_xray2() {
+  is_root
+  system_check
+  dependency_install
+  basic_optimization
+  xray_install
+  configure_xray2
+  install_stat
+  restart_all
 }
 menu() {
   update_sh
   shell_mode_check
-  echo -e "\t Xray 安装管理脚本 ${Red}[${shell_version}]${Font}"
-
-  echo -e "当前已安装版本：${shell_mode}"
+  echo -e "\t Xray 安装管理脚本 ${Red}${Font}"
   echo -e "—————————————— 安装向导 ——————————————"""
-  echo -e "${Green}0.${Font}  升级 脚本"
-  echo -e "${Green}1.${Font}  安装 Xray (VLESS + TCP + XTLS / TLS + Nginx)"
-  echo -e "—————————————— 配置变更 ——————————————"
-  echo -e "${Green}11.${Font} 变更 UUID"
-  echo -e "${Green}13.${Font} 变更 连接端口"
-  echo -e "—————————————— 查看信息 ——————————————"
-  echo -e "${Green}21.${Font} 查看 实时访问日志"
-  echo -e "${Green}22.${Font} 查看 实时错误日志"
-  echo -e "${Green}23.${Font} 查看 Xray 配置链接"
+  echo -e "${Green}1.${Font}  安装 Xray (VLESS + TCP + TLS + Nginx)"
+  echo -e "${Green}2.${Font}  安装 Xray (VMESS + TCP[http伪装])"
+  echo -e "${Green}3.${Font} 变更 端口"
+  echo -e "${Green}4.${Font} 查看 实时访问日志"
+  echo -e "${Green}5.${Font} 查看 实时错误日志"
+  echo -e "${Green}6.${Font} 查看 Xray 配置链接"
   echo -e "—————————————— 其他选项 ——————————————"
-  echo -e "${Green}31.${Font} 安装 4 合 1 BBR、锐速安装脚本"
-  echo -e "${Green}33.${Font} 卸载 Xray"
-  echo -e "${Green}34.${Font} 更新 Xray-core"
+  echo -e "${Green}7.${Font} 安装 4 合 1 BBR、锐速安装脚本"
+  echo -e "${Green}8.${Font} 卸载 Xray"
+  echo -e "${Green}9.${Font} 更新 Xray-core"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
-  0)
-    update_sh
-    ;;
   1)
-    install_xray
+    install_xray1
     ;;
-  11)
-    read -rp "请输入 UUID:" UUID
-    if [[ ${shell_mode} == "tcp" ]]; then
-      modify_UUID
-    fi
-    restart_all
+  2)
+    install_xray2
     ;;
-  13)
+  3)
     modify_port
     restart_all
     ;;
-  21)
+  4)
     tail -f $xray_access_log
     ;;
-  22)
+  5)
     tail -f $xray_error_log
     ;;
-  23)
+  6)
     if [[ -f $xray_conf_dir/config.json ]]; then
       if [[ ${shell_mode} == "tcp" ]]; then
         basic_information
@@ -528,14 +464,14 @@ menu() {
       print_error "xray 配置文件不存在"
     fi
     ;;
-  31)
+  7)
     bbr_boost_sh
     ;;
-  33)
+  8)
     source '/etc/os-release'
     xray_uninstall
     ;;
-  34)
+  9)
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" - install
     restart_all
     ;;
