@@ -69,13 +69,13 @@ function system_check() {
     print_ok "当前系统为 Centos ${VERSION_ID} ${VERSION}"
     INS="yum install -y"
     ${INS} wget
-    wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
+    wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/gongshen/xray/main/basic/nginx.repo
 
 
   elif [[ "${ID}" == "ol" ]]; then
     print_ok "当前系统为 Oracle Linux ${VERSION_ID} ${VERSION}"
     INS="yum install -y"
-    wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/basic/nginx.repo
+    wget -N -P /etc/yum.repos.d/ https://raw.githubusercontent.com/gongshen/xray/main/basic/nginx.repo
   elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 9 ]]; then
     print_ok "当前系统为 Debian ${VERSION_ID} ${VERSION}"
     INS="apt install -y"
@@ -188,7 +188,7 @@ function dependency_install() {
   ${INS} jq
 
   if ! command -v jq; then
-    wget -P /usr/bin https://raw.githubusercontent.com/wulabing/Xray_onekey/${github_branch}/binary/jq && chmod +x /usr/bin/jq
+    wget -P /usr/bin https://raw.githubusercontent.com/gongshen/xray/main/binary/jq && chmod +x /usr/bin/jq
     judge "安装 jq"
   fi
 
