@@ -20,7 +20,7 @@ OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 
 # 变量
-stat_dir="/use/local/bin/stat"
+stat_dir="/usr/local/bin/stat"
 stat_service_dir="/etc/systemd/system/stat.service"
 xray_conf_dir="/usr/local/etc/xray"
 website_dir="/www/xray_web/"
@@ -409,7 +409,7 @@ function bbr_boost_sh() {
 
 function install_stat() {
   wget -O stat https://github.com/gongshen/xray/releases/download/v1.0.0/stat && chmod +x stat && mv -f stat ${stat_dir}
-  wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv stat.service ${stat_service_dir}
+  wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv -f stat.service ${stat_service_dir}
   systemctl daemon-reload
   systemctl enable stat
 }
