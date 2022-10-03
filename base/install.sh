@@ -29,13 +29,6 @@ xray_error_log="/var/log/xray/error.log"
 
 VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 
-function shell_mode_check() {
-  if [ -f ${xray_conf_dir}/config.json ]; then
-    shell_mode="tcp"
-  else
-    shell_mode="None"
-  fi
-}
 function print_ok() {
   echo -e "${OK} ${Blue} $1 ${Font}"
 }
@@ -439,8 +432,6 @@ function install_xray2() {
   restart_all
 }
 menu() {
-  update_sh
-  shell_mode_check
   echo -e "\t Xray 安装管理脚本 ${Red}${Font}"
   echo -e "—————————————— 安装向导 ——————————————"""
   echo -e "${Green}1.${Font}  安装 Xray (VLESS + TCP + TLS + Nginx)"
@@ -475,9 +466,7 @@ menu() {
     ;;
   6)
     if [[ -f $xray_conf_dir/config.json ]]; then
-      if [[ ${shell_mode} == "tcp" ]]; then
-        basic_information
-      fi
+      basic_information
     else
       print_error "xray 配置文件不存在"
     fi
