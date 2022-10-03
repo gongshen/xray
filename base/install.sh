@@ -21,10 +21,11 @@ ERROR="${Red}[ERROR]${Font}"
 
 # 变量
 stat_dir = "/use/local/bin/stat"
-xray_conf_dir="/usr/local/etc/xray"
-website_dir="/www/xray_web/"
-xray_access_log="/var/log/xray/access.log"
-xray_error_log="/var/log/xray/error.log"
+stat_service_dir = "/etc/systemd/system/stat.service"
+xray_conf_dir ="/usr/local/etc/xray"
+website_dir = "/www/xray_web/"
+xray_access_log = "/var/log/xray/access.log"
+xray_error_log = "/var/log/xray/error.log"
 
 VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 
@@ -279,6 +280,14 @@ function configure_nginx() {
   systemctl restart nginx
 }
 
+function xray_tmp_config_file_check_and_use() {
+  if [[ -s ${xray_conf_dir}/config_tmp.json ]]; then
+    mv -f ${xray_conf_dir}/config_tmp.json ${xray_conf_dir}/config.json
+  else
+    print_error "xray 配置文件修改异常"
+  fi
+}
+
 function modify_port() {
   read -rp "请输入端口号(默认：443)：" PORT
   [ -z "$PORT" ] && PORT="443"
@@ -287,8 +296,16 @@ function modify_port() {
     exit 1
   fi
   port_exist_check $PORT
-  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config.json
+  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config_tmp.json
+  xray_tmp_config_file_check_and_use
   judge "Xray 端口 修改"
+}
+
+function modify_UUID() {
+  [ -z "$UUID" ] && UUID=$(cat /proc/sys/kernel/random/uuid)
+  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config_tmp.json
+  xray_tmp_config_file_check_and_use
+  judge "Xray TCP UUID 修改"
 }
 
 function configure_xray() {
@@ -389,8 +406,8 @@ function bbr_boost_sh() {
 }
 
 function install_stat() {
-  wget -O stat https://github.com/gongshen/xray/releases/download/v1.0.0/stat && chmod +x stat && mv stat /usr/local/bin/stat
-  wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv stat.service /etc/systemd/system/stat.service
+  wget -O stat https://github.com/gongshen/xray/releases/download/v1.0.0/stat && chmod +x stat && mv -f stat ${stat_dir}
+  wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv stat.service ${stat_service_dir}
   systemctl daemon-reload
   systemctl enable stat
 }
