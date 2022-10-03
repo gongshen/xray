@@ -453,6 +453,7 @@ menu() {
   echo -e "${Green}7.${Font} 安装 4 合 1 BBR、锐速安装脚本"
   echo -e "${Green}8.${Font} 卸载 Xray"
   echo -e "${Green}9.${Font} 更新 Xray-core"
+  echo -e "${Green}10.${Font} 替换tmp"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
@@ -491,6 +492,9 @@ menu() {
   9)
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" - install
     restart_all
+    ;;
+  10)
+    xray_tmp_config_file_check_and_use
     ;;
   40)
     exit 0
