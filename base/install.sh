@@ -461,7 +461,7 @@ function install_xray2() {
   xray_install2
   configure_xray2
   nginx_install
-  configure_nginx
+  configure_nginx2
   configure_web
   install_stat
   restart_all
