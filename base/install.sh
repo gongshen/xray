@@ -209,32 +209,21 @@ function domain_check() {
   domain_ip=$(curl -sm8 ipget.net/?ip="${domain}")
   print_ok "正在获取 IP 地址信息，请耐心等待"
   wgcfv4_status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-  wgcfv6_status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
   if [[ ${wgcfv4_status} =~ "on"|"plus" ]] || [[ ${wgcfv6_status} =~ "on"|"plus" ]]; then
     # 关闭wgcf-warp，以防误判VPS IP情况
     wg-quick down wgcf >/dev/null 2>&1
     print_ok "已关闭 wgcf-warp"
   fi
   local_ipv4=$(curl -s4m8 ip.gs)
-  local_ipv6=$(curl -s6m8 ip.gs)
-  if [[ -z ${local_ipv4} && -n ${local_ipv6} ]]; then
-    # 纯IPv6 VPS，自动添加DNS64服务器以备acme.sh申请证书使用
-    echo -e nameserver 2a01:4f8:c2c:123f::1 > /etc/resolv.conf
-    print_ok "识别为 IPv6 Only 的 VPS，自动添加 DNS64 服务器"
-  fi
   echo -e "域名通过 DNS 解析的 IP 地址：${domain_ip}"
   echo -e "本机公网 IPv4 地址： ${local_ipv4}"
-  echo -e "本机公网 IPv6 地址： ${local_ipv6}"
   sleep 2
   if [[ ${domain_ip} == "${local_ipv4}" ]]; then
     print_ok "域名通过 DNS 解析的 IP 地址与 本机 IPv4 地址匹配"
     sleep 2
-  elif [[ ${domain_ip} == "${local_ipv6}" ]]; then
-    print_ok "域名通过 DNS 解析的 IP 地址与 本机 IPv6 地址匹配"
-    sleep 2
   else
     print_error "请确保域名添加了正确的 A / AAAA 记录，否则将无法正常使用 xray"
-    print_error "域名通过 DNS 解析的 IP 地址与 本机 IPv4 / IPv6 地址不匹配，是否继续安装？（y/n）" && read -r install
+    print_error "域名通过 DNS 解析的 IP 地址与 本机 IPv4 地址不匹配，是否继续安装？（y/n）" && read -r install
     case $install in
     [yY][eE][sS] | [yY])
       print_ok "继续安装"
@@ -292,6 +281,13 @@ function modify_port() {
   cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config_tmp.json
   xray_tmp_config_file_check_and_use
   judge "Xray 端口 修改"
+}
+
+function modify_listen() {
+  local_ipv4=$(curl -s4m8 ip.gs)
+  cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"listen"];"'${local_ipv4}'")' >${xray_conf_dir}/config_tmp.json
+  xray_tmp_config_file_check_and_use
+  judge "Xray 监听IP 修改"
 }
 
 function modify_UUID() {
@@ -378,9 +374,10 @@ function basic_information() {
   UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
   PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
   EMAIL=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].email | tr -d '"')
+  echo -e "${Blue}用户:${Font} $EMAIL"
   echo -e "${Blue}uuid:${Font} $UUID"
   echo -e "${Blue}port:${Font} $PORT"
-  echo -e "${Blue}email:${Font} $EMAIL"
+  echo -e "${Blue}alterId:${Font} （dino2模式默认64）"
 }
 
 function vless_xtls-rprx-direct_link() {
@@ -417,6 +414,8 @@ function bbr_boost_sh() {
 function install_stat() {
   wget -O stat https://github.com/gongshen/xray/releases/download/v1.0.0/stat && chmod +x stat && mv -f stat ${stat_dir}
   wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv -f stat.service ${stat_service_dir}
+  # 替换域名
+  sed -i "s|__DOMAIN__|${domain}|" ${stat_service_dir}
   systemctl daemon-reload
   systemctl enable stat
 }

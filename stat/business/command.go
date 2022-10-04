@@ -5,8 +5,20 @@ import (
 	"os/exec"
 )
 
-func XrayRestart() error {
-	cmd := exec.Command("systemctl", "restart", "xray")
+const (
+	SystemctlRestartOpt = "restart"
+	SystemctlStartOpt   = "start"
+	SystemctlStopOpt    = "stop"
+)
+
+const (
+	ServiceNameXray  = "xray"
+	ServiceNameNginx = "nginx"
+	ServiceNameStat  = "stat"
+)
+
+func Systemctl(opt string, svcName string) error {
+	cmd := exec.Command("systemctl", opt, svcName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return err
