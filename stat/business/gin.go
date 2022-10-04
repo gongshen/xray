@@ -24,7 +24,7 @@ func NewGinServer() *GinServer {
 }
 
 func (g *GinServer) Start() error {
-	listener, err := net.Listen("tcp", "127.0.0.1:8080")
+	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (g *GinServer) Start() error {
 
 	engine := gin.New()
 	srv := &http.Server{
-		Addr:    "127.0.0.1:8080",
+		Addr:    ":8080",
 		Handler: engine,
 	}
 	// 获取流量统计信息

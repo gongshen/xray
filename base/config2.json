@@ -36,7 +36,7 @@
   "inbounds": [
     {
       "listen": "0.0.0.0",
-      "port":64002,
+      "port": 80,
       "protocol":"vmess",
       "settings":{
         "clients": [
@@ -45,6 +45,17 @@
             "alterId": 64,
             "level": 0,
             "email": "admin"
+          }
+        ],
+        "fallbacks":[
+          {
+            "dest":8001,
+            "xver":1
+          },
+          {
+            "dest":8002,
+            "alpn":"h2",
+            "xver":1
           }
         ]
       },
