@@ -1,16 +1,37 @@
 {
+  "policy":{
+    "levels":{
+      "0":{
+        "statsUserUplink":true,
+        "statsUserDownlink":true
+      }
+    },
+    "system":{
+      "statsInboundUplink":true,
+      "statsInboundDownlink":true,
+      "statsOutboundUplink":true,
+      "statsOutboundDownlink":true
+    }
+  },
+  "stats":{
+
+  },
   "log":{
     "access": "/var/log/xray/access.log",
     "error": "/var/log/xray/error.log",
     "loglevel":"debug"
   },
-  "api":{
-    "services":[
-      "HandlerService",
-      "LoggerService",
-      "StatsService"
-    ],
-    "tag":"api"
+  "routing":{
+    "domainStrategy":"AsIs",
+    "rules":[
+      {
+        "type":"field",
+        "inboundTag":[
+          "api"
+        ],
+        "outboundTag":"api"
+      }
+    ]
   },
   "inbounds": [
     {
@@ -52,13 +73,6 @@
             }
           }
         }
-      },
-      "sniffing":{
-        "enabled":true,
-        "destOverride":[
-          "http",
-          "tls"
-        ]
       }
     },
     {
@@ -77,47 +91,12 @@
       "settings":{
 
       }
-    },
-    {
-      "protocol":"blackhole",
-      "settings":{
-
-      },
-      "tag":"blocked"
     }
   ],
-  "policy":{
-    "system":{
-      "statsInboundDownlink":true,
-      "statsInboundUplink":true
-    }
-  },
-  "routing":{
-    "rules":[
-      {
-        "inboundTag":[
-          "api"
-        ],
-        "outboundTag":"api",
-        "type":"field"
-      },
-      {
-        "ip":[
-          "geoip:private"
-        ],
-        "outboundTag":"blocked",
-        "type":"field"
-      },
-      {
-        "outboundTag":"blocked",
-        "protocol":[
-          "bittorrent"
-        ],
-        "type":"field"
-      }
+  "api":{
+    "tag":"api",
+    "services":[
+      "StatsService"
     ]
-  },
-  "stats":{
-
   }
 }
