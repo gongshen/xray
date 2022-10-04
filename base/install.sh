@@ -323,6 +323,12 @@ function xray_install() {
   judge "域名记录"
 }
 
+function xray_install2() {
+  print_ok "安装 Xray"
+  curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh | bash -s -- install --version v1.6.0
+  judge "Xray 安装"
+}
+
 function configure_web() {
   rm -rf /www/xray_web
   mkdir -p /www/xray_web
@@ -443,7 +449,7 @@ function install_xray2() {
   system_check
   dependency_install
   basic_optimization
-  xray_install
+  xray_install2
   configure_xray2
   install_stat
   restart_all2
