@@ -315,7 +315,7 @@ function configure_xray2() {
 
 function xray_install() {
   print_ok "安装 Xray"
-  curl -L https://raw.githubusercontent.com/gongshen/xray/main/base/xray-install.sh | bash -s -- install --version v1.4.2
+  curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh | bash -s -- install --version v1.4.2
   judge "Xray 安装"
 
   # 用于生成 Xray 的导入链接
