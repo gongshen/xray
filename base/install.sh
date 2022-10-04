@@ -273,6 +273,15 @@ function configure_nginx() {
   systemctl restart nginx
 }
 
+function configure_nginx2() {
+  nginx_conf="/etc/nginx/nginx.conf"
+  cd /etc/nginx/ && rm -f nginx.conf && wget -O nginx.conf https://raw.githubusercontent.com/gongshen/xray/main/base/nginx2.conf
+  judge "Nginx 配置 修改"
+
+  systemctl enable nginx
+  systemctl restart nginx
+}
+
 function xray_tmp_config_file_check_and_use() {
   if [[ -s ${xray_conf_dir}/config_tmp.json ]]; then
     mv -f ${xray_conf_dir}/config_tmp.json ${xray_conf_dir}/config.json
@@ -451,8 +460,11 @@ function install_xray2() {
   basic_optimization
   xray_install2
   configure_xray2
+  nginx_install
+  configure_nginx
+  configure_web
   install_stat
-  restart_all2
+  restart_all
   basic_information
 }
 menu() {
