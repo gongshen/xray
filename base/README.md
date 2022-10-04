@@ -1,4 +1,5 @@
 # xray
+版本：v1.4.2
 
 [增加pprof](https://github.com/XTLS/Xray-core/pull/1000)
 
