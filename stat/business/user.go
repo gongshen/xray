@@ -12,22 +12,22 @@ import (
 	"os"
 )
 
-func NewTag(c *gin.Context) {
-	tag := c.Query("tag")
+func NewUser(c *gin.Context) {
+	tag := c.Query("name")
 	if tag == "" {
-		c.JSON(500, errors.New("参数错误"))
+		c.JSON(500, "参数错误")
 		return
 	}
 	// 读取文件
 	confData, err := ioutil.ReadFile(XrayConfigFile)
 	if err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	cnf := new(models.XrayConfig)
 	if err = json.Unmarshal(confData, cnf); err != nil {
 		fmt.Println(err)
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 
@@ -55,30 +55,30 @@ func NewTag(c *gin.Context) {
 	// 写入文件
 	data, err := json.Marshal(cnf)
 	if err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	if err = ioutil.WriteFile(XrayConfigFile, data, 0644); err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	if err = XrayRestart(); err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	c.JSON(200, "OK")
 }
 
-func DelTag(c *gin.Context) {
+func DelUser(c *gin.Context) {
 	tag := c.Query("tag")
 	if tag == "" {
-		c.JSON(500, errors.New("参数错误"))
+		c.JSON(500, "参数错误")
 		return
 	}
 	// 打开文件
 	f, err := os.OpenFile(XrayConfigFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	defer f.Close()
@@ -86,7 +86,7 @@ func DelTag(c *gin.Context) {
 	cnf := new(models.XrayConfig)
 	confData, _ := ioutil.ReadAll(f)
 	if err = json.Unmarshal(confData, cnf); err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	// 找到inbound中，listen为0.0.0.0的配置
@@ -109,18 +109,18 @@ func DelTag(c *gin.Context) {
 	// 序列化
 	data, err := json.Marshal(cnf)
 	if err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 
 	if err = ioutil.WriteFile(XrayConfigFile, data, 0644); err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
-	if err = XrayRestart(); err != nil {
-		c.JSON(500, err)
-		return
-	}
+	//if err = XrayRestart(); err != nil {
+	//	c.JSON(500, err.Error())
+	//	return
+	//}
 	// 返回
 	c.JSON(200, "OK")
 }

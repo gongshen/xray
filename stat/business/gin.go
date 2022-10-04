@@ -3,7 +3,6 @@ package business
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gongshen/xray/stat/models"
@@ -36,9 +35,9 @@ func (g *GinServer) Start() error {
 		Handler: engine,
 	}
 	// 获取流量统计信息
-	engine.GET("/stat/get", GetTraffic)
-	engine.GET("/tag/new", NewTag)
-	engine.GET("/tag/del", DelTag)
+	engine.GET("/user/stat", GetStat)
+	engine.GET("/user/new", NewUser)
+	engine.GET("/user/del", DelUser)
 	engine.GET("/share/link", ShareLink)
 	engine.GET("/share/qr", ShareQr)
 
@@ -53,7 +52,7 @@ func (g *GinServer) Close() {
 func ShareLink(c *gin.Context) {
 	tag := c.Query("tag")
 	if tag == "" {
-		c.JSON(500, errors.New("参数错误"))
+		c.JSON(500, "参数错误")
 		return
 	}
 
@@ -62,16 +61,16 @@ func ShareLink(c *gin.Context) {
 func ShareQr(c *gin.Context) {
 	tag := c.Query("tag")
 	if tag == "" {
-		c.JSON(500, errors.New("参数错误"))
+		c.JSON(500, "参数错误")
 		return
 	}
 
 }
 
-func GetTraffic(c *gin.Context) {
+func GetStat(c *gin.Context) {
 	cc, err := grpc.Dial(TrafficTarget, grpc.WithInsecure())
 	if err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	defer cc.Close()
@@ -84,7 +83,7 @@ func GetTraffic(c *gin.Context) {
 	}
 	resp, err := client.QueryStats(ctx, request)
 	if err != nil {
-		c.JSON(500, err)
+		c.JSON(500, err.Error())
 		return
 	}
 	tagTrafficMap := map[string]*models.Traffic{}
@@ -106,15 +105,14 @@ func GetTraffic(c *gin.Context) {
 		}
 		traffic.Used += stat.Value
 	}
-
 	var output bytes.Buffer
 	output.WriteString("<html><body><p>")
 	for _, traffic := range tagTrafficMap {
-		output.WriteString(fmt.Sprintf("用户:%s<br>使用流量:%s<br>", traffic.Tag, format(traffic.Used)))
+		output.WriteString(fmt.Sprintf(`<font color="red">用户：</font>%s<br><font color="green">已用流量：</font>%s<br>`, traffic.Tag, format(traffic.Used)))
 		output.WriteString("-----------------------------------------------------------------------<br>")
 	}
-
-	c.Data(200, "text/html", output.Bytes())
+	output.WriteString("</html></body></p>")
+	c.Data(200, "text/html; charset=utf-8", output.Bytes())
 }
 
 func format(used int64) string {
