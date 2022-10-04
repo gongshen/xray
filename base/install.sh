@@ -367,6 +367,13 @@ function restart_all() {
   judge "Stat 启动"
 }
 
+function restart_all2() {
+  systemctl restart xray
+  judge "Xray 启动"
+  systemctl restart stat
+  judge "Stat 启动"
+}
+
 function basic_information() {
   UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
   PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
@@ -439,7 +446,7 @@ function install_xray2() {
   xray_install
   configure_xray2
   install_stat
-  restart_all
+  restart_all2
   basic_information
 }
 menu() {
