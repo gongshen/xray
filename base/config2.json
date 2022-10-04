@@ -42,11 +42,11 @@
         "clients": [
           {
             "id":"119e79d6-a0d8-43e4-8132-dd447f8715a3",
-            "alterId":64,
+            "alterId": 64,
+            "level": 0,
             "email": "admin"
           }
-        ],
-        "disableInsecureEncryption":false
+        ]
       },
       "streamSettings":{
         "network":"tcp",
