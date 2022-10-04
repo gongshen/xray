@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gongshen/xray/stat/models"
+	"github.com/sirupsen/logrus"
 	statsservice "github.com/xtls/xray-core/app/stats/command"
 	"github.com/xtls/xray-core/common/net"
 	"google.golang.org/grpc"
@@ -95,6 +96,7 @@ func GetTraffic(c *gin.Context) {
 		if tag == "api" || !isUser {
 			continue
 		}
+		logrus.Debugln("tag:%s,used:%d", tag, stat.Value)
 		traffic, ok := tagTrafficMap[tag]
 		if !ok {
 			traffic = &models.Traffic{
