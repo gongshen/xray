@@ -273,15 +273,6 @@ function configure_nginx() {
   systemctl restart nginx
 }
 
-function configure_nginx2() {
-  nginx_conf="/etc/nginx/nginx.conf"
-  cd /etc/nginx/ && rm -f nginx.conf && wget -O nginx.conf https://raw.githubusercontent.com/gongshen/xray/main/base/nginx2.conf
-  judge "Nginx 配置 修改"
-
-  systemctl enable nginx
-  systemctl restart nginx
-}
-
 function xray_tmp_config_file_check_and_use() {
   if [[ -s ${xray_conf_dir}/config_tmp.json ]]; then
     mv -f ${xray_conf_dir}/config_tmp.json ${xray_conf_dir}/config.json
@@ -332,12 +323,6 @@ function xray_install() {
   judge "域名记录"
 }
 
-function xray_install2() {
-  print_ok "安装 Xray"
-  curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh | bash -s -- install --version v1.4.2
-  judge "Xray 安装"
-}
-
 function configure_web() {
   rm -rf /www/xray_web
   mkdir -p /www/xray_web
@@ -382,7 +367,7 @@ function restart_all() {
   judge "Stat 启动"
 }
 
-function restart_all2() {
+function restart_all_without_nginx() {
   systemctl restart xray
   judge "Xray 启动"
   systemctl restart stat
@@ -458,13 +443,10 @@ function install_xray2() {
   system_check
   dependency_install
   basic_optimization
-  xray_install2
+  xray_install
   configure_xray2
-  nginx_install
-  configure_nginx2
-  configure_web
   install_stat
-  restart_all
+  restart_all_without_nginx
   basic_information
 }
 menu() {

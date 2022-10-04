@@ -41,21 +41,10 @@
       "settings":{
         "clients": [
           {
-            "id":"119e79d6-a0d8-43e4-8132-dd447f8715a3",
+            "id":"",
             "alterId": 64,
             "level": 0,
             "email": "admin"
-          }
-        ],
-        "fallbacks":[
-          {
-            "dest":8001,
-            "xver":1
-          },
-          {
-            "dest":8002,
-            "alpn":"h2",
-            "xver":1
           }
         ]
       },
