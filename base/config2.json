@@ -1,112 +1,123 @@
 {
-  "policy":{
-    "levels":{
-      "0":{
-        "statsUserUplink":true,
-        "statsUserDownlink":true
-      }
-    },
-    "system":{
-      "statsInboundUplink":true,
-      "statsInboundDownlink":true,
-      "statsOutboundUplink":true,
-      "statsOutboundDownlink":true
-    }
-  },
-  "stats":{},
   "log":{
-    "access":"/var/log/xray/access.log",
-    "error":"/var/log/xray/error.log",
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log",
     "loglevel":"debug"
   },
-  "routing":{
-    "domainStrategy":"AsIs",
-    "rules":[
-      {
-        "type":"field",
-        "inboundTag":[
-          "api"
-        ],
-        "outboundTag":"api"
-      },
-      {
-        "type":"field",
-        "ip":[
-          "geoip:private"
-        ],
-        "outboundTag":"block"
-      },
-      {
-        "type":"field",
-        "domain":[
-          "geosite:category-ads-all"
-        ],
-        "outboundTag":"block"
-      },
-      {
-        "type":"field",
-        "protocol":[
-          "bittorrent"
-        ],
-        "outboundTag":"block"
-      }
-    ]
+  "api":{
+    "services":[
+      "HandlerService",
+      "LoggerService",
+      "StatsService"
+    ],
+    "tag":"api"
   },
   "inbounds": [
     {
       "listen": "0.0.0.0",
-      "port": 80,
-      "protocol": "vmess",
-      "settings": {
+      "port":64002,
+      "protocol":"vmess",
+      "settings":{
         "clients": [
           {
-            "id": "",
-            "level": 0,
-            "alterId": 64,
+            "id":"119e79d6-a0d8-43e4-8132-dd447f8715a3",
+            "alterId":64,
             "email": "admin"
           }
-        ]
+        ],
+        "disableInsecureEncryption":false
       },
-      "streamSettings": {
-        "network": "tcp",
-        "tcpSettings": {
-          "header": {
-            "type": "http",
-            "response": {
-              "version": "1.1",
-              "status": "200",
-              "reason": "OK",
-              "headers": {
-                "Content-Type": ["application/octet-stream", "application/x-msdownload", "text/html", "application/x-shockwave-flash"],
-                "Transfer-Encoding": ["chunked"],
-                "Connection": ["keep-alive"],
-                "Pragma": "no-cache"
+      "streamSettings":{
+        "network":"tcp",
+        "security":"none",
+        "tcpSettings":{
+          "header":{
+            "type":"http",
+            "request":{
+              "method":"GET",
+              "path":[
+                "/"
+              ],
+              "headers":{
+
+              }
+            },
+            "response":{
+              "version":"1.1",
+              "status":"200",
+              "reason":"OK",
+              "headers":{
+
               }
             }
           }
         }
+      },
+      "sniffing":{
+        "enabled":true,
+        "destOverride":[
+          "http",
+          "tls"
+        ]
       }
     },
     {
+      "listen":"127.0.0.1",
       "port":11111,
       "protocol":"dokodemo-door",
-      "tag":"api",
       "settings":{
         "address":"127.0.0.1"
       },
-      "listen":"127.0.0.1"
+      "tag":"api"
     }
   ],
-  "outbounds": [
+  "outbounds":[
     {
-      "protocol": "freedom",
-      "settings": {}
+      "protocol":"freedom",
+      "settings":{
+
+      }
+    },
+    {
+      "protocol":"blackhole",
+      "settings":{
+
+      },
+      "tag":"blocked"
     }
   ],
-  "api":{
-    "tag":"api",
-    "services":[
-      "StatsService"
+  "policy":{
+    "system":{
+      "statsInboundDownlink":true,
+      "statsInboundUplink":true
+    }
+  },
+  "routing":{
+    "rules":[
+      {
+        "inboundTag":[
+          "api"
+        ],
+        "outboundTag":"api",
+        "type":"field"
+      },
+      {
+        "ip":[
+          "geoip:private"
+        ],
+        "outboundTag":"blocked",
+        "type":"field"
+      },
+      {
+        "outboundTag":"blocked",
+        "protocol":[
+          "bittorrent"
+        ],
+        "type":"field"
+      }
     ]
+  },
+  "stats":{
+
   }
 }

@@ -1,58 +1,16 @@
 {
-  "policy":{
-    "levels":{
-      "0":{
-        "statsUserUplink":true,
-        "statsUserDownlink":true
-      }
-    },
-    "system":{
-      "statsInboundUplink":true,
-      "statsInboundDownlink":true,
-      "statsOutboundUplink":true,
-      "statsOutboundDownlink":true
-    }
-  },
-  "stats":{
-
-  },
   "log":{
     "access": "/var/log/xray/access.log",
     "error": "/var/log/xray/error.log",
     "loglevel":"debug"
   },
-  "routing":{
-    "domainStrategy":"AsIs",
-    "rules":[
-      {
-        "type":"field",
-        "inboundTag":[
-          "api"
-        ],
-        "outboundTag":"api"
-      },
-      {
-        "type":"field",
-        "ip":[
-          "geoip:private"
-        ],
-        "outboundTag":"block"
-      },
-      {
-        "type":"field",
-        "domain":[
-          "geosite:category-ads-all"
-        ],
-        "outboundTag":"block"
-      },
-      {
-        "type":"field",
-        "protocol":[
-          "bittorrent"
-        ],
-        "outboundTag":"block"
-      }
-    ]
+  "api":{
+    "services":[
+      "HandlerService",
+      "LoggerService",
+      "StatsService"
+    ],
+    "tag":"api"
   },
   "inbounds":[
     {
@@ -114,12 +72,61 @@
       "settings":{
 
       }
+    },
+    {
+      "protocol":"blackhole",
+      "settings":{
+
+      },
+      "tag":"blocked"
     }
   ],
-  "api":{
-    "tag":"api",
-    "services":[
-      "StatsService"
+  "policy":{
+    "levels":{
+      "0":{
+        "statsUserUplink":true,
+        "statsUserDownlink":true
+      }
+    },
+    "system":{
+      "statsInboundUplink":true,
+      "statsInboundDownlink":true,
+      "statsOutboundUplink":true,
+      "statsOutboundDownlink":true
+    }
+  },
+  "routing":{
+    "domainStrategy":"AsIs",
+    "rules":[
+      {
+        "type":"field",
+        "inboundTag":[
+          "api"
+        ],
+        "outboundTag":"api"
+      },
+      {
+        "type":"field",
+        "ip":[
+          "geoip:private"
+        ],
+        "outboundTag":"block"
+      },
+      {
+        "type":"field",
+        "domain":[
+          "geosite:category-ads-all"
+        ],
+        "outboundTag":"block"
+      },
+      {
+        "type":"field",
+        "protocol":[
+          "bittorrent"
+        ],
+        "outboundTag":"block"
+      }
     ]
-  }
+  },
+  "stats":{}
 }
