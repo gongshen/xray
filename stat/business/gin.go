@@ -64,7 +64,7 @@ func ShareQr(c *gin.Context) {
 		c.JSON(500, errors.New("参数错误"))
 		return
 	}
-	
+
 }
 
 func GetTraffic(c *gin.Context) {
@@ -106,12 +106,13 @@ func GetTraffic(c *gin.Context) {
 	}
 
 	var output bytes.Buffer
+	output.WriteString("<html><body><p>")
 	for _, traffic := range tagTrafficMap {
-		output.WriteString(fmt.Sprintf("用户:%s\n使用流量:%s\n", traffic.Tag, format(traffic.Used)))
-		output.WriteString("-----------------------------------------------------------------------")
+		output.WriteString(fmt.Sprintf("用户:%s<br>使用流量:%s<br>", traffic.Tag, format(traffic.Used)))
+		output.WriteString("-----------------------------------------------------------------------<br>")
 	}
 
-	c.JSON(200, output.String())
+	c.Data(200, "text/html", output.Bytes())
 }
 
 func format(used int64) string {
