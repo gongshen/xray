@@ -12,6 +12,7 @@ import (
 )
 
 func GetStat(c *gin.Context) {
+	reset := c.Query("reset")
 	cc, err := grpc.Dial(TrafficTarget, grpc.WithInsecure())
 	if err != nil {
 		c.JSON(500, err.Error())
@@ -23,7 +24,7 @@ func GetStat(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	request := &statsservice.QueryStatsRequest{
-		Reset_: false,
+		Reset_: reset == "",
 	}
 	resp, err := client.QueryStats(ctx, request)
 	if err != nil {
@@ -52,9 +53,9 @@ func GetStat(c *gin.Context) {
 	output.WriteString("<html><body><p>")
 	for _, traffic := range tagTrafficMap {
 		output.WriteString(fmt.Sprintf(`<font color="red">用户：</font>%s<br><font color="green">已用流量：</font>%s<br>`, traffic.Tag, format(traffic.Used)))
-		output.WriteString("-----------------------------------------------------------------------<br>")
+		output.WriteString("---------------------------------------<br>")
 	}
-	output.WriteString("</html></body></p>")
+	output.WriteString("</p></body></html>")
 	c.Data(200, "text/html; charset=utf-8", output.Bytes())
 }
 

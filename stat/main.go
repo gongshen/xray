@@ -18,6 +18,7 @@ func init() {
 func main() {
 	flag.Parse()
 	utils.SetDomain(domain)
+	utils.SetIp()
 	initLogger()
 	logrus.Debugln("域名", domain)
 	srv := business.NewServer()

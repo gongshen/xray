@@ -5,10 +5,17 @@ import (
 	"net"
 )
 
-var Domain string
+var (
+	Domain string
+	Ip     string
+)
 
 func SetDomain(domain string) {
 	Domain = domain
+}
+
+func SetIp() {
+	Ip = GetIp()
 }
 
 func GetIp() string {
