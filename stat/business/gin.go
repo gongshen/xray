@@ -31,7 +31,6 @@ func (g *GinServer) Start() error {
 	engine.GET("/user/new", NewUser)
 	engine.GET("/user/del", DelUser)
 	engine.GET("/user/share", Share)
-
 	go srv.Serve(listener)
 	return nil
 }

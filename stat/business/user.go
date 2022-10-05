@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gongshen/xray/stat/models"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -55,7 +54,7 @@ func NewUser(c *gin.Context) {
 }
 
 func DelUser(c *gin.Context) {
-	tag := c.Query("tag")
+	tag := c.Query("name")
 	if tag == "" {
 		c.JSON(500, "参数错误")
 		return
@@ -65,6 +64,7 @@ func DelUser(c *gin.Context) {
 		c.JSON(500, err.Error())
 		return
 	}
+	find := false
 	// 找到inbound中，listen为0.0.0.0的配置
 	for _, inbound := range cnf.InboundConfigs {
 		if inbound.Listen == MainInboundListen {
@@ -75,12 +75,15 @@ func DelUser(c *gin.Context) {
 					newClients = append(newClients, cli)
 				} else {
 					// 找到删除的tag
-					logrus.Debugln("找到需要删除的tag")
+					find = true
 				}
 			}
 			inbound.Settings.Clients = newClients
 			break
 		}
+	}
+	if !find {
+		c.JSON(500, "未找到该用户")
 	}
 	if err = SaveConfigToFile(cnf); err != nil {
 		c.JSON(500, err.Error())

@@ -11,7 +11,7 @@ import (
 
 const (
 	VMessPattern = `vmess://tcp:%s-%d@%s:%d?type=http#dino2-%s`
-	VLessPattern = `vless://%s@%s:%d?security=tls#dino1-%s"`
+	VLessPattern = `vless://%s@%s:%d?security=tls#dino1-%s`
 
 	VMessQrPattern = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=vmess://tcp:%s-%d@%s:%d?type=http#dino2-%s`
 	VLessQrPattern = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=vless://%s@%s:%d?security=tls#dino1-%s`
@@ -34,9 +34,10 @@ func Share(c *gin.Context) {
 		return
 	}
 	var output bytes.Buffer
-	output.WriteString("<html><body><p>")
-	output.WriteString(fmt.Sprintf(`<font color="red">用户：</font>%s<br><font color="green">分享链接：</font>%s<br><font color="green">二维码链接：</font>%s<br>`, tag, link, url))
-	output.WriteString("</html></body></p>")
+	output.WriteString("<html><body>")
+	output.WriteString(fmt.Sprintf(`<font color="red">用户：</font>%s<br><font color="green">分享链接：</font>%s<br><font color="green">二维码链接：</font><br>`, tag, link))
+	output.WriteString(fmt.Sprintf(`<img src="%s" width="200" height="200">`, url))
+	output.WriteString("</body></html>")
 	c.Data(200, "text/html; charset=utf-8", output.Bytes())
 }
 
