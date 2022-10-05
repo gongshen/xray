@@ -1,21 +1,22 @@
 package models
 
 type XrayConfig struct {
+	Policy          *XrayConfigPolicy     `json:"policy,omitempty"`
+	Stats           XrayConfigStats       `json:"stats,omitempty"`
 	LogConfig       *XrayConfigLog        `json:"log,omitempty"`
 	RouterConfig    *XrayConfigRouter     `json:"routing,omitempty"`
 	InboundConfigs  []*XrayConfigInbound  `json:"inbounds,omitempty"`
 	OutboundConfigs []*XrayConfigOutbound `json:"outbounds,omitempty"`
-	Policy          *XrayConfigPolicy     `json:"policy,omitempty"`
 	API             *XrayConfigApi        `json:"api,omitempty"`
-	Stats           XrayConfigStats       `json:"stats,omitempty"`
 }
 
 type XrayConfigInbound struct {
-	Port     int64               `json:"port,omitempty"`
-	Protocol string              `json:"protocol,omitempty"`
-	Tag      string              `json:"tag,omitempty"`
-	Listen   string              `json:"listen,omitempty"`
-	Settings *XrayConfigSettings `json:"settings,omitempty"`
+	Listen         string                    `json:"listen,omitempty"`
+	Port           int64                     `json:"port,omitempty"`
+	Protocol       string                    `json:"protocol,omitempty"`
+	Tag            string                    `json:"tag,omitempty"`
+	Settings       *XrayConfigSettings       `json:"settings,omitempty"`
+	StreamSettings *XrayConfigStreamSettings `json:"streamSettings,omitempty"`
 }
 
 type XrayConfigOutbound struct {
@@ -74,8 +75,8 @@ type XrayConfigTlsSettingsCertificate struct {
 
 type XrayConfigSettingsFallback struct {
 	Dest int64  `json:"dest,omitempty"`
-	Xver int64  `json:"xver,omitempty"`
 	Alpn string `json:"alpn,omitempty"`
+	Xver int64  `json:"xver,omitempty"`
 }
 
 type XrayConfigSettingsClient struct {
@@ -105,9 +106,9 @@ type XrayConfigRouterRule struct {
 }
 
 type XrayConfigLog struct {
-	LogLevel string `json:"loglevel,omitempty"`
 	Access   string `json:"access,omitempty"`
 	Error    string `json:"error,omitempty"`
+	LogLevel string `json:"loglevel,omitempty"`
 }
 
 type XrayConfigStats struct{}
