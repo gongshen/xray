@@ -25,6 +25,11 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
 
     展示用户分享信息
 
+### 统计信息其他功能
+- 流量每个月重置
+- 支持程序重启流量累计计算
+- 支持v2rayN使用
+
 ### 样例
 ```http request
 http://127.0.0.1:8080/user/stat
@@ -32,6 +37,3 @@ http://127.0.0.1:8080/user/stat
 ```http request
 https://dinoland.top:64002/user/stat
 ```
-
-### TODO
-- stat支持重置流量接口

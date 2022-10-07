@@ -4,7 +4,7 @@ After=network.target nss-lookup.target
 
 [Service]
 User=root
-ExecStart=/usr/local/bin/stat -domain=__DOMAIN__
+ExecStart=/usr/local/bin/stat -domain=__DOMAIN__ -reset=__RESETDAY__
 Restart=on-failure
 RestartPreventExitStatus=23
 
