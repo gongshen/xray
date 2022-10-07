@@ -1,5 +1,9 @@
-# xray
+# 代理安装
+```shell
+wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/gongshen/xray/main/base/install.sh" && chmod +x install.sh && bash install.sh
+```
 
+# 统计信息
 ### 统计信息访问地址
 > 【服务器ip地址】:8080
 > 【域名】:【暴露的端口】
