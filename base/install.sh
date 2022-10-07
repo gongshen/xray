@@ -186,6 +186,10 @@ function dependency_install() {
     judge "安装 jq"
   fi
 
+  wget https://copr.fedorainfracloud.org/coprs/ngompa/musl-libc/repo/epel-7/ngompa-musl-libc-epel-7.repo -O /etc/yum.repos.d/ngompa-musl-libc-epel-7.repo
+  ${INS} musl-libc-static
+  judge "安装musl静态库"
+
   # 防止部分系统xray的默认bin目录缺失
   mkdir /usr/local/bin >/dev/null 2>&1
 }
@@ -412,7 +416,7 @@ function bbr_boost_sh() {
 }
 
 function install_stat() {
-  wget -O stat https://github.com/gongshen/xray/releases/download/v1.0.0/stat && chmod +x stat && mv -f stat ${stat_dir}
+  wget -O stat https://github.com/gongshen/xray/releases/download/v2.0.0/stat && chmod +x stat && mv -f stat ${stat_dir}
   wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv -f stat.service ${stat_service_dir}
   # 替换域名
   sed -i "s|__DOMAIN__|${domain}|" ${stat_service_dir}
