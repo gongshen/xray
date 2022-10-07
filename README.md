@@ -1,4 +1,4 @@
-# 代理安装
+# 一键安装
 ```shell
 wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/gongshen/xray/main/base/install.sh" && chmod +x install.sh && bash install.sh
 ```
