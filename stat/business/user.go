@@ -2,6 +2,7 @@ package business
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gongshen/xray/stat/dao"
 	"github.com/gongshen/xray/stat/models"
 	"github.com/google/uuid"
 )
@@ -50,6 +51,11 @@ func NewUser(c *gin.Context) {
 		c.JSON(500, err.Error())
 		return
 	}
+	// 新建统计配置
+	if err = dao.NewTraffic(tag); err != nil {
+		c.JSON(500, err.Error())
+		return
+	}
 	c.JSON(200, "OK")
 }
 
@@ -90,6 +96,11 @@ func DelUser(c *gin.Context) {
 		return
 	}
 	if err = Systemctl(SystemctlRestartOpt, ServiceNameXray); err != nil {
+		c.JSON(500, err.Error())
+		return
+	}
+	// 软删除记录
+	if err = dao.DelTraffic(tag); err != nil {
 		c.JSON(500, err.Error())
 		return
 	}

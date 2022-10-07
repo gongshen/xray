@@ -1,7 +1,7 @@
 package business
 
 import (
-	"log"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,23 +10,23 @@ import (
 
 type Server struct {
 	ginServer *GinServer
-	//jobServer *JobServer
+	jobServer *JobServer
 }
 
 func NewServer() *Server {
 	return &Server{
 		ginServer: NewGinServer(),
-		//jobServer: NewJobServer(),
+		jobServer: NewJobServer(),
 	}
 }
 
 func (s *Server) Start() {
-	//if err := s.jobServer.Start(); err != nil {
-	//	log.Println(err)
-	//	return
-	//}
+	if err := s.jobServer.Start(); err != nil {
+		logrus.Println(err)
+		return
+	}
 	if err := s.ginServer.Start(); err != nil {
-		log.Println(err)
+		logrus.Println(err)
 		return
 	}
 	c := make(chan os.Signal, 1)
@@ -37,6 +37,6 @@ func (s *Server) Start() {
 }
 
 func (s *Server) Close() {
-	//s.jobServer.Close()
+	s.jobServer.Close()
 	s.ginServer.Close()
 }

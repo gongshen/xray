@@ -16,6 +16,7 @@ func init() {
 }
 
 func main() {
+	business.InitStat()
 	flag.Parse()
 	utils.SetDomain(domain)
 	utils.SetIp()

@@ -13,7 +13,21 @@ import (
 var db *gorm.DB
 
 func initTraffic() error {
-	return db.AutoMigrate(&models.Traffic{})
+	if err := db.AutoMigrate(&models.Traffic{}); err != nil {
+		return err
+	}
+	var count int64
+	if err := db.Model(&models.Traffic{}).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		user := &models.Traffic{
+			Tag:    "admin",
+			Enable: true,
+		}
+		return db.Create(user).Error
+	}
+	return nil
 }
 
 func InitDB(dbPath string) error {
@@ -44,7 +58,7 @@ func InitDB(dbPath string) error {
 }
 
 func GetDB() *gorm.DB {
-	return db
+	return db.Debug()
 }
 
 func IsNotFound(err error) bool {

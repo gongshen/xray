@@ -21,9 +21,9 @@ func (j *JobServer) Start() error {
 	c := cron.New(cron.WithLocation(location), cron.WithSeconds())
 	c.Start()
 	go func() {
-		time.Sleep(time.Second * 5)
-		// 每 10 秒统计一次流量，首次启动延迟 5 秒，与重启 xray 的时间错开
-		c.AddJob("@every 10s", nil)
+		time.Sleep(time.Second * 10)
+		//每 10 秒统计一次流量，首次启动延迟 10 秒，与重启 xray 的时间错开
+		c.AddJob("@every 10s", &Stat{})
 	}()
 	return nil
 }

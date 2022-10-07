@@ -1,9 +1,9 @@
 package models
 
 type Traffic struct {
-	//Id     int    `json:"id" gorm:"primaryKey;autoIncrement"`
-	Tag string `json:"tag" form:"tag" gorm:"unique"`
-	//Limit  int64  `json:"limit"`                             // 流量限制
-	Used int64 `json:"used"` // 使用流量
-	//Enable bool   `json:"enable" form:"enable" gorm:"index"` // 是否允许使用
+	Id     int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Tag    string `json:"tag" form:"tag" gorm:"unique"`
+	Used   int64  `json:"used" form:"used"`                  // 当前使用流量
+	Base   int64  `json:"base" form:"base"`                  // 基础流量
+	Enable bool   `json:"enable" form:"enable" gorm:"index"` // 是否启用
 }
