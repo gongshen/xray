@@ -20,7 +20,7 @@ OK="${Green}[OK]${Font}"
 ERROR="${Red}[ERROR]${Font}"
 
 # 变量
-stat_version="v2.0.0"
+stat_version="v3.0.0"
 stat_dir="/usr/local/bin/stat"
 stat_service_dir="/etc/systemd/system/stat.service"
 xray_conf_dir="/usr/local/etc/xray"
