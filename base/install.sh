@@ -417,7 +417,8 @@ function bbr_boost_sh() {
 }
 
 function install_stat() {
-  wget -O stat https://github.com/gongshen/xray/releases/download/${stat_version}/stat && chmod +x stat && mv -f stat ${stat_dir}
+  cd /root
+  wget -O stat https://github.com/gongshen/xray/releases/download/v3.0.0/stat && chmod +x stat && mv -f stat ${stat_dir}
   wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv -f stat.service ${stat_service_dir}
   # 替换重置日期
   read -rp "请输入流量重置日期，默认25号(eg: 25):" resetDay
@@ -470,6 +471,7 @@ menu() {
   echo -e "${Green}8.${Font} 卸载 Xray"
   echo -e "${Green}9.${Font} 更新 Xray-core"
   echo -e "${Green}10.${Font} 替换tmp"
+  echo -e "${Green}11.${Font} 安装stat"
   echo -e "${Green}40.${Font} 退出"
   read -rp "请输入数字：" menu_num
   case $menu_num in
@@ -509,6 +511,9 @@ menu() {
     ;;
   10)
     xray_tmp_config_file_check_and_use
+    ;;
+  11)
+    install_stat
     ;;
   40)
     exit 0

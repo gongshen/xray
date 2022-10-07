@@ -24,6 +24,9 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
 - /user/share?name=【用户名】
 
     展示用户分享信息
+- /user/reset_stat
+  
+  重置流量
 
 ### 统计信息其他功能
 - 流量每个月重置
