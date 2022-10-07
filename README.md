@@ -11,15 +11,15 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
 ### 统计信息接口
 - /user/stat
 
-    查看用户流量使用信息（如果服务重启，所有用户流量重头开始统计）
+    查看用户流量使用信息
 
 - /user/new?name=【用户名】
 
-    新增用户，name后面填写新增的用户名（新增用户后，所有用户的流量从头开始统计）
+    新增用户，name后面填写新增的用户名
 
 - /user/del?name=【用户名】
 
-    删除用户，name后面填写删除的用户名（删除用户后，所有用户的流量从头开始统计）
+    删除用户，name后面填写删除的用户名
 
 - /user/share?name=【用户名】
 
@@ -32,3 +32,6 @@ http://127.0.0.1:8080/user/stat
 ```http request
 https://dinoland.top:64002/user/stat
 ```
+
+### TODO
+- stat支持重置流量接口
