@@ -13,10 +13,13 @@ type Server struct {
 	jobServer *JobServer
 }
 
-func NewServer() *Server {
+func NewServer(resetDay string) *Server {
+	if resetDay == "" {
+		resetDay = "25" // 默认25号
+	}
 	return &Server{
 		ginServer: NewGinServer(),
-		jobServer: NewJobServer(),
+		jobServer: NewJobServer(resetDay),
 	}
 }
 

@@ -2,6 +2,8 @@ package business
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gongshen/xray/stat/dao"
+	"github.com/sirupsen/logrus"
 	"github.com/xtls/xray-core/common/net"
 	"net/http"
 )
@@ -40,4 +42,8 @@ func (g *GinServer) Close() {
 	g.l.Close()
 }
 
-func ResetStat(c *gin.Context) {}
+func ResetStat(_ *gin.Context) {
+	if err := dao.ResetTraffics(); err != nil {
+		logrus.Errorln(err)
+	}
+}

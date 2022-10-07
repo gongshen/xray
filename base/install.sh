@@ -419,6 +419,8 @@ function bbr_boost_sh() {
 function install_stat() {
   wget -O stat https://github.com/gongshen/xray/releases/download/${stat_version}/stat && chmod +x stat && mv -f stat ${stat_dir}
   wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv -f stat.service ${stat_service_dir}
+  read -rp "请输入流量重置日期，默认25号(eg: 25):" domain
+
   # 替换域名
   sed -i "s|__DOMAIN__|${domain}|" ${stat_service_dir}
   systemctl daemon-reload

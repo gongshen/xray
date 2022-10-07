@@ -8,11 +8,13 @@ import (
 )
 
 var (
-	domain string
+	domain   string
+	resetDay string
 )
 
 func init() {
 	flag.StringVar(&domain, "domain", "", "vless项目的域名")
+	flag.StringVar(&resetDay, "reset", "25", "流量重置日期，默认25号凌晨")
 }
 
 func main() {
@@ -22,6 +24,6 @@ func main() {
 	utils.SetIp()
 	initLogger()
 	logrus.Debugln("域名", domain)
-	srv := business.NewServer()
+	srv := business.NewServer(resetDay)
 	srv.Start()
 }

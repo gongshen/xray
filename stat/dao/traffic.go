@@ -63,7 +63,7 @@ func GetTrafficsByTags(tags []string) ([]*models.Traffic, error) {
 
 func ResetTraffics() error {
 	db := conn.GetDB()
-	return db.Model(models.Traffic{}).UpdateColumns(map[string]interface{}{
+	return db.Model(models.Traffic{}).Where("enable = ?", true).UpdateColumns(map[string]interface{}{
 		"used": 0,
 		"base": 0,
 	}).Error

@@ -5,8 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type StatReset struct {
-}
+type StatReset struct{}
 
 func (*StatReset) Run() {
 	err := dao.ResetTraffics()
