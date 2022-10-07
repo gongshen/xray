@@ -102,7 +102,7 @@ func generateShare(protocol string, port int64, client *models.XrayConfigSetting
 var defaultV2rayN = models.V2rayN{
 	V:    "2",
 	Type: "http",
-	Aid:  "64",
+	Aid:  AlterIDStr,
 	Net:  "tcp",
 	Scy:  "auto",
 }

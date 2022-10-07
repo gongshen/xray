@@ -25,9 +25,10 @@ func NewUser(c *gin.Context) {
 	// 生成uuid
 	id := uuid.New().String()
 	newCli := &models.XrayConfigSettingsClient{
-		Email: tag,
-		Level: 0,
-		Id:    id,
+		Email:   tag,
+		Level:   0,
+		Id:      id,
+		AlterId: AlterID,
 	}
 	// 找到inbound中，listen为0.0.0.0的配置
 	for _, inbound := range cnf.InboundConfigs {

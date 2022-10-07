@@ -9,6 +9,8 @@ const (
 	XrayConfigFile = "/usr/local/etc/xray/config.json"
 	GB             = 1024 * 1024 * 1024
 	MB             = 1024 * 1024
+	AlterID        = 64
+	AlterIDStr     = "64"
 )
 
 var (

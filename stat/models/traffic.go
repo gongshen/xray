@@ -7,3 +7,10 @@ type Traffic struct {
 	Base   int64  `json:"base" form:"base"`                  // 基础流量
 	Enable bool   `json:"enable" form:"enable" gorm:"index"` // 是否启用
 }
+
+type TrafficHistory struct {
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Used       int64  `json:"used" form:"used"`
+	Tag        string `json:"tag" form:"tag" gorm:"uniqueIndex:udx"`
+	CreatedDay string `json:"created_day" form:"created_day"  gorm:"uniqueIndex:udx"`
+}

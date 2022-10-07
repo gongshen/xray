@@ -31,6 +31,7 @@ func (g *GinServer) Start() error {
 	engine.GET("/user/new", NewUser)
 	engine.GET("/user/del", DelUser)
 	engine.GET("/user/share", Share)
+	engine.GET("/user/reset_stat", ResetStat)
 	go srv.Serve(listener)
 	return nil
 }
@@ -38,3 +39,5 @@ func (g *GinServer) Start() error {
 func (g *GinServer) Close() {
 	g.l.Close()
 }
+
+func ResetStat(c *gin.Context) {}
