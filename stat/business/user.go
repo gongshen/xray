@@ -91,6 +91,7 @@ func DelUser(c *gin.Context) {
 	}
 	if !find {
 		c.JSON(500, "未找到该用户")
+		return
 	}
 	if err = SaveConfigToFile(cnf); err != nil {
 		c.JSON(500, err.Error())

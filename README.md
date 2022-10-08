@@ -40,3 +40,8 @@ http://127.0.0.1:8080/user/stat
 ```http request
 http://mydomain.com:64002/user/stat
 ```
+
+### TODO（后续迭代需要实现的功能）
+- 每个月定时流量重置后通过telegram上报用户流量统计信息
+- 流量重置前保存历史数据
+- 支持手动指定用户充值流量
