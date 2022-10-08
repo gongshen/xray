@@ -38,5 +38,5 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
 http://127.0.0.1:8080/user/stat
 ```
 ```http request
-https://dinoland.top:64002/user/stat
+http://mydomain.com:64002/user/stat
 ```
