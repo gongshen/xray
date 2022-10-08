@@ -5,8 +5,8 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
 
 # 统计信息
 ### 统计信息访问地址
-> 【服务器ip地址】:8080
-> 【域名】:【暴露的端口】
+- 【服务器ip地址】:8080
+- 【域名】:【暴露的端口】
 
 ### 统计信息接口
 - /user/stat
@@ -26,10 +26,10 @@ wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.c
     展示用户分享信息
 - /user/reset_stat
   
-  重置流量
+  手动重置流量
 
 ### 统计信息其他功能
-- 流量每个月重置
+- 流量每个月定时重置
 - 支持程序重启流量累计计算
 - 支持v2rayN使用
 
