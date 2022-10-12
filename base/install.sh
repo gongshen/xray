@@ -187,7 +187,7 @@ function dependency_install() {
     judge "安装 jq"
   fi
 
-  wget https://copr.fedorainfracloud.org/coprs/ngompa/musl-libc/repo/epel-7/ngompa-musl-libc-epel-7.repo -O /etc/yum.repos.d/ngompa-musl-libc-epel-7.repo
+  wget --no-check-certificate https://copr.fedorainfracloud.org/coprs/ngompa/musl-libc/repo/epel-7/ngompa-musl-libc-epel-7.repo -O /etc/yum.repos.d/ngompa-musl-libc-epel-7.repo
   ${INS} musl-libc-static
   judge "安装musl静态库"
 
