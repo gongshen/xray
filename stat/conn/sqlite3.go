@@ -16,6 +16,9 @@ func initTraffic() error {
 	if err := db.AutoMigrate(&models.Traffic{}); err != nil {
 		return err
 	}
+	if err := db.AutoMigrate(&models.TrafficHistory{}); err != nil {
+		return err
+	}
 	var count int64
 	if err := db.Model(&models.Traffic{}).Count(&count).Error; err != nil {
 		return err

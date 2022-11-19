@@ -6,19 +6,8 @@ import (
 )
 
 // UpdateTraffic 用户的traffic更新
-func UpdateTraffic(traffic *models.Traffic) (err error) {
-	db := conn.GetDB()
-	db = db.Model(models.Traffic{})
-	cond := map[string]interface{}{
-		"used": traffic.Used,
-		"base": traffic.Base,
-	}
-	err = db.Where("tag = ?", traffic.Tag).
-		UpdateColumns(cond).Error
-	if err != nil {
-		return
-	}
-	return
+func UpdateTraffic(traffic *models.Traffic) error {
+	return conn.GetDB().Model(models.Traffic{}).Exec("update traffics set used = used + ? where tag = ?", traffic.Used, traffic.Tag).Error
 }
 
 // NewTraffic 根据tag新建traffic
@@ -51,10 +40,10 @@ func GetEnableTraffics() ([]*models.Traffic, error) {
 	return ans, nil
 }
 
-func GetTrafficsByTags(tags []string) ([]*models.Traffic, error) {
+func GetTraffics() ([]*models.Traffic, error) {
 	db := conn.GetDB()
 	var ans []*models.Traffic
-	err := db.Model(models.Traffic{}).Where("tag in (?)", tags).Find(&ans).Error
+	err := db.Model(models.Traffic{}).Find(&ans).Error
 	if err != nil && !conn.IsNotFound(err) {
 		return nil, err
 	}
@@ -63,8 +52,12 @@ func GetTrafficsByTags(tags []string) ([]*models.Traffic, error) {
 
 func ResetTraffics() error {
 	db := conn.GetDB()
-	return db.Model(models.Traffic{}).Where("enable = ?", true).UpdateColumns(map[string]interface{}{
-		"used": 0,
-		"base": 0,
-	}).Error
+	// 保存到history表
+	if err := db.Model(models.Traffic{}).Where("enable = ?", 1).Update("base", 0).Error; err != nil {
+		return err
+	}
+	if err := db.Model(models.Traffic{}).Where("enable = ?", 1).Update("used", 0).Error; err != nil {
+		return err
+	}
+	return nil
 }

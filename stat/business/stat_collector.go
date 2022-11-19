@@ -24,7 +24,7 @@ func (*StatCollector) Run() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	request := &statsservice.QueryStatsRequest{
-		Reset_: false,
+		Reset_: true,
 	}
 	resp, err := client.QueryStats(ctx, request)
 	if err != nil {
@@ -54,26 +54,9 @@ func (*StatCollector) Run() {
 	if len(tags) <= 0 {
 		return
 	}
-	curTraffics, err := dao.GetTrafficsByTags(tags)
-	if err != nil {
-		logrus.Errorln(err)
-		return
-	}
-	if len(curTraffics) != len(tagTrafficMap) {
-		logrus.Errorln("traffics不匹配")
-		return
-	}
-	for _, oldT := range curTraffics {
-		// key一定存在
-		newT := tagTrafficMap[oldT.Tag]
-		// new used > old used
-		if newT.Used >= oldT.Used {
-			oldT.Used = newT.Used
-		} else {
-			oldT.Base += oldT.Used
-			oldT.Used = newT.Used
-		}
-		if err = dao.UpdateTraffic(oldT); err != nil {
+	// 直接在数据库上进行累加
+	for _, traffic := range tagTrafficMap {
+		if err = dao.UpdateTraffic(traffic); err != nil {
 			logrus.Errorln(err)
 			return
 		}
