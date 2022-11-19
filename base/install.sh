@@ -418,7 +418,7 @@ function bbr_boost_sh() {
 
 function install_stat() {
   cd /root
-  wget -O stat https://github.com/gongshen/xray/releases/download/v3.0.0/stat && chmod +x stat && mv -f stat ${stat_dir}
+  wget -O stat https://github.com/gongshen/xray/releases/download/v4.0.1/stat && chmod +x stat && mv -f stat ${stat_dir}
   wget -O stat.service https://raw.githubusercontent.com/gongshen/xray/main/base/stat.service && mv -f stat.service ${stat_service_dir}
   # 替换重置日期
   read -rp "请输入流量重置日期，默认26号(eg: 26):" resetDay
