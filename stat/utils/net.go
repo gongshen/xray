@@ -3,15 +3,16 @@ package utils
 import (
 	"github.com/sirupsen/logrus"
 	"net"
+	"os"
 )
 
 var (
-	Domain string
-	Ip     string
+	Ip       string
+	RemoteIp string
 )
 
-func SetDomain(domain string) {
-	Domain = domain
+func SetRemoteIp() {
+	RemoteIp = os.Getenv("REMOTE_IP")
 }
 
 func SetIp() {

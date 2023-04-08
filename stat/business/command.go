@@ -23,6 +23,6 @@ func Systemctl(opt string, svcName string) error {
 	if err != nil {
 		return err
 	}
-	logrus.Debugln("xray restart:", string(output))
+	logrus.Debugf("%s %s:%s\n", svcName, opt, string(output))
 	return nil
 }

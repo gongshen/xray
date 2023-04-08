@@ -1,44 +1,33 @@
 package business
 
 import (
-	"bytes"
-	"fmt"
-	"github.com/gin-gonic/gin"
+	"context"
+	"encoding/json"
 	"github.com/gongshen/xray/stat/conn"
-	"github.com/gongshen/xray/stat/dao"
-	"sort"
+	"github.com/sirupsen/logrus"
+	"github.com/valyala/fasthttp"
+	statsservice "github.com/xtls/xray-core/app/stats/command"
+	"net/http"
+	"time"
 )
 
-func InitStat() {
-	if err := conn.InitDB(XrayDBPath); err != nil {
-		panic(err)
+func CollectTraffic(reqCtx *fasthttp.RequestCtx) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+	request := &statsservice.QueryStatsRequest{
+		Reset_: true,
 	}
-}
-
-func GetStat(c *gin.Context) {
-	traffics, err := dao.GetEnableTraffics()
+	resp, err := conn.StatServiceClient.QueryStats(ctx, request)
 	if err != nil {
-		c.JSON(500, err.Error())
+		reqCtx.Error(err.Error(), http.StatusBadRequest)
 		return
 	}
-	sort.Slice(traffics, func(i, j int) bool {
-		return traffics[i].Base+traffics[i].Used > traffics[j].Base+traffics[j].Used
-	})
-	var output bytes.Buffer
-	output.WriteString("<html><body>")
-	output.WriteString("---------------------------------------<br>")
-	for _, traffic := range traffics {
-		output.WriteString(fmt.Sprintf(`<font color="red">用户：</font>%s<br><font color="green">已用流量：</font>%s<br>`, traffic.Tag, format(traffic.Used+traffic.Base)))
-		output.WriteString("---------------------------------------<br>")
+	data, err := json.Marshal(resp)
+	if err != nil {
+		reqCtx.Error(err.Error(), http.StatusBadRequest)
+		return
 	}
-	output.WriteString("</body></html>")
-	c.Data(200, "text/html; charset=utf-8", output.Bytes())
-}
-
-func format(used int64) string {
-	if used < GB {
-		return fmt.Sprintf("%.2fMB", float64(used)/MB)
-	} else {
-		return fmt.Sprintf("%.2fGB", float64(used)/GB)
-	}
+	logrus.Debugln("stats:", string(data))
+	reqCtx.Success("application/json", data)
+	return
 }

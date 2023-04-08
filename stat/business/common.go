@@ -1,18 +1,49 @@
 package business
 
-import "regexp"
-
 const (
-	TrafficTarget = "127.0.0.1:11111"
-
-	XrayDBPath     = "/usr/local/etc/xray.db"
-	XrayConfigFile = "/usr/local/etc/xray/config.json"
-	GB             = 1024 * 1024 * 1024
-	MB             = 1024 * 1024
-	AlterID        = 64
-	AlterIDStr     = "64"
+	VLessPattern   = `vless://{uid}@{ip}:{port}?security=tls#dino1-{ip}`
+	XrayConfigFile = "/usr/local/etc/xray/config2.json"
 )
 
-var (
-	trafficRegex = regexp.MustCompile("(inbound|outbound|user)>>>([^>]+)>>>traffic>>>(downlink|uplink)")
-)
+var testContent = `
+{
+  "stat": [
+    {
+      "name": "inbound>>>vmess-quic>>>traffic>>>downlink",
+      "value": 1176
+    },
+    {
+      "name": "user>>>1>>>traffic>>>downlink",
+      "value": 2040
+    },
+    {
+      "name": "inbound>>>api>>>traffic>>>uplink",
+      "value": 14247
+    },
+    {
+      "name": "user>>>2>>>traffic>>>uplink",
+      "value": 2520
+    },
+ 	{
+      "name": "user>>>3>>>traffic>>>uplink",
+      "value": 252000
+    },
+    {
+      "name": "inbound>>>api>>>traffic>>>downlink",
+      "value": 87618
+    },
+    {
+      "name": "outbound>>>direct>>>traffic>>>downlink",
+      "value": 0
+    },
+    {
+      "name": "inbound>>>vmess-quic>>>traffic>>>uplink",
+      "value": 1691
+    },
+    {
+      "name": "outbound>>>direct>>>traffic>>>uplink",
+      "value": 0
+    }
+  ]
+}
+`

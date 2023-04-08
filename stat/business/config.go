@@ -1,30 +1,23 @@
 package business
 
 import (
-	"encoding/json"
-	"github.com/gongshen/xray/stat/models"
-	"io/ioutil"
+	"github.com/sirupsen/logrus"
+	"github.com/valyala/fasthttp"
+	"net/http"
+	"os"
 )
 
-// GetConfigFromFile 读取配置文件
-func GetConfigFromFile() (*models.XrayConfig, error) {
-	// 读取文件
-	confData, err := ioutil.ReadFile(XrayConfigFile)
-	if err != nil {
-		return nil, err
+func UpdateConfig(ctx *fasthttp.RequestCtx) {
+	data := ctx.Request.Body()
+	if err := os.WriteFile(XrayConfigFile, data, 0644); err != nil {
+		ctx.Error(err.Error(), http.StatusBadRequest)
+		return
 	}
-	cnf := new(models.XrayConfig)
-	if err = json.Unmarshal(confData, cnf); err != nil {
-		return nil, err
-	}
-	return cnf, nil
-}
-
-// SaveConfigToFile 将配置写入文件（覆盖）
-func SaveConfigToFile(cnf *models.XrayConfig) error {
-	data, err := json.Marshal(cnf)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(XrayConfigFile, data, 0644)
+	//if err := Systemctl(SystemctlRestartOpt, ServiceNameXray); err != nil {
+	//	ctx.Error(err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+	logrus.Debugln("收到配置文件 重启xray.")
+	ctx.SuccessString("application/json", "OK")
+	return
 }
