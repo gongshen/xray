@@ -1,0 +1,4 @@
+/*! 
+ Build based on gin-vue-admin 
+ Time : 1680873134000 */
+import{aJ as a}from"./index.e22ca15e.js";const t=t=>a({url:"/autoCode/preview",method:"post",data:t}),e=t=>a({url:"/autoCode/createTemp",method:"post",data:t,responseType:"blob"}),o=t=>a({url:"/autoCode/getDB",method:"get",params:t}),d=t=>a({url:"/autoCode/getTables",method:"get",params:t}),s=t=>a({url:"/autoCode/getColumn",method:"get",params:t}),r=t=>a({url:"/autoCode/getSysHistory",method:"post",data:t}),u=t=>a({url:"/autoCode/rollback",method:"post",data:t}),l=t=>a({url:"/autoCode/getMeta",method:"post",data:t}),m=t=>a({url:"/autoCode/delSysHistory",method:"post",data:t}),p=t=>a({url:"/autoCode/createPackage",method:"post",data:t}),g=()=>a({url:"/autoCode/getPackage",method:"post"}),h=t=>a({url:"/autoCode/delPackage",method:"post",data:t}),C=t=>a({url:"/autoCode/createPlug",method:"post",data:t});export{d as a,s as b,e as c,g as d,l as e,r as f,o as g,m as h,p as i,h as j,C as k,t as p,u as r};

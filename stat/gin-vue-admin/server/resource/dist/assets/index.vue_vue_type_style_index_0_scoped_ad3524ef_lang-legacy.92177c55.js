@@ -1,0 +1,4 @@
+/*! 
+ Build based on gin-vue-admin 
+ Time : 1680873134000 */
+System.register([],(function(t,e){"use strict";var a=document.createElement("style");return a.textContent=".previewCodeTool[data-v-ad3524ef]{display:flex;align-items:center;padding:5px 0}.button-box[data-v-ad3524ef]{padding:10px 20px}.button-box .el-button[data-v-ad3524ef]{margin-right:20px;float:right}.auto-btn-list[data-v-ad3524ef]{margin-top:16px}.auto-icon[data-v-ad3524ef]{margin-left:6px;color:#666;cursor:pointer}\n",document.head.appendChild(a),{execute:function(){}}}));
