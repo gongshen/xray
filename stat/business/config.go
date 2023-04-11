@@ -13,10 +13,10 @@ func UpdateConfig(ctx *fasthttp.RequestCtx) {
 		ctx.Error(err.Error(), http.StatusBadRequest)
 		return
 	}
-	//if err := Systemctl(SystemctlRestartOpt, ServiceNameXray); err != nil {
-	//	ctx.Error(err.Error(), http.StatusBadRequest)
-	//	return
-	//}
+	if err := Systemctl(SystemctlRestartOpt, ServiceNameXray); err != nil {
+		ctx.Error(err.Error(), http.StatusBadRequest)
+		return
+	}
 	logrus.Debugln("收到配置文件 重启xray.")
 	ctx.SuccessString("application/json", "OK")
 	return

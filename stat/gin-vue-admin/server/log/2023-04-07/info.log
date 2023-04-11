@@ -1,3 +1,0 @@
-[dino/server]2023/04/07 - 21:17:16.712	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
-[dino/server]2023/04/07 - 21:17:16.723	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:78	router register success
-[dino/server]2023/04/07 - 21:17:16.729	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:37	server run success on 	{"address": ":8888"}

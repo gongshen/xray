@@ -2,7 +2,7 @@ package business
 
 const (
 	VLessPattern   = `vless://{uid}@{ip}:{port}?security=tls#dino1-{ip}`
-	XrayConfigFile = "/usr/local/etc/xray/config2.json"
+	XrayConfigFile = "/usr/local/etc/xray/config.json"
 )
 
 var testContent = `
