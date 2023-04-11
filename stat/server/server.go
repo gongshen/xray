@@ -22,7 +22,7 @@ func StartServer() error {
 
 func requestHandler(ctx *fasthttp.RequestCtx) {
 	remoteIP := ctx.RemoteIP().String()
-	if remoteIP != "127.0.0.1" || remoteIP != utils.RemoteIp {
+	if remoteIP != utils.RemoteIp {
 		ctx.Error("Forbidden", fasthttp.StatusForbidden)
 		return
 	}

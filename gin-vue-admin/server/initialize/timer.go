@@ -36,7 +36,7 @@ func Timer() {
 		time.Sleep(1 * time.Minute)
 		location, _ := time.LoadLocation("Asia/Shanghai")
 
-		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", "@every 10s", v2ray_admin.CollectorJob{}, cron.WithLocation(location)); err != nil {
+		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", "@every 1m", v2ray_admin.CollectorJob{}, cron.WithLocation(location)); err != nil {
 			fmt.Println("add timer error:", err)
 		}
 		if _, err := global.GVA_Timer.AddTaskByJob("quota_reset", "@daily", v2ray_admin.QuotaResetJob{}, cron.WithLocation(location)); err != nil {

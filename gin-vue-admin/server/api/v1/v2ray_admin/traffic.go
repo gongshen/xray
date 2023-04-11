@@ -37,7 +37,10 @@ func (job CollectorJob) Run() {
 		return
 	}
 	now := time.Now().In(location)
-	zeroTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
+	year := now.Year()
+	month := now.Month()
+	day := now.Day()
+	createdAt := year*10000 + int(month)*100 + day
 	for _, srv := range srvs {
 		req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
 		req.SetRequestURI(fmt.Sprintf("http://%s:%d/stat/traffic", srv.Ip, global.GVA_CONFIG.STAT_PORT))
@@ -55,6 +58,9 @@ func (job CollectorJob) Run() {
 		var usedQuota uint64
 		itemMap := make(map[string]*v2ray.Stat)
 		for _, stat := range statsResp.Stat {
+			if stat.Value <= 0 {
+				continue
+			}
 			matchs := trafficRegex.FindStringSubmatch(stat.Name)
 			if len(matchs) != 4 {
 				global.GVA_LOG.Error("CollectorJob FindStringSubmatch")
@@ -65,7 +71,7 @@ func (job CollectorJob) Run() {
 				item = &v2ray.Stat{
 					Category:  matchs[1],
 					Tag:       matchs[2],
-					CreatedAt: zeroTime.Unix(),
+					CreatedAt: createdAt,
 					ServerIp:  srv.Ip,
 				}
 				itemMap[matchs[2]] = item

@@ -9,7 +9,7 @@ type Stat struct {
 	Down      uint64 `json:"down" form:"down" gorm:"column:down;comment:字节;"`
 	Up        uint64 `json:"up" form:"up" gorm:"column:up;comment:;"`
 	ServerIp  string `json:"server_ip" form:"server_ip" gorm:"column:server_ip;uniqueIndex:udx_tag_time_ip;index:idx_cate_ip;"`
-	CreatedAt int64  `json:"created_at" form:"created_at" gorm:"column:created_at;uniqueIndex:udx_tag_time_ip;index"` // 创建时间
+	CreatedAt int    `json:"created_at" form:"created_at" gorm:"column:created_at;uniqueIndex:udx_tag_time_ip;index"` // 创建时间
 }
 
 // TableName Stat 表名

@@ -17,6 +17,7 @@ import (
 var (
 	GB = 1024 * 1024 * 1024
 	MB = 1024 * 1024
+	KB = 1024
 )
 
 type StatService struct{}
@@ -66,7 +67,9 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 	var stats []v2ray.Stat
 	// 如果有条件搜索 下方会自动创建搜索语句
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
-		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt.Unix(), info.EndCreatedAt.Unix())
+		startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
+		endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
+		db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
 	}
 	if info.Category != "" {
 		db = db.Where("category = ?", info.Category)
@@ -86,6 +89,14 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 
 	ans := make([]*v2rayResp.Stat, 0, len(stats))
 	for _, stat := range stats {
+		if stat.Down+stat.Up <= 0 {
+			continue
+		}
+		createdAt := stat.CreatedAt
+		day := createdAt % 100
+		createdAt /= 100
+		month := createdAt % 100
+		createdAt /= 100
 		ans = append(ans, &v2rayResp.Stat{
 			ID:        stat.ID,
 			Category:  stat.Category,
@@ -93,7 +104,7 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 			Down:      format(stat.Down),
 			Up:        format(stat.Up),
 			Total:     format(stat.Down + stat.Up),
-			CreatedAt: time.Unix(stat.CreatedAt, 0).Format("2006-01-02"),
+			CreatedAt: fmt.Sprintf("%d年%d月%d日", createdAt, month, day),
 			ServerIp:  stat.ServerIp,
 		})
 	}
@@ -133,7 +144,15 @@ func findUserNameByIds(ids []string) (map[string]string, error) {
 
 func format(used uint64) string {
 	if used < uint64(GB) {
-		return fmt.Sprintf("%.2fMB", float64(used)/float64(MB))
+		if used < uint64(MB) {
+			if used < uint64(KB) {
+				return fmt.Sprintf("%.2fB", float64(used))
+			} else {
+				return fmt.Sprintf("%.2fKB", float64(used)/float64(KB))
+			}
+		} else {
+			return fmt.Sprintf("%.2fMB", float64(used)/float64(MB))
+		}
 	} else {
 		return fmt.Sprintf("%.2fGB", float64(used)/float64(GB))
 	}
@@ -159,22 +178,24 @@ func (statService *StatService) StatsCollector(statsMap map[string]*v2ray.Stat) 
 
 func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*response.StatChartResponse, error) {
 	resp := &response.StatChartResponse{
-		DataAxis: make([]int64, 13),
+		DataAxis: make([]int, 13),
 		Data:     make([]int64, 13),
 	}
-	now := time.Now()
+	// 转换为东八时区
+	location, _ := time.LoadLocation("Asia/Shanghai")
+	now := time.Now().In(location)
 	for i := 12; i >= 0; i-- {
 		date := now.AddDate(0, -i, 0)
 		month := date.Month()
 		year := date.Year()
-		key := int64(year*100 + int(month))
+		key := year*100 + int(month)
 		resp.DataAxis[12-i] = key
 	}
 	// 创建db
 	db := global.GVA_DB.Debug().Model(&v2ray.Stat{}).Select("down,up,created_at")
 	stats := make([]*v2ray.Stat, 0)
 	// 如果有条件搜索 下方会自动创建搜索语句
-	db = db.Where("created_at BETWEEN ? AND ?", now.AddDate(-1, 0, 0).Unix(), now.Unix())
+	db = db.Where("created_at BETWEEN ? AND ?", (now.Year()-1)*10000+int(now.Month())*100+now.Day(), now.Year()*10000+int(now.Month())*100+now.Day())
 	if info.Category != "" {
 		db = db.Where("category = ?", info.Category)
 	}
@@ -190,13 +211,9 @@ func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*respo
 	if len(stats) <= 0 {
 		return resp, nil
 	}
-	monthCount := make(map[int64]int64)
+	monthCount := make(map[int]int64)
 	for _, stat := range stats {
-		date := time.Unix(stat.CreatedAt, 0)
-		month := date.Month()
-		year := date.Year()
-		key := int64(year*100 + int(month))
-		monthCount[key] += int64(stat.Down + stat.Up)
+		monthCount[stat.CreatedAt/100] += int64(stat.Down + stat.Up)
 	}
 	for i, key := range resp.DataAxis {
 		resp.Data[i] = monthCount[key]

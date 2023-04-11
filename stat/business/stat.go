@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gongshen/xray/stat/conn"
-	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 	statsservice "github.com/xtls/xray-core/app/stats/command"
 	"net/http"
@@ -27,7 +26,6 @@ func CollectTraffic(reqCtx *fasthttp.RequestCtx) {
 		reqCtx.Error(err.Error(), http.StatusBadRequest)
 		return
 	}
-	logrus.Debugln("stats:", string(data))
 	reqCtx.Success("application/json", data)
 	return
 }
