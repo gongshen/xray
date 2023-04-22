@@ -194,3 +194,18 @@ func (statApi *StatApi) GetStatCharts(c *gin.Context) {
 		response.OkWithDetailed(list, "获取成功", c)
 	}
 }
+
+func (statApi *StatApi) GetStatRank(c *gin.Context) {
+	var pageInfo v2rayReq.StatSearch
+	err := c.ShouldBindQuery(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if list, err := statService.GetStatCharts(&pageInfo); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithDetailed(list, "获取成功", c)
+	}
+}

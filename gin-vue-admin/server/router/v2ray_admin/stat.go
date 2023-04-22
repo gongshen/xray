@@ -24,5 +24,6 @@ func (s *StatRouter) InitStatRouter(Router *gin.RouterGroup) {
 		statRouterWithoutRecord.GET("findStat", statApi.FindStat)           // 根据ID获取Stat
 		statRouterWithoutRecord.GET("getStatList", statApi.GetStatList)     // 获取Stat列表
 		statRouterWithoutRecord.GET("getStatCharts", statApi.GetStatCharts) // 获取流量统计图表展示
+		statRouterWithoutRecord.GET("getStatRank", statApi.GetStatRank)     // 获取流量统计图表展示
 	}
 }

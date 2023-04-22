@@ -111,3 +111,11 @@ export const getStatCharts = (params) => {
     params
   })
 }
+
+export const getStatRank = (params) => {
+  return service({
+    url: '/v2ray_admin/stat/getStatRank',
+    method: 'get',
+    params
+  })
+}
