@@ -18,5 +18,4 @@ export const setChartData = async (searchInfo) => {
         chartData.data = []
         chartData.data_axis = []
     }
-    console.log("222:",chartData.data,chartData.data_axis)
 }

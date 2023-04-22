@@ -12,7 +12,6 @@ import (
 	v2rayResp "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/response"
 	"sort"
 	"strconv"
-	"time"
 )
 
 var (
@@ -172,44 +171,38 @@ func (statService *StatService) StatsCollector(statsMap map[string]*v2ray.Stat) 
 }
 
 func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*response.StatChartResponse, error) {
-	resp := &response.StatChartResponse{
-		DataAxis: make([]int, 13),
-		Data:     make([]int64, 13),
-	}
-	// 转换为东八时区
-	location, _ := time.LoadLocation("Asia/Shanghai")
-	now := time.Now().In(location)
-	for i := 12; i >= 0; i-- {
-		date := now.AddDate(0, -i, 0)
-		month := date.Month()
-		year := date.Year()
-		key := year*100 + int(month)
-		resp.DataAxis[12-i] = key
-	}
+	resp := &response.StatChartResponse{}
 	// 创建db
-	db := global.GVA_DB.Model(&v2ray.Stat{}).Select("down,up,created_at")
+	db := global.GVA_DB.Debug().Model(&v2ray.Stat{}).Select("sum(down) as down,sum(up) as up,created_at")
 	stats := make([]*v2ray.Stat, 0)
-	// 如果有条件搜索 下方会自动创建搜索语句
-	db = db.Where("created_at BETWEEN ? AND ?", (now.Year()-1)*10000+int(now.Month())*100+now.Day(), now.Year()*10000+int(now.Month())*100+now.Day())
+	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
+		startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
+		endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
+		db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
+	}
 	if info.Tag != "" {
 		db = db.Where("tag = ?", info.Tag)
 	}
 	if info.ServerIp != "" {
 		db = db.Where("server_ip = ?", info.ServerIp)
 	}
-	if err := db.Find(&stats).Error; err != nil {
+	if err := db.Group("created_at").Find(&stats).Error; err != nil {
 		return nil, err
 	}
 	if len(stats) <= 0 {
 		return resp, nil
 	}
-	monthCount := make(map[int]int64)
-	for _, stat := range stats {
-		monthCount[stat.CreatedAt/100] += int64(stat.Down + stat.Up)
+	sort.Slice(stats, func(i, j int) bool {
+		return stats[i].CreatedAt < stats[j].CreatedAt
+	})
+	createdAt := make([]int, len(stats))
+	createdAtCount := make([]int64, len(stats))
+	for i, stat := range stats {
+		createdAt[i] = stat.CreatedAt
+		createdAtCount[i] = int64(stat.Down + stat.Up)
 	}
-	for i, key := range resp.DataAxis {
-		resp.Data[i] = monthCount[key]
-	}
+	resp.Data = createdAtCount
+	resp.DataAxis = createdAt
 	return resp, nil
 }
 
