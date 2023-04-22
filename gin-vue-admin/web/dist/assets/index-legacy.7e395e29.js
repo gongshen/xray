@@ -1,4 +1,0 @@
-/*! 
- Build based on gin-vue-admin 
- Time : 1682150634000 */
-System.register(["./index-legacy.eedaa1d8.js"],(function(e,n){"use strict";var t,u,r,a,i,c,o,l,s,d,f;return{setters:[function(e){t=e.b$,u=e.aB,r=e.o,a=e.c,i=e.e,c=e.w,o=e.aE,l=e.a1,s=e.c0,d=e.K,f=e.a2}],execute:function(){var n={name:"System"};e("default",Object.assign(n,{setup:function(e){var n=t();return function(e,t){var v=u("router-view");return r(),a("div",null,[i(v,null,{default:c((function(e){var t=e.Component;return[i(o,{mode:"out-in",name:"el-fade-in-linear"},{default:c((function(){return[(r(),l(s,{include:d(n).keepAliveRouters},[(r(),l(f(t)))],1032,["include"]))]})),_:2},1024)]})),_:1})])}}}))}}}));

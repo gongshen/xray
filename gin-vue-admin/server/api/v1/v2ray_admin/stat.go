@@ -202,7 +202,7 @@ func (statApi *StatApi) GetStatRank(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	if list, err := statService.GetStatCharts(&pageInfo); err != nil {
+	if list, err := statService.GetStatRank(&pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

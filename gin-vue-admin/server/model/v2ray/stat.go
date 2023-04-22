@@ -4,7 +4,6 @@ package v2ray
 // Stat 结构体
 type Stat struct {
 	ID        uint   `gorm:"primarykey"` // 主键ID
-	Category  string `json:"category" form:"category" gorm:"column:category;index:idx_cate_tag;index:idx_cate_ip;comment:user inbound outbound;"`
 	Tag       string `json:"tag" form:"tag" gorm:"column:tag;uniqueIndex:udx_tag_time_ip;index:idx_cate_tag;comment:如果category是user，tag就是uid;"`
 	Down      uint64 `json:"down" form:"down" gorm:"column:down;comment:字节;"`
 	Up        uint64 `json:"up" form:"up" gorm:"column:up;comment:;"`

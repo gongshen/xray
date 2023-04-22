@@ -21,9 +21,7 @@
           row-key="ID"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="标签" prop="tag" width="120" />
         <el-table-column align="left" label="用户" prop="username" width="120" />
-        <el-table-column align="left" label="流量分类" prop="category" width="120" />
         <el-table-column align="left" label="服务器Ip" prop="server_ip" width="200" />
         <el-table-column align="left" label="下行流量" prop="down" width="120" />
         <el-table-column align="left" label="上行流量" prop="up" width="120" />

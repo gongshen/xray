@@ -164,6 +164,7 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/stat/deleteStat", V2: "DELETE"},
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/stat/deleteStatByIds", V2: "DELETE"},
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/stat/getStatCharts", V2: "GET"},
+		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/stat/getStatRank", V2: "GET"},
 
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/server/createServer", V2: "POST"},
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/server/getServerList", V2: "GET"},

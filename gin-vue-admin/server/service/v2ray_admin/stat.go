@@ -10,6 +10,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
 	v2rayReq "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/request"
 	v2rayResp "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/response"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -71,9 +72,6 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 		endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
 		db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
 	}
-	if info.Category != "" {
-		db = db.Where("category = ?", info.Category)
-	}
 	if info.Tag != "" {
 		db = db.Where("tag = ?", info.Tag)
 	}
@@ -99,7 +97,6 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 		createdAt /= 100
 		ans = append(ans, &v2rayResp.Stat{
 			ID:        stat.ID,
-			Category:  stat.Category,
 			Tag:       stat.Tag,
 			Down:      format(stat.Down),
 			Up:        format(stat.Up),
@@ -109,20 +106,18 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 		})
 	}
 	// 补充用户名
-	if info.Category == "user" {
-		nickNameMap := make(map[string]string)
-		tagsMap := make(map[string]struct{})
-		for _, stat := range stats {
-			tagsMap[stat.Tag] = struct{}{}
-		}
-		tags := make([]string, 0, len(tagsMap))
-		for tag := range tagsMap {
-			tags = append(tags, tag)
-		}
-		nickNameMap, err = findUserNameByIds(tags)
-		for _, v := range ans {
-			v.Username = nickNameMap[v.Tag]
-		}
+	nickNameMap := make(map[string]string)
+	tagsMap := make(map[string]struct{})
+	for _, stat := range stats {
+		tagsMap[stat.Tag] = struct{}{}
+	}
+	tags := make([]string, 0, len(tagsMap))
+	for tag := range tagsMap {
+		tags = append(tags, tag)
+	}
+	nickNameMap, err = findUserNameByIds(tags)
+	for _, v := range ans {
+		v.Username = nickNameMap[v.Tag]
 	}
 	if err != nil {
 		return
@@ -160,15 +155,15 @@ func format(used uint64) string {
 
 func (statService *StatService) StatsCollector(statsMap map[string]*v2ray.Stat) (err error) {
 	buf := bytes.Buffer{}
-	buf.WriteString("INSERT INTO v2ray_stat (category,tag,down,up,created_at,server_ip) VALUES ")
-	args := make([]interface{}, 0, len(statsMap)*6)
+	buf.WriteString("INSERT INTO v2ray_stat (tag,down,up,created_at,server_ip) VALUES ")
+	args := make([]interface{}, 0, len(statsMap)*5)
 	i := 0
 	for _, stat := range statsMap {
 		if i > 0 {
 			buf.WriteString(",")
 		}
-		buf.WriteString("(?,?,?,?,?,?)")
-		args = append(args, stat.Category, stat.Tag, stat.Down, stat.Up, stat.CreatedAt, stat.ServerIp)
+		buf.WriteString("(?,?,?,?,?)")
+		args = append(args, stat.Tag, stat.Down, stat.Up, stat.CreatedAt, stat.ServerIp)
 		i++
 	}
 	buf.WriteString(" ON DUPLICATE KEY UPDATE down=down+VALUES(down),up=up+VALUES(up)")
@@ -192,13 +187,10 @@ func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*respo
 		resp.DataAxis[12-i] = key
 	}
 	// 创建db
-	db := global.GVA_DB.Debug().Model(&v2ray.Stat{}).Select("down,up,created_at")
+	db := global.GVA_DB.Model(&v2ray.Stat{}).Select("down,up,created_at")
 	stats := make([]*v2ray.Stat, 0)
 	// 如果有条件搜索 下方会自动创建搜索语句
 	db = db.Where("created_at BETWEEN ? AND ?", (now.Year()-1)*10000+int(now.Month())*100+now.Day(), now.Year()*10000+int(now.Month())*100+now.Day())
-	if info.Category != "" {
-		db = db.Where("category = ?", info.Category)
-	}
 	if info.Tag != "" {
 		db = db.Where("tag = ?", info.Tag)
 	}
@@ -218,5 +210,48 @@ func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*respo
 	for i, key := range resp.DataAxis {
 		resp.Data[i] = monthCount[key]
 	}
+	return resp, nil
+}
+
+func (statService *StatService) GetStatRank(info *v2rayReq.StatSearch) (*response.StatRankResponse, error) {
+	resp := &response.StatRankResponse{}
+	// 创建db
+	db := global.GVA_DB.Model(&v2ray.Stat{}).Select("sum(down) as down,sum(up) as up,tag")
+	stats := make([]*v2ray.Stat, 0)
+	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
+		startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
+		endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
+		db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
+	}
+	if info.Tag != "" {
+		db = db.Where("tag = ?", info.Tag)
+	}
+	if info.ServerIp != "" {
+		db = db.Where("server_ip = ?", info.ServerIp)
+	}
+	if err := db.Group("tag").Find(&stats).Error; err != nil {
+		return nil, err
+	}
+	if len(stats) <= 0 {
+		return resp, nil
+	}
+	sort.Slice(stats, func(i, j int) bool {
+		return stats[i].Down+stats[i].Up < stats[j].Down+stats[j].Up
+	})
+	tagCount := make([]int64, len(stats))
+	tags := make([]string, len(stats))
+	for i, stat := range stats {
+		tags[i] = stat.Tag
+		tagCount[i] = int64(stat.Down + stat.Up)
+	}
+	nickNameMap, err := findUserNameByIds(tags)
+	if err != nil {
+		return nil, err
+	}
+	for i, v := range tags {
+		tags[i] = nickNameMap[v]
+	}
+	resp.RankAxis = tags
+	resp.Rank = tagCount
 	return resp, nil
 }

@@ -1,0 +1,4 @@
+/*! 
+ Build based on gin-vue-admin 
+ Time : 1682153148000 */
+System.register(["./index-legacy.feb8a109.js"],(function(e,r){"use strict";var t;return{setters:[function(e){t=e.s}],execute:function(){e("c",(function(e){return t({url:"/v2ray_admin/server/createServer",method:"post",data:e})})),e("b",(function(e){return t({url:"/v2ray_admin/server/deleteServer",method:"delete",data:e})})),e("d",(function(e){return t({url:"/v2ray_admin/server/deleteServerByIds",method:"delete",data:e})})),e("u",(function(e){return t({url:"/v2ray_admin/server/updateServer",method:"put",data:e})})),e("f",(function(e){return t({url:"/v2ray_admin/server/findServer",method:"get",params:e})})),e("a",(function(e){return t({url:"/v2ray_admin/server/getServerList",method:"get",params:e})})),e("g",(function(){return t({url:"/v2ray_admin/server/getAllServer",method:"post"})})),e("r",(function(e){return t({url:"/v2ray_admin/server/restartXray",method:"put",data:e})}))}}}));

@@ -66,10 +66,12 @@ func (job CollectorJob) Run() {
 				global.GVA_LOG.Error("CollectorJob FindStringSubmatch")
 				return
 			}
+			if matchs[1] != "user" {
+				continue
+			}
 			item, ok := itemMap[matchs[2]]
 			if !ok {
 				item = &v2ray.Stat{
-					Category:  matchs[1],
 					Tag:       matchs[2],
 					CreatedAt: createdAt,
 					ServerIp:  srv.Ip,

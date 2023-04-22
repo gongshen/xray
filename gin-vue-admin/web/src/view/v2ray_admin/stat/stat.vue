@@ -6,11 +6,6 @@
           <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始时间"></el-date-picker>
           <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束时间"></el-date-picker>
         </el-form-item>
-        <el-form-item label="流量分类">
-          <el-select v-model="searchInfo.category" style="width:194px">
-            <el-option v-for="item in CategoryOption" :key="item.categoryName" :value="item.categoryName" :label="item.categoryName" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="用户名">
           <el-select v-model="searchInfo.tag" clearable filterable style="width:194px">
             <el-option v-for="item in users" :key="item.ID" :value="item.ID" :label="item.nickName" />
@@ -36,9 +31,7 @@
           row-key="ID"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="标签" prop="tag" width="120" />
         <el-table-column align="left" label="用户" prop="username" width="120" />
-        <el-table-column align="left" label="流量分类" prop="category" width="120" />
         <el-table-column align="left" label="服务器Ip" prop="server_ip" width="200" />
         <el-table-column align="left" label="下行流量" prop="down" width="120" />
         <el-table-column align="left" label="上行流量" prop="up" width="120" />

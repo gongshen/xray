@@ -164,6 +164,7 @@ func (i *initApi) InitializeData(ctx context.Context) (context.Context, error) {
 		{ApiGroup: "v2ray_admin", Method: "DELETE", Path: "/v2ray_admin/stat/deleteStat", Description: "删除流量统计"},
 		{ApiGroup: "v2ray_admin", Method: "DELETE", Path: "/v2ray_admin/stat/deleteStatByIds", Description: "批量删除流量统计"},
 		{ApiGroup: "v2ray_admin", Method: "GET", Path: "/v2ray_admin/stat/getStatCharts", Description: "获取流量统计图"},
+		{ApiGroup: "v2ray_admin", Method: "GET", Path: "/v2ray_admin/stat/getStatRank", Description: "获取流量排名"},
 
 		{ApiGroup: "v2ray_admin", Method: "POST", Path: "/v2ray_admin/server/createServer", Description: "新增服务器ip"},
 		{ApiGroup: "v2ray_admin", Method: "GET", Path: "/v2ray_admin/server/getServerList", Description: "获取服务器ip列表"},
