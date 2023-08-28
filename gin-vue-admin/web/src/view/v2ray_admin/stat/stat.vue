@@ -3,8 +3,8 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
         <el-form-item label="创建时间">
-          <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始时间"></el-date-picker>
-          <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束时间"></el-date-picker>
+          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" :default-value="new Date()"></el-date-picker>
+          <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" :default-value="new Date()"></el-date-picker>
         </el-form-item>
         <el-form-item label="用户名">
           <el-select v-model="searchInfo.tag" clearable filterable style="width:194px">
@@ -83,32 +83,24 @@ import {ref, reactive, shallowRef, onMounted, nextTick, onUnmounted} from 'vue'
 import EchartsLine from './statChart.vue'
 import { setChartData } from "./common";
 const formData = ref({
-  category: '',
   tag: '',
   down: '',
   up: '',
   total: '',
 })
-const rule = reactive({
-  category : [{
-    required: true,
-    message: '',
-    trigger: ['input','blur'],
-  }],
-})
+
 const elFormRef = ref()
 const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
+const today = new Date().toISOString()
 const searchInfo = ref({
-  category: "user"
+  startCreatedAt: today,
+  endCreatedAt: today
 })
 
 const onReset = () => {
-  searchInfo.value = {
-    category: "user"
-  }
   getTableData()
   setChartData({...searchInfo.value})
 }
@@ -117,6 +109,17 @@ const onReset = () => {
 const onSubmit = () => {
   page.value = 1
   pageSize.value = 10
+  // 将搜索时间转换为 UTC 时间
+  if (searchInfo.value.startCreatedAt) {
+    const startDate = new Date(searchInfo.value.startCreatedAt)
+    const utcStartDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()))
+    searchInfo.value.startCreatedAt = utcStartDate.toISOString()
+  }
+  if (searchInfo.value.endCreatedAt) {
+    const endDate = new Date(searchInfo.value.endCreatedAt)
+    const utcEndDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()))
+    searchInfo.value.endCreatedAt = utcEndDate.toISOString()
+  }
   getTableData()
   setChartData({...searchInfo.value})
 }
@@ -146,18 +149,6 @@ const getTableData = async() => {
 
 getTableData()
 setChartData({...searchInfo.value})
-
-const CategoryOption = ref([
-  {
-    categoryName: 'user'
-  },
-  {
-    categoryName: 'inbound'
-  },
-  {
-    categoryName: 'outbound'
-  }
-])
 
 const users = ref([])
 const getUsers = async() => {

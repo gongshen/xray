@@ -1,7 +1,7 @@
 <template>
    <div class="dashboard-line-box">
      <div class="dashboard-line-title">
-       近一年统计
+       总流量: {{ formatFlow(chartData.total) }}
      </div>
      <div ref="echart" class="dashboard-line"></div>
    </div>

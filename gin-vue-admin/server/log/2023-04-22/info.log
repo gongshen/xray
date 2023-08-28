@@ -22,3 +22,36 @@
 [github.com/gongshen/dino]2023/04/22 - 16:11:31.929	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
 [github.com/gongshen/dino]2023/04/22 - 16:11:31.955	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
 [github.com/gongshen/dino]2023/04/22 - 16:11:31.967	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 17:19:33.007	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 17:19:33.040	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 17:19:33.042	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 17:28:26.180	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 17:28:26.205	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 17:28:26.209	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 17:36:01.800	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 17:36:01.827	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 17:36:01.836	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 18:45:00.874	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 18:45:00.927	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 18:45:00.940	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 19:27:35.194	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 19:27:35.219	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 19:27:35.225	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 19:51:05.719	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 19:51:05.754	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 19:51:05.757	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 19:55:04.762	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 19:55:04.780	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 19:55:04.795	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 19:56:48.928	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 19:56:48.968	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 19:56:48.990	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 19:58:45.614	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 19:58:45.638	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 19:58:45.650	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 20:00:11.589	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 20:00:11.615	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 20:00:11.626	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[github.com/gongshen/dino]2023/04/22 - 20:01:26.293	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/gorm.go:58	register table success
+[github.com/gongshen/dino]2023/04/22 - 20:01:26.355	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/initialize/router.go:72	router register success
+[github.com/gongshen/dino]2023/04/22 - 20:01:26.361	[34minfo[0m	D:/gopath/src/github.com/gongshen/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}

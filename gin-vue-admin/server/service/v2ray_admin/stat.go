@@ -63,14 +63,11 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
-	db := global.GVA_DB.Model(&v2ray.Stat{})
+	db := global.GVA_DB.Debug().Model(&v2ray.Stat{})
 	var stats []v2ray.Stat
-	// 如果有条件搜索 下方会自动创建搜索语句
-	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
-		startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
-		endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
-		db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
-	}
+	startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
+	endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
+	db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
 	if info.Tag != "" {
 		db = db.Where("tag = ?", info.Tag)
 	}
@@ -175,11 +172,9 @@ func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*respo
 	// 创建db
 	db := global.GVA_DB.Debug().Model(&v2ray.Stat{}).Select("sum(down) as down,sum(up) as up,created_at")
 	stats := make([]*v2ray.Stat, 0)
-	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
-		startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
-		endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
-		db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
-	}
+	startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
+	endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
+	db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
 	if info.Tag != "" {
 		db = db.Where("tag = ?", info.Tag)
 	}
@@ -209,13 +204,11 @@ func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*respo
 func (statService *StatService) GetStatRank(info *v2rayReq.StatSearch) (*response.StatRankResponse, error) {
 	resp := &response.StatRankResponse{}
 	// 创建db
-	db := global.GVA_DB.Model(&v2ray.Stat{}).Select("sum(down) as down,sum(up) as up,tag")
+	db := global.GVA_DB.Debug().Model(&v2ray.Stat{}).Select("sum(down) as down,sum(up) as up,tag")
 	stats := make([]*v2ray.Stat, 0)
-	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
-		startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
-		endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
-		db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
-	}
+	startCreatedAt := info.StartCreatedAt.Year()*10000 + int(info.StartCreatedAt.Month())*100 + info.StartCreatedAt.Day()
+	endCreatedAt := info.EndCreatedAt.Year()*10000 + int(info.EndCreatedAt.Month())*100 + info.EndCreatedAt.Day()
+	db = db.Where("created_at BETWEEN ? AND ?", startCreatedAt, endCreatedAt)
 	if info.Tag != "" {
 		db = db.Where("tag = ?", info.Tag)
 	}

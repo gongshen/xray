@@ -1,6 +1,10 @@
+# 介绍
+`gin-vue-admin` 是使用gin-vue-admin做的管理前端
+`stat` 是用来收集流量的后端程序
+
 # 一键安装
 ```shell
-wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/gongshen/xray/main/base/install.sh" && chmod +x install.sh && bash install.sh
+wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/gongshen/dino/main/base/install.sh" && chmod +x install.sh && bash install.sh
 ```
 
 # 统计信息

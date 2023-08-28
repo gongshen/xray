@@ -3,8 +3,8 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
         <el-form-item label="创建时间">
-          <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始时间"></el-date-picker>
-          <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束时间"></el-date-picker>
+          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间"></el-date-picker>
+          <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间"></el-date-picker>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
@@ -65,7 +65,6 @@ import {ref, reactive,} from 'vue'
 import EchartsLine from './statChart.vue'
 import { setChartData } from "./common";
 const formData = ref({
-  category: '',
   tag: '',
   down: '',
   up: '',
@@ -83,14 +82,13 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
+const today = new Date().toISOString()
 const searchInfo = ref({
-  category: "user"
+  startCreatedAt: today,
+  endCreatedAt: today
 })
 
 const onReset = () => {
-  searchInfo.value = {
-    category: "user"
-  }
   getTableData()
   setChartData({...searchInfo.value})
 }
@@ -99,6 +97,16 @@ const onReset = () => {
 const onSubmit = () => {
   page.value = 1
   pageSize.value = 10
+  if (searchInfo.value.startCreatedAt) {
+    const startDate = new Date(searchInfo.value.startCreatedAt)
+    const utcStartDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()))
+    searchInfo.value.startCreatedAt = utcStartDate.toISOString()
+  }
+  if (searchInfo.value.endCreatedAt) {
+    const endDate = new Date(searchInfo.value.endCreatedAt)
+    const utcEndDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()))
+    searchInfo.value.endCreatedAt = utcEndDate.toISOString()
+  }
   getTableData()
   setChartData({...searchInfo.value})
 }

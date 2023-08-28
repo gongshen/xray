@@ -10,6 +10,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"time"
 )
 
 type StatApi struct {
@@ -167,6 +168,14 @@ func (statApi *StatApi) GetStatList(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	if pageInfo.EndCreatedAt == nil || pageInfo.StartCreatedAt == nil {
+		response.FailWithMessage("请输入时间", c)
+		return
+	}
+	if pageInfo.EndCreatedAt.Sub(*pageInfo.StartCreatedAt) > time.Hour*24*365 {
+		response.FailWithMessage("查询时间不能超过一年", c)
+		return
+	}
 	if list, total, err := statService.GetStatInfoList(pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
@@ -187,6 +196,14 @@ func (statApi *StatApi) GetStatCharts(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	if pageInfo.EndCreatedAt == nil || pageInfo.StartCreatedAt == nil {
+		response.FailWithMessage("请输入时间", c)
+		return
+	}
+	if pageInfo.EndCreatedAt.Sub(*pageInfo.StartCreatedAt) > time.Hour*24*365 {
+		response.FailWithMessage("查询时间不能超过一年", c)
+		return
+	}
 	if list, err := statService.GetStatCharts(&pageInfo); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
@@ -200,6 +217,14 @@ func (statApi *StatApi) GetStatRank(c *gin.Context) {
 	err := c.ShouldBindQuery(&pageInfo)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if pageInfo.EndCreatedAt == nil || pageInfo.StartCreatedAt == nil {
+		response.FailWithMessage("请输入时间", c)
+		return
+	}
+	if pageInfo.EndCreatedAt.Sub(*pageInfo.StartCreatedAt) > time.Hour*24*365 {
+		response.FailWithMessage("查询时间不能超过一年", c)
 		return
 	}
 	if list, err := statService.GetStatRank(&pageInfo); err != nil {
