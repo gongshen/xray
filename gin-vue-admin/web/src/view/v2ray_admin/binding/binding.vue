@@ -60,7 +60,7 @@
         <el-table-column align="left" label="是否限流" width="100">
             <template #default="scope">{{ scope.row.is_limited ? '是' : '否' }}</template>
         </el-table-column>
-          <el-table-column align="left" label="按钮组">
+        <el-table-column align="left" label="按钮组">
             <template #default="scope">
             <el-button type="primary" link icon="share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
