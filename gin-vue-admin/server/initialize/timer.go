@@ -2,7 +2,7 @@ package initialize
 
 import (
 	"fmt"
-	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/v2ray_admin"
+	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/job"
 	"github.com/robfig/cron/v3"
 	"time"
 
@@ -36,10 +36,16 @@ func Timer() {
 		time.Sleep(1 * time.Minute)
 		location, _ := time.LoadLocation("Asia/Shanghai")
 
-		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", "@every 1m", v2ray_admin.CollectorJob{}, cron.WithLocation(location)); err != nil {
+		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", "@every 1m", job.CollectorJob{}, cron.WithLocation(location)); err != nil {
 			fmt.Println("add timer error:", err)
 		}
-		if _, err := global.GVA_Timer.AddTaskByJob("quota_reset", "@daily", v2ray_admin.QuotaResetJob{}, cron.WithLocation(location)); err != nil {
+		if _, err := global.GVA_Timer.AddTaskByJob("calc_traffic_limit", "@every 10m", job.CalculateMonthlyTrafficLimitJob{}, cron.WithLocation(location)); err != nil {
+			fmt.Println("add timer error:", err)
+		}
+		if _, err := global.GVA_Timer.AddTaskByJob("reset_traffic_limit", "@monthly", job.ResetMonthlyTrafficLimitJob{}, cron.WithLocation(location)); err != nil {
+			fmt.Println("add timer error:", err)
+		}
+		if _, err := global.GVA_Timer.AddTaskByJob("quota_reset", "@daily", job.QuotaResetJob{}, cron.WithLocation(location)); err != nil {
 			fmt.Println("add timer error:", err)
 		}
 	}()

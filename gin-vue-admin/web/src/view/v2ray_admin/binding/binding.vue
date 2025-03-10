@@ -57,6 +57,9 @@
         <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
+        <el-table-column align="left" label="是否限流" width="100">
+            <template #default="scope">{{ scope.row.is_limited ? '是' : '否' }}</template>
+        </el-table-column>
           <el-table-column align="left" label="按钮组">
             <template #default="scope">
             <el-button type="primary" link icon="share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>

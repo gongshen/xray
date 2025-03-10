@@ -164,16 +164,17 @@ func (userService *UserService) DeleteUser(id int) (err error) {
 
 func (userService *UserService) SetUserInfo(req system.SysUser) error {
 	return global.GVA_DB.Model(&system.SysUser{}).
-		Select("updated_at", "nick_name", "header_img", "phone", "email", "sideMode", "enable").
+		Select("updated_at", "nick_name", "header_img", "phone", "email", "sideMode", "enable", "traffic_limit").
 		Where("id=?", req.ID).
 		Updates(map[string]interface{}{
-			"updated_at": time.Now(),
-			"nick_name":  req.NickName,
-			"header_img": req.HeaderImg,
-			"phone":      req.Phone,
-			"email":      req.Email,
-			"side_mode":  req.SideMode,
-			"enable":     req.Enable,
+			"updated_at":    time.Now(),
+			"nick_name":     req.NickName,
+			"header_img":    req.HeaderImg,
+			"phone":         req.Phone,
+			"email":         req.Email,
+			"side_mode":     req.SideMode,
+			"enable":        req.Enable,
+			"traffic_limit": req.TrafficLimit,
 		}).Error
 }
 

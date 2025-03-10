@@ -4,7 +4,7 @@
 
 # 一键安装
 ```shell
-wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/gongshen/dino/main/base/install.sh" && chmod +x install.sh && bash install.sh
+wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/gongshen/dino/main/resource/install.sh" && chmod +x install.sh && bash install.sh
 ```
 
 # 统计信息

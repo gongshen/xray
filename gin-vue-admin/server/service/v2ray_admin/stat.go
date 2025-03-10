@@ -12,6 +12,7 @@ import (
 	v2rayResp "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/response"
 	"sort"
 	"strconv"
+	"time"
 )
 
 var (
@@ -240,4 +241,24 @@ func (statService *StatService) GetStatRank(info *v2rayReq.StatSearch) (*respons
 	resp.RankAxis = tags
 	resp.Rank = tagCount
 	return resp, nil
+}
+
+func (statService *StatService) MonthlyUserTraffic(createdAt time.Time, tag string) (uint64, error) {
+	// 创建db
+	db := global.GVA_DB.Debug().Model(&v2ray.Stat{})
+	stats := make([]*v2ray.Stat, 0)
+	startCreatedAt := createdAt.Year()*10000 + int(createdAt.Month())*100
+	db = db.Where("created_at > ?", startCreatedAt)
+	if tag != "" {
+		db = db.Where("tag = ?", tag)
+	}
+	if err := db.Find(&stats).Error; err != nil {
+		return 0, err
+	}
+	var traffic uint64
+	for _, stat := range stats {
+		traffic += stat.Up
+		traffic += stat.Down
+	}
+	return traffic, nil
 }

@@ -82,7 +82,7 @@ func (bindingService *BindingService) CountBindingByServerID(ids ...int) (count 
 }
 
 func (bindingService *BindingService) GetBindingsByServerID(ids ...int) (bindings []*v2ray.Binding, err error) {
-	err = global.GVA_DB.Model(&v2ray.Binding{}).Where("server_id in (?)", ids).Preload("User").
+	err = global.GVA_DB.Model(&v2ray.Binding{}).Where("server_id in (?) and is_limited = 0", ids).Preload("User").
 		Preload("Server").Find(&bindings).Error
 	return
 }
@@ -130,4 +130,18 @@ func (bindingService *BindingService) ReportBinding(srv *v2ray.Server) error {
 	fasthttp.ReleaseRequest(req)
 	fasthttp.ReleaseResponse(resp)
 	return nil
+}
+
+func (bindingService *BindingService) GetBindingByUserID(userID uint) (bindings []*v2ray.Binding, err error) {
+	err = global.GVA_DB.Model(&v2ray.Binding{}).Where("user_id = ?", userID).Preload("User").
+		Preload("Server").Find(&bindings).Error
+	return
+}
+
+func (bindingService *BindingService) ResetTrafficLimit() error {
+	return  global.GVA_DB.Model(&v2ray.Binding{}).UpdateColumn("is_limited", false).Error
+}
+
+func (bindingService *BindingService) SetTrafficLimit(userID uint) error {
+	return global.GVA_DB.Model(&v2ray.Binding{}).Where("user_id = ?", userID).UpdateColumn("is_limited", true).Error
 }
