@@ -3,12 +3,13 @@ package v2ray_admin
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
 	v2rayReq "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/request"
 	"github.com/valyala/fasthttp"
-	"strconv"
 )
 
 type BindingService struct {
@@ -139,9 +140,13 @@ func (bindingService *BindingService) GetBindingByUserID(userID uint) (bindings 
 }
 
 func (bindingService *BindingService) ResetTrafficLimit() error {
-	return  global.GVA_DB.Model(&v2ray.Binding{}).UpdateColumn("is_limited", false).Error
+	return global.GVA_DB.Model(&v2ray.Binding{}).UpdateColumn("is_limited", false).Error
 }
 
 func (bindingService *BindingService) SetTrafficLimit(userID uint) error {
 	return global.GVA_DB.Model(&v2ray.Binding{}).Where("user_id = ?", userID).UpdateColumn("is_limited", true).Error
+}
+
+func (bindingService *BindingService) RemoveLimited(id uint) (err error) {
+	return global.GVA_DB.Model(&v2ray.Binding{}).Where("id = ?", id).UpdateColumn("is_limited", false).Error
 }

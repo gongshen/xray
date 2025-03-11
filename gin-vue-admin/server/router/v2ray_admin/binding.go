@@ -1,9 +1,9 @@
 package v2ray_admin
 
 import (
-	"github.com/flipped-aurora/gin-vue-admin/server/api/v1"
 	"github.com/flipped-aurora/gin-vue-admin/server/middleware"
 	"github.com/gin-gonic/gin"
+	v1 "github.com/gongshen/xray/gin-vue-admin/server/api/v1"
 )
 
 type BindingRouter struct {
@@ -24,5 +24,6 @@ func (s *BindingRouter) InitBindingRouter(Router *gin.RouterGroup) {
 		bindingRouterWithoutRecord.GET("findBinding", bindingApi.FindBinding)       // 根据ID获取Binding
 		bindingRouterWithoutRecord.GET("getBindingList", bindingApi.GetBindingList) // 获取Binding列表
 		bindingRouterWithoutRecord.GET("shareBinding", bindingApi.ShareBinding)     // 分享binding
+		bindingRouterWithoutRecord.GET("removeLimited", bindingApi.RemoveLimited)   // 根据ID更新binding的is_limited字段为false
 	}
 }

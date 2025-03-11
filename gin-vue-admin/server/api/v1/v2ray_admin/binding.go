@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -12,7 +14,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"strconv"
 )
 
 type BindingApi struct {
@@ -212,4 +213,28 @@ var defaultV2rayN = v2ray.V2ray{
 	Type: "http",
 	Net:  "tcp",
 	Scy:  "auto",
+}
+
+// RemoveLimited 根据ID更新binding的is_limited字段为false
+// @Tags Binding
+// @Summary 根据ID更新binding的is_limited字段为false
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data query v2ray.Binding true "根据ID更新binding的is_limited字段为false"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"更新成功"}"
+// @Router /binding/removeLimited [get]
+func (bindingApi *BindingApi) RemoveLimited(c *gin.Context) {
+	var binding v2ray.Binding
+	err := c.ShouldBindQuery(&binding)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := bindingService.RemoveLimited(binding.ID); err != nil {
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		response.FailWithMessage("更新失败", c)
+	} else {
+		response.OkWithMessage("更新成功", c)
+	}
 }
