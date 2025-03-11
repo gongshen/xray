@@ -103,3 +103,11 @@ export const shareBinding = (params) => {
     params
   })
 }
+
+export const removeLimited = (params) => {
+  return service({
+    url: '/v2ray_admin/binding/removeLimited',
+    method: 'get',
+    params
+  })
+}
