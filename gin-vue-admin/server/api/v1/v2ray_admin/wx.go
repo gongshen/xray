@@ -1,0 +1,50 @@
+package v2ray_admin
+
+import (
+	"crypto/sha1"
+	"encoding/hex"
+	"encoding/xml"
+	"sort"
+	"time"
+)
+
+// 验证签名
+func CheckSignature(signature, timestamp, nonce, token string) bool {
+	sl := []string{token, timestamp, nonce}
+	sort.Strings(sl)
+	sum := sha1.Sum([]byte(sl[0] + sl[1] + sl[2]))
+	return signature == hex.EncodeToString(sum[:])
+}
+
+type Msg struct {
+	XMLName      xml.Name `xml:"xml"`
+	ToUserName   string   `xml:"ToUserName"`
+	FromUserName string   `xml:"FromUserName"`
+	CreateTime   int64    `xml:"CreateTime"`
+	MsgType      string   `xml:"MsgType"`
+	Event        string   `xml:"Event"`
+	Content      string   `xml:"Content"`
+	Recognition  string   `xml:"Recognition"`
+
+	MsgId int64 `xml:"MsgId,omitempty"`
+}
+
+func NewMsg(data []byte) *Msg {
+	var msg Msg
+	if err := xml.Unmarshal(data, &msg); err != nil {
+		return nil
+	}
+	return &msg
+}
+
+func (msg *Msg) GenerateEchoData(s string) []byte {
+	data := Msg{
+		ToUserName:   msg.FromUserName,
+		FromUserName: msg.ToUserName,
+		CreateTime:   time.Now().Unix(),
+		MsgType:      "text",
+		Content:      s,
+	}
+	bs, _ := xml.Marshal(&data)
+	return bs
+}
