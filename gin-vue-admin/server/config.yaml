@@ -163,7 +163,7 @@ redis:
 stat_port: 56611
 system:
   env: public
-  addr: 8888
+  addr: 443
   db-type: mysql
   oss-type: local
   use-multipoint: false
@@ -171,6 +171,8 @@ system:
   iplimit-count: 500
   iplimit-time: 3600
   router-prefix: ""
+  cert-file: ""
+  key-file: ""
 tencent-cos:
   bucket: xxxxx-10005608
   region: ap-shanghai

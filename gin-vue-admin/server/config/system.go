@@ -10,4 +10,6 @@ type System struct {
 	LimitCountIP  int    `mapstructure:"iplimit-count" json:"iplimit-count" yaml:"iplimit-count"`
 	LimitTimeIP   int    `mapstructure:"iplimit-time" json:"iplimit-time" yaml:"iplimit-time"`
 	RouterPrefix  string `mapstructure:"router-prefix" json:"router-prefix" yaml:"router-prefix"`
+	CertFile      string `mapstructure:"cert-file" json:"cert-file" yaml:"cert-file"`
+	KeyFile       string `mapstructure:"key-file" json:"key-file" yaml:"key-file"`
 }
