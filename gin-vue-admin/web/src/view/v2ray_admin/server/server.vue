@@ -54,8 +54,8 @@
         </el-table-column>
         <el-table-column align="left" label="按钮组">
             <template #default="scope">
-                <el-button type="primary" link icon="document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>
-<!--            <el-button type="primary" link icon="edit" class="table-button" @click="updateServerFunc(scope.row)">变更</el-button>-->
+            <el-button type="primary" link icon="document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>
+            <el-button type="primary" link icon="edit" class="table-button" @click="updateServerFunc(scope.row)">变更</el-button>
             <el-button type="primary" link icon="refresh" @click="restartXray(scope.row)">代理重启</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
             </template>
