@@ -1,77 +1,195 @@
 @import '@/style/basics.scss';
-@media screen and (min-width: 320px)and (max-width: 750px) {
+
+// Mobile devices (portrait phones)
+@media screen and (max-width: 480px) {
+    // General layout adjustments
+    .el-container {
+        flex-direction: column;
+    }
+
     .el-header {
         padding: 0 $padding-xs;
+        height: auto !important;
     }
+
+    .el-aside {
+        width: 100% !important;
+        .menu-total {
+            z-index: 999;
+        }
+    }
+
+    // Main content area
     .layout-cont {
         .main-cont {
             .breadcrumb {
-                padding: 0 $padding-xs;
+                padding: 8px $padding-xs;
+                font-size: 14px;
             }
         }
-    }
-    .layout-cont {
         .right-box {
-            margin-right: $margin-xs;
+            margin: 0 $margin-xs;
         }
     }
+
+    // Admin dashboard
     .el-main {
+        padding: 10px !important;
+        
         .admin-box {
-            margin-left: 0;
-            margin-right: 0;
+            margin: 0;
+            padding: 10px;
         }
+
         .big.admin-box {
             padding: 0;
         }
-        .big {
-            .bottom {
-                .chart-player {
-                    height: auto!important;
-                    margin-bottom: 15px;
-                }
-                .todoapp {
-                    background-color: #fff;
-                    padding-bottom: 10px;
-                }
+
+        .bottom {
+            .chart-player {
+                height: auto !important;
+                margin-bottom: 15px;
+            }
+            .todoapp {
+                background-color: #fff;
+                padding: 10px;
+                margin-bottom: 10px;
             }
         }
     }
-    .card .car-left,
-    .card .car-right {
-        width: 100%;
-        height: 100%;
-    }
+
+    // Cards and grids
     .card {
-        padding-left: $padding-xs;
-        padding-right: $padding-xs;
-    }
-    .card {
+        padding: 10px;
+        margin-bottom: 10px;
+        
+        .car-left,
+        .car-right {
+            width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
         .text {
             width: 100%;
             h4 {
-                white-space: break-spaces;
+                white-space: normal;
+                word-break: break-word;
             }
         }
     }
-    .shadow {
-        margin-left: 4px;
-        margin-right: 4px;
-        .grid-content {
-            margin-bottom: 10px;
-            padding: 0;
+
+    // Form elements
+    .el-form {
+        .el-form-item {
+            margin-bottom: 15px;
         }
     }
+
+    // Tables
+    .el-table {
+        width: 100%;
+        .cell {
+            padding: 8px;
+        }
+    }
+
+    // Dialogs
     .el-dialog {
-        width: 90%;
+        width: 95% !important;
+        margin: 10px auto !important;
+        
+        .el-dialog__body {
+            padding: 15px !important;
+        }
     }
+
+    // Buttons and controls
+    .el-button {
+        &+.el-button {
+            margin-left: 5px;
+        }
+    }
+
+    // Transfer component
     .el-transfer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        
         .el-transfer-panel {
-            width: 40%;
-            display: inline-block;
+            width: 100%;
+            margin-bottom: 10px;
         }
+        
         .el-transfer__buttons {
-            padding: 0 5px;
-            display: inline-block;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
         }
+    }
+
+    // Navigation
+    .el-menu {
+        .el-menu-item,
+        .el-submenu__title {
+            height: 45px;
+            line-height: 45px;
+        }
+    }
+
+    // Tabs
+    .el-tabs {
+        .el-tabs__item {
+            padding: 0 10px;
+        }
+    }
+}
+
+// Tablet devices
+@media screen and (min-width: 481px) and (max-width: 768px) {
+    .el-header {
+        padding: 0 15px;
+    }
+
+    .el-aside {
+        width: 200px !important;
+    }
+
+    .el-dialog {
+        width: 80% !important;
+    }
+
+    .card {
+        .car-left,
+        .car-right {
+            width: 48%;
+        }
+    }
+}
+
+// Common styles for both mobile and tablet
+@media screen and (max-width: 768px) {
+    // Fix for fixed position elements
+    .fixed-header {
+        position: relative !important;
+    }
+
+    // Improve touch targets
+    .el-button,
+    .el-link,
+    .el-menu-item {
+        min-height: 44px;
+    }
+
+    // Improve form usability
+    .el-input__inner {
+        height: 40px;
+    }
+
+    // Improve readability
+    body {
+        font-size: 14px;
+        line-height: 1.5;
     }
 }

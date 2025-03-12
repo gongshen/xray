@@ -110,7 +110,7 @@ export const shareBinding = (params) => {
 // @accept application/json
 // @Produce application/json
 // @Param data body model.Binding true "解除限流"
-// @Success 200 {string} string "{'success':true,'data':{},'msg':'解除限流成功'}"
+// @Success 200 {string} string "{\"success\":true,\"data\":{},\"msg\":\"解除限流成功\"}"
 // @Router /binding/removeLimited [post]
 export const removeLimited = (data) => {
   return service({
