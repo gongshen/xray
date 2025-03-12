@@ -18,6 +18,7 @@ func (s *BindingRouter) InitBindingRouter(Router *gin.RouterGroup) {
 		bindingRouter.POST("createBinding", bindingApi.CreateBinding)             // 新建Binding
 		bindingRouter.DELETE("deleteBinding", bindingApi.DeleteBinding)           // 删除Binding
 		bindingRouter.DELETE("deleteBindingByIds", bindingApi.DeleteBindingByIds) // 批量删除Binding
+		bindingRouter.POST("removeLimited", bindingApi.RemoveLimited)            // 解除限流
 		//bindingRouter.PUT("updateBinding", bindingApi.UpdateBinding)              // 更新Binding
 	}
 	{

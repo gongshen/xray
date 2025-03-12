@@ -207,6 +207,30 @@ type ShareResponse struct {
 	Share2 string `json:"share2"`
 }
 
+// RemoveLimited 解除绑定限流
+// @Tags Binding
+// @Summary 解除绑定限流
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body v2ray.Binding true "解除绑定限流"
+// @Success 200 {string} string "{\"success\":true,\"data\":{},\"msg\":\"解除限流成功\"}"
+// @Router /binding/removeLimited [post]
+func (bindingApi *BindingApi) RemoveLimited(c *gin.Context) {
+	var binding v2ray.Binding
+	err := c.ShouldBindJSON(&binding)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if err := bindingService.RemoveTrafficLimit(binding.ID); err != nil {
+		global.GVA_LOG.Error("解除限流失败!", zap.Error(err))
+		response.FailWithMessage("解除限流失败", c)
+		return
+	}
+	response.OkWithMessage("解除限流成功", c)
+}
+
 var defaultV2rayN = v2ray.V2ray{
 	V:    "2",
 	Type: "http",

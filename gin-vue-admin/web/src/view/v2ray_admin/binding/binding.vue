@@ -64,6 +64,7 @@
             <template #default="scope">
             <el-button type="primary" link icon="share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+            <el-button v-if="scope.row.is_limited" type="primary" link icon="unlock" @click="removeLimitedFunc(scope.row)">解除限流</el-button>
             </template>
         </el-table-column>
         </el-table>
@@ -131,7 +132,8 @@ import {
   updateBinding,
   findBinding,
   getBindingList,
-  shareBinding
+  shareBinding,
+  removeLimited
 } from '@/api/binding'
 import { getAllServerApi } from '@/api/server'
 import { getAllUserApi } from '@/api/user'
@@ -308,6 +310,18 @@ const deleteBindingFunc = async (row) => {
             if (tableData.value.length === 1 && page.value > 1) {
             page.value--
         }
+        getTableData()
+    }
+}
+
+// 解除限流
+const removeLimitedFunc = async (row) => {
+    const res = await removeLimited({ ID: row.ID })
+    if (res.code === 0) {
+        ElMessage({
+            type: 'success',
+            message: '解除限流成功'
+        })
         getTableData()
     }
 }

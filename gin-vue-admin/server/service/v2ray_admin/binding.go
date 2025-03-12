@@ -145,3 +145,8 @@ func (bindingService *BindingService) ResetTrafficLimit() error {
 func (bindingService *BindingService) SetTrafficLimit(userID uint) error {
 	return global.GVA_DB.Model(&v2ray.Binding{}).Where("user_id = ?", userID).UpdateColumn("is_limited", true).Error
 }
+
+// RemoveTrafficLimit 根据ID解除限流
+func (bindingService *BindingService) RemoveTrafficLimit(id uint) error {
+	return global.GVA_DB.Model(&v2ray.Binding{}).Where("id = ?", id).UpdateColumn("is_limited", false).Error
+}

@@ -103,3 +103,19 @@ export const shareBinding = (params) => {
     params
   })
 }
+
+// @Tags Binding
+// @Summary 解除限流
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body model.Binding true "解除限流"
+// @Success 200 {string} string "{'success':true,'data':{},'msg':'解除限流成功'}"
+// @Router /binding/removeLimited [post]
+export const removeLimited = (data) => {
+  return service({
+    url: '/v2ray_admin/binding/removeLimited',
+    method: 'post',
+    data
+  })
+}
