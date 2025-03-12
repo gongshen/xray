@@ -1,0 +1,123 @@
+// responsive.js - Custom directives for responsive design
+
+/**
+ * Directive to make tables responsive on mobile devices
+ * Usage: v-responsive-table
+ */
+const responsiveTable = {
+  mounted(el) {
+    makeTableResponsive(el)
+    window.addEventListener('resize', () => makeTableResponsive(el))
+  },
+  unmounted(el) {
+    window.removeEventListener('resize', () => makeTableResponsive(el))
+  }
+}
+
+/**
+ * Helper function to transform tables for mobile view
+ * @param {HTMLElement} el - The table element
+ */
+function makeTableResponsive(el) {
+  const screenWidth = document.body.clientWidth
+  const isMobile = screenWidth < 768
+  
+  if (!el || !el.classList.contains('el-table')) return
+  
+  if (isMobile) {
+    // Add responsive class
+    el.classList.add('mobile-friendly-table')
+    
+    // Add data-label attributes for mobile card view
+    setTimeout(() => {
+      const headerCells = el.querySelectorAll('th .cell')
+      const rows = el.querySelectorAll('tbody tr')
+      
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td .cell')
+        cells.forEach((cell, index) => {
+          if (headerCells[index]) {
+            const label = headerCells[index].textContent.trim()
+            cell.setAttribute('data-label', label)
+          }
+        })
+      })
+    }, 100)
+  } else {
+    el.classList.remove('mobile-friendly-table')
+  }
+}
+
+/**
+ * Directive to adapt form layouts for mobile
+ * Usage: v-responsive-form
+ */
+const responsiveForm = {
+  mounted(el, binding) {
+    const form = el.querySelector('.el-form')
+    if (!form) return
+    
+    adaptFormForMobile(form, binding.value)
+    window.addEventListener('resize', () => adaptFormForMobile(form, binding.value))
+  },
+  unmounted(el) {
+    const form = el.querySelector('.el-form')
+    if (!form) return
+    
+    window.removeEventListener('resize', () => adaptFormForMobile(form, binding.value))
+  }
+}
+
+/**
+ * Helper function to adapt forms for mobile
+ * @param {HTMLElement} form - The form element
+ * @param {Object} options - Configuration options
+ */
+function adaptFormForMobile(form, options = {}) {
+  const screenWidth = document.body.clientWidth
+  const isMobile = screenWidth < 768
+  
+  if (isMobile) {
+    // Add responsive class
+    form.classList.add('mobile-form')
+    
+    // Adjust label position
+    const formItems = form.querySelectorAll('.el-form-item')
+    formItems.forEach(item => {
+      const label = item.querySelector('.el-form-item__label')
+      const content = item.querySelector('.el-form-item__content')
+      
+      if (label && content) {
+        label.style.float = 'none'
+        label.style.display = 'block'
+        label.style.textAlign = 'left'
+        label.style.padding = '0 0 8px'
+        content.style.marginLeft = '0'
+      }
+    })
+  } else {
+    form.classList.remove('mobile-form')
+    
+    // Restore default styles if not mobile
+    const formItems = form.querySelectorAll('.el-form-item')
+    formItems.forEach(item => {
+      const label = item.querySelector('.el-form-item__label')
+      const content = item.querySelector('.el-form-item__content')
+      
+      if (label && content) {
+        label.style.float = ''
+        label.style.display = ''
+        label.style.textAlign = ''
+        label.style.padding = ''
+        content.style.marginLeft = ''
+      }
+    })
+  }
+}
+
+export default {
+  install(app) {
+    app.directive('responsive-table', responsiveTable)
+    app.directive('responsive-form', responsiveForm)
+  }
+}
