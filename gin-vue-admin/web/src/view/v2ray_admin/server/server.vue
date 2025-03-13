@@ -45,7 +45,7 @@
             <template #default="scope">{{ formatFlow(scope.row.used_quota) }}</template>
         </el-table-column>
         <el-table-column align="left" label="总额度" width="100" >
-            <template #default="scope">{{ formatFlow(scope.row.total_quota) }}</template>
+            <template #default="scope">{{ scope.row.total_quota }}</template>
         </el-table-column>
         <el-table-column align="left" label="备注" prop="remark" width="120" />
         <el-table-column align="left" label="重置日期" prop="reset_date" width="100" />
@@ -55,7 +55,7 @@
         <el-table-column align="left" label="按钮组">
             <template #default="scope">
             <el-button type="primary" link icon="document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>
-            <el-button type="primary" link icon="edit" class="table-button" @click="updateServerFunc(scope.row)">变更</el-button>
+            <el-button type="primary" link icon="edit" class="table-button" @click="updateServerFunc(scope.row)">编辑</el-button>
             <el-button type="primary" link icon="refresh" @click="restartXray(scope.row)">代理重启</el-button>
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
             </template>
@@ -285,11 +285,31 @@ const closeConfigDialog = () => {
 
 // 更新行
 const updateServerFunc = async(row) => {
-    const res = await findServer({ ID: row.ID })
-    type.value = 'update'
-    if (res.code === 0) {
-        formData.value = res.data.reserver
-        dialogFormVisible.value = true
+    try {
+        const res = await updateServer({ ...row })
+        if (res.code === 0) {
+            // Only set type and show dialog if successful
+            type.value = 'update'
+            
+            // Get the server data directly from the row parameter
+            // This ensures we have all the necessary fields including total_quota
+            formData.value = { ...row }
+            
+            dialogFormVisible.value = true
+        } else {
+            // Handle API error response
+            ElMessage({
+                type: 'error',
+                message: res.message || '更新失败'
+            })
+        }
+    } catch (error) {
+        // Handle unexpected errors
+        console.error('更新服务器时出错:', error)
+        ElMessage({
+            type: 'error',
+            message: '更新服务器时发生错误'
+        })
     }
 }
 

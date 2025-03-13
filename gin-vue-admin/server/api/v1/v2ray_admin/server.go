@@ -44,7 +44,6 @@ func (serverApi *ServerApi) CreateServer(c *gin.Context) {
 		response.FailWithMessage("ip地址格式不正确", c)
 		return
 	}
-	server.TotalQuota = server.TotalQuota * 1024 * 1024 * 1024
 	if err := serverService.CreateServer(&server); err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))
 		response.FailWithMessage("创建失败", c)
