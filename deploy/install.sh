@@ -174,6 +174,9 @@ function download_stat() {
   # 检查是否需要覆盖
   confirm_overwrite "${stat_dir}" "stat 二进制文件" || return 0
   
+  # 停止正在运行的服务，避免 "Text file busy" 错误
+  systemctl stop stat 2>/dev/null
+  
   wget -O ${stat_dir} ${github_release_url}/stat
   if [ $? -ne 0 ]; then
     print_error "下载 stat 失败"
@@ -191,6 +194,9 @@ function download_xray_admin() {
   
   # 检查是否需要覆盖
   confirm_overwrite "${xray_admin_dir}" "xray-admin 二进制文件" || return 0
+  
+  # 停止正在运行的服务，避免 "Text file busy" 错误
+  systemctl stop xray_admin 2>/dev/null
   
   wget -O ${xray_admin_dir} ${github_release_url}/xray-admin
   if [ $? -ne 0 ]; then
