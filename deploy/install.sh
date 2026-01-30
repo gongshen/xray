@@ -21,8 +21,8 @@ ERROR="${Red}[ERROR]${Font}"
 
 # 变量
 xray_version="v25.3.6"
-dino_version="v1.0.0"
-github_repo="gongshen/dino"
+project_version=""  # 由用户输入
+github_repo="gongshen/xray"
 stat_dir="/usr/local/bin/stat"
 xray_admin_dir="/usr/local/bin/xray-admin"
 xray_admin_conf_dir="/usr/local/etc/xray-admin"
@@ -31,8 +31,23 @@ stat_service_dir="/etc/systemd/system/stat.service"
 xray_conf_dir="/usr/local/etc/xray"
 iptables_conf_dir="/usr/local/etc/xray/iptables"
 
-# GitHub 下载地址
-github_release_url="https://github.com/${github_repo}/releases/download/${dino_version}"
+# GitHub 下载地址 (在获取版本号后设置)
+github_release_url=""
+
+# 获取项目版本号
+function get_project_version() {
+  if [ -z "$project_version" ]; then
+    echo -e "${Blue}请输入要安装的版本号 (如 v1.0.0)${Font}"
+    echo -e "${Yellow}提示: 可在 https://github.com/${github_repo}/releases 查看可用版本${Font}"
+    read -rp "版本号: " project_version
+    if [ -z "$project_version" ]; then
+      print_error "版本号不能为空"
+      return 1
+    fi
+    github_release_url="https://github.com/${github_repo}/releases/download/${project_version}"
+  fi
+  return 0
+}
 
 function print_ok() {
   echo -e "${OK} ${Blue} $1 ${Font}"
@@ -153,6 +168,9 @@ function confirm_overwrite() {
 function download_stat() {
   print_ok "从 GitHub 下载 stat..."
   
+  # 获取版本号
+  get_project_version || return 1
+  
   # 检查是否需要覆盖
   confirm_overwrite "${stat_dir}" "stat 二进制文件" || return 0
   
@@ -167,6 +185,9 @@ function download_stat() {
 
 function download_xray_admin() {
   print_ok "从 GitHub 下载 xray-admin..."
+  
+  # 获取版本号
+  get_project_version || return 1
   
   # 检查是否需要覆盖
   confirm_overwrite "${xray_admin_dir}" "xray-admin 二进制文件" || return 0
@@ -300,7 +321,7 @@ After=network.target nss-lookup.target
 [Service]
 User=root
 Environment="REMOTE_IP=__REMOTE_IP__"
-ExecStart=/usr/local/bin/stat
+ExecStart=/usr/local/bin/stat -port __STAT_PORT__
 Restart=on-failure
 RestartPreventExitStatus=23
 
@@ -458,6 +479,10 @@ function install_stat() {
   
   read -rp "请输入管理端IP地址：" remoteIp
   sed -i "s|__REMOTE_IP__|${remoteIp}|" ${stat_service_dir}
+  
+  read -rp "请输入Stat监听端口(默认56611)：" statPort
+  [ -z "$statPort" ] && statPort="56611"
+  sed -i "s|__STAT_PORT__|${statPort}|" ${stat_service_dir}
   
   systemctl daemon-reload
   systemctl enable stat
