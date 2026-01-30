@@ -5,6 +5,7 @@ import (
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/middleware"
+	"github.com/flipped-aurora/gin-vue-admin/server/resource"
 	"github.com/flipped-aurora/gin-vue-admin/server/router"
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +17,8 @@ func Routers() *gin.Engine {
 	exampleRouter := router.RouterGroupApp.Example
 
 	Router.StaticFS(global.GVA_CONFIG.Local.StorePath, http.Dir(global.GVA_CONFIG.Local.StorePath))
-	Router.Static("/fe", "./resource/dist")
+	// 使用嵌入的前端静态文件
+	Router.StaticFS("/fe", resource.GetPageFS())
 
 	Router.Any("/", func(context *gin.Context) {
 		context.Redirect(http.StatusMovedPermanently, "/fe")

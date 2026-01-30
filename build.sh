@@ -80,13 +80,13 @@ CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=amd64 go build -ldflags="-s -w" -o ../dis
 cd ..
 echo -e "${Green}[OK] stat 编译完成${Font}"
 
-# 编译 xray-admin
+# 编译 xray-admin (前端文件会通过 embed 嵌入到二进制中)
 echo -e "\n${Green}[3/3] 编译 xray-admin...${Font}"
 cd gin-vue-admin/server
 go mod tidy
 CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=amd64 go build -ldflags="-s -w" -o ../../dist/xray-admin${EXE_SUFFIX} .
 cd ../..
-echo -e "${Green}[OK] xray-admin 编译完成${Font}"
+echo -e "${Green}[OK] xray-admin 编译完成 (前端已嵌入二进制)${Font}"
 
 # 显示结果
 echo -e "\n${Blue}========================================${Font}"

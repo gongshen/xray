@@ -22,3 +22,12 @@
 [xray-admin]2026/01/30 - 16:54:00.380	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/gorm.go:56	register table success
 [xray-admin]2026/01/30 - 16:54:00.569	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/router.go:71	router register success
 [xray-admin]2026/01/30 - 16:54:00.573	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/core/server.go:37	server run success on 	{"address": ":8888"}
+[xray-admin]2026/01/30 - 17:01:26.002	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/gorm.go:56	register table success
+[xray-admin]2026/01/30 - 17:01:26.052	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/router.go:71	router register success
+[xray-admin]2026/01/30 - 17:01:26.054	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[xray-admin]2026/01/30 - 17:04:18.761	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/gorm.go:56	register table success
+[xray-admin]2026/01/30 - 17:04:18.809	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/router.go:71	router register success
+[xray-admin]2026/01/30 - 17:04:18.811	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
+[xray-admin]2026/01/30 - 17:20:33.111	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/gorm.go:56	register table success
+[xray-admin]2026/01/30 - 17:20:33.143	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/initialize/router.go:71	router register success
+[xray-admin]2026/01/30 - 17:20:33.144	[34minfo[0m	D:/go/pkg/xray/gin-vue-admin/server/core/server.go:36	server run success on 	{"address": ":8888"}
