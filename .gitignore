@@ -2,6 +2,8 @@
 
 # 编译输出
 dist/
+gin-vue-admin/web/dist/
+gin-vue-admin/server/resource/
 
 # 临时文件
 *.tmp

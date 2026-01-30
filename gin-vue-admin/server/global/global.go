@@ -1,10 +1,11 @@
 package global
 
 import (
-	"github.com/valyala/fasthttp"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/timer"
 	"github.com/songzhibin97/gkit/cache/local_cache"
