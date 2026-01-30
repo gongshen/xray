@@ -3,15 +3,17 @@ package job
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/flipped-aurora/gin-vue-admin/server/global"
-	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
-	"github.com/flipped-aurora/gin-vue-admin/server/service"
-	"github.com/valyala/fasthttp"
-	"github.com/xtls/xray-core/app/stats/command"
-	"go.uber.org/zap"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
+	"github.com/flipped-aurora/gin-vue-admin/server/service"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/v2ray_admin"
+	"github.com/valyala/fasthttp"
+	"github.com/xtls/xray-core/app/stats/command"
+	"go.uber.org/zap"
 )
 
 var serviceGroup = service.ServiceGroupApp
@@ -46,59 +48,91 @@ func (job CollectorJob) Run() {
 	day := now.Day()
 	createdAt := year*10000 + int(month)*100 + day
 	for _, srv := range srvs {
-		req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
-		req.SetRequestURI(fmt.Sprintf("http://%s:%d/stat/traffic", srv.Ip, global.GVA_CONFIG.STAT_PORT))
-		if err = global.HTTP_CLI.Do(req, resp); err != nil {
-			global.GVA_LOG.Error("CollectorJob Do", zap.Error(err))
+		// 收集流量统计
+		collectTraffic(srv, createdAt)
+		// 收集系统信息
+		collectSysInfo(srv)
+	}
+}
+
+// collectTraffic 收集流量统计
+func collectTraffic(srv *v2ray.Server, createdAt int) {
+	req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+
+	req.SetRequestURI(fmt.Sprintf("http://%s:%d/stat/traffic", srv.Ip, srv.GetStatPort()))
+	if err := global.HTTP_CLI.Do(req, resp); err != nil {
+		global.GVA_LOG.Error("CollectorJob Do traffic", zap.Error(err), zap.String("ip", srv.Ip))
+		return
+	}
+	statsResp := new(command.QueryStatsResponse)
+	if err := json.Unmarshal(resp.Body(), statsResp); err != nil {
+		global.GVA_LOG.Error("CollectorJob Unmarshal traffic", zap.Error(err))
+		return
+	}
+
+	var usedQuota uint64
+	itemMap := make(map[string]*v2ray.Stat)
+	for _, stat := range statsResp.Stat {
+		if stat.Value <= 0 {
+			continue
+		}
+		matchs := trafficRegex.FindStringSubmatch(stat.Name)
+		if len(matchs) != 4 {
+			global.GVA_LOG.Error("CollectorJob FindStringSubmatch")
 			return
 		}
-		statsResp := new(command.QueryStatsResponse)
-		if err = json.Unmarshal(resp.Body(), statsResp); err != nil {
-			fmt.Println(string(resp.Body()))
-			global.GVA_LOG.Error("CollectorJob Unmarshal", zap.Error(err))
-			return
+		if matchs[1] != "user" {
+			continue
 		}
-		// TODO 不知道总额度是：user+inbound+outbound，还是sum(user) = inbound+outbound
-		var usedQuota uint64
-		itemMap := make(map[string]*v2ray.Stat)
-		for _, stat := range statsResp.Stat {
-			if stat.Value <= 0 {
-				continue
+		item, ok := itemMap[matchs[2]]
+		if !ok {
+			item = &v2ray.Stat{
+				Tag:       matchs[2],
+				CreatedAt: createdAt,
+				ServerIp:  srv.Ip,
 			}
-			matchs := trafficRegex.FindStringSubmatch(stat.Name)
-			if len(matchs) != 4 {
-				global.GVA_LOG.Error("CollectorJob FindStringSubmatch")
-				return
-			}
-			if matchs[1] != "user" {
-				continue
-			}
-			item, ok := itemMap[matchs[2]]
-			if !ok {
-				item = &v2ray.Stat{
-					Tag:       matchs[2],
-					CreatedAt: createdAt,
-					ServerIp:  srv.Ip,
-				}
-				itemMap[matchs[2]] = item
-			}
-			if matchs[3] == "downlink" {
-				item.Down += uint64(stat.Value)
-			} else {
-				item.Up += uint64(stat.Value)
-			}
-			usedQuota += uint64(stat.Value)
+			itemMap[matchs[2]] = item
 		}
-		if err = serviceGroup.V2rayAdminServiceGroup.StatsCollector(itemMap); err != nil {
-			global.GVA_LOG.Error("CollectorJob StatsCollector")
-			return
+		if matchs[3] == "downlink" {
+			item.Down += uint64(stat.Value)
+		} else {
+			item.Up += uint64(stat.Value)
 		}
-		if err = serviceGroup.V2rayAdminServiceGroup.UpdateServerUsedQuota(srv.ID, usedQuota); err != nil {
-			global.GVA_LOG.Error("CollectorJob UpdateServerUsedQuota")
-			return
-		}
-		fasthttp.ReleaseRequest(req)
-		fasthttp.ReleaseResponse(resp)
+		usedQuota += uint64(stat.Value)
+	}
+	if err := serviceGroup.V2rayAdminServiceGroup.StatsCollector(itemMap); err != nil {
+		global.GVA_LOG.Error("CollectorJob StatsCollector", zap.Error(err))
+		return
+	}
+	if err := serviceGroup.V2rayAdminServiceGroup.UpdateServerUsedQuota(srv.ID, usedQuota); err != nil {
+		global.GVA_LOG.Error("CollectorJob UpdateServerUsedQuota", zap.Error(err))
+		return
+	}
+}
+
+// collectSysInfo 收集系统信息
+func collectSysInfo(srv *v2ray.Server) {
+	req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+
+	req.SetRequestURI(fmt.Sprintf("http://%s:%d/stat/sysinfo", srv.Ip, srv.GetStatPort()))
+	if err := global.HTTP_CLI.Do(req, resp); err != nil {
+		global.GVA_LOG.Error("CollectorJob Do sysinfo", zap.Error(err), zap.String("ip", srv.Ip))
+		return
+	}
+
+	sysInfo := new(v2ray_admin.SysInfo)
+	if err := json.Unmarshal(resp.Body(), sysInfo); err != nil {
+		global.GVA_LOG.Error("CollectorJob Unmarshal sysinfo", zap.Error(err))
+		return
+	}
+
+	if err := serviceGroup.V2rayAdminServiceGroup.UpdateServerSysInfo(srv.ID, sysInfo); err != nil {
+		global.GVA_LOG.Error("CollectorJob UpdateServerSysInfo", zap.Error(err))
+		return
 	}
 }
 

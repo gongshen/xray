@@ -124,7 +124,7 @@ func (bindingService *BindingService) ReportBinding(srv *v2ray.Server) error {
 	req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
 	req.Header.SetMethod("POST")
 	req.SetBody(data)
-	req.SetRequestURI(fmt.Sprintf("http://%s:%d/conf/update", srv.Ip, global.GVA_CONFIG.STAT_PORT))
+	req.SetRequestURI(fmt.Sprintf("http://%s:%d/conf/update", srv.Ip, srv.GetStatPort()))
 	if err = global.HTTP_CLI.Do(req, nil); err != nil {
 		return err
 	}
@@ -150,4 +150,3 @@ func (bindingService *BindingService) SetTrafficLimit(userID uint) error {
 func (bindingService *BindingService) RemoveTrafficLimit(id uint) error {
 	return global.GVA_DB.Model(&v2ray.Binding{}).Where("id = ?", id).UpdateColumn("is_limited", false).Error
 }
-

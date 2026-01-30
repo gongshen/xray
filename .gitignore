@@ -1,1 +1,9 @@
 .idea/
+
+# 编译输出
+dist/
+
+# 临时文件
+*.tmp
+*.swp
+.DS_Store

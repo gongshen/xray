@@ -38,12 +38,10 @@ func RegisterTables() {
 		system.SysAuthority{},
 		system.SysDictionary{},
 		system.SysOperationRecord{},
-		system.SysAutoCodeHistory{},
 		system.SysDictionaryDetail{},
 		system.SysBaseMenuParameter{},
 		system.SysBaseMenuBtn{},
 		system.SysAuthorityBtn{},
-		system.SysAutoCode{},
 		system.SysChatGptOption{},
 
 		example.ExaFile{},

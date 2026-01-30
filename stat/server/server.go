@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
+
 	"github.com/gongshen/xray/stat/business"
 	"github.com/gongshen/xray/stat/utils"
 	"github.com/valyala/fasthttp"
 )
 
-func StartServer() error {
+func StartServer(port int) error {
 	h := requestHandler
 	s := &fasthttp.Server{
 		Handler:            h,
@@ -16,8 +17,9 @@ func StartServer() error {
 		WriteBufferSize:    1024 * 4,
 		MaxRequestBodySize: 1024 * 1024 * 2, // 最大请求体大小为 2MB
 	}
-	fmt.Println("Server listening on :56611")
-	return s.ListenAndServe(":56611")
+	addr := fmt.Sprintf(":%d", port)
+	fmt.Printf("Server listening on %s\n", addr)
+	return s.ListenAndServe(addr)
 }
 
 func requestHandler(ctx *fasthttp.RequestCtx) {
@@ -29,6 +31,8 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	switch string(ctx.Path()) {
 	case "/stat/traffic":
 		business.CollectTraffic(ctx)
+	case "/stat/sysinfo":
+		business.CollectSysInfo(ctx)
 	case "/conf/update":
 		business.UpdateConfig(ctx)
 	default:

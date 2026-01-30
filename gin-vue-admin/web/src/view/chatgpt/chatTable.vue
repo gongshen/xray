@@ -146,7 +146,6 @@ import { getTableApi,
   createSKApi,
   getSKApi,
   deleteSKApi } from '@/api/chatgpt'
-import { getDB as getDBAPI } from '@/api/autoCode'
 import { ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, Plus, Position, UserFilled, Service } from '@element-plus/icons-vue'
@@ -167,18 +166,9 @@ const getSK = async() => {
   chatToken.value = res.data.ok
 }
 
-// 获取数据库列表
-const getDB = async() => {
-  const res = await getDBAPI()
-  if (res.code === 0) {
-    dbArr.value = res.data.dbs
-  }
-}
-
 // 初始化
 onMounted(() => {
   getSK()
-  getDB()
 })
 
 // 保存SK

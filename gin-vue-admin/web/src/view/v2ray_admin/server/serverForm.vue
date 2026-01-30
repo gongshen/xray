@@ -8,6 +8,9 @@
         <el-form-item label="端口:" prop="port">
           <el-input v-model.number="formData.port" :clearable="true" :required="true" placeholder="请输入" />
         </el-form-item>
+        <el-form-item label="统计端口:" prop="stat_port">
+          <el-input v-model.number="formData.stat_port" :clearable="true" placeholder="默认: 56611" />
+        </el-form-item>
         <el-form-item label="备注:" prop="remark">
           <el-input v-model="formData.remark" :clearable="false" placeholder="请输入" />
         </el-form-item>
@@ -46,6 +49,7 @@ const formData = ref({
             ip: '',
             port: 80,
             remark: '',
+            stat_port: 0,
         })
 // 验证规则
 const rule = reactive({})

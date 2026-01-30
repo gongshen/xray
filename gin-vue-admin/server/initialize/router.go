@@ -1,11 +1,12 @@
 package initialize
 
 import (
+	"net/http"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/middleware"
 	"github.com/flipped-aurora/gin-vue-admin/server/router"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func Routers() *gin.Engine {
@@ -41,10 +42,8 @@ func Routers() *gin.Engine {
 		systemRouter.InitMenuRouter(PrivateGroup)
 		systemRouter.InitSystemRouter(PrivateGroup)
 		systemRouter.InitCasbinRouter(PrivateGroup)
-		systemRouter.InitAutoCodeRouter(PrivateGroup)
 		systemRouter.InitAuthorityRouter(PrivateGroup)
 		systemRouter.InitSysDictionaryRouter(PrivateGroup)
-		systemRouter.InitAutoCodeHistoryRouter(PrivateGroup)
 		systemRouter.InitSysOperationRecordRouter(PrivateGroup)
 		systemRouter.InitSysDictionaryDetailRouter(PrivateGroup)
 		systemRouter.InitAuthorityBtnRouterRouter(PrivateGroup)

@@ -2,6 +2,7 @@ package v2ray_admin
 
 import (
 	"encoding/json"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
@@ -97,4 +98,26 @@ func (serverService *ServerService) UpdateServerConfig(id uint, config json.RawM
 func (serverService *ServerService) SaveServerUsedQuotaLog(log *v2ray.ServerQuotaLog) (err error) {
 	err = global.GVA_DB.Create(log).Error
 	return err
+}
+
+// SysInfo 系统信息结构 (与 stat 程序返回的结构对应)
+type SysInfo struct {
+	DiskTotal  uint64  `json:"dt"` // 磁盘总量 (MB)
+	DiskUsed   uint64  `json:"du"` // 磁盘已用 (MB)
+	MemTotal   uint64  `json:"mt"` // 内存总量 (MB)
+	MemUsed    uint64  `json:"mu"` // 内存已用 (MB)
+	CPUPercent float64 `json:"cp"` // CPU使用率
+	Timestamp  int64   `json:"ts"` // 时间戳
+}
+
+// UpdateServerSysInfo 更新服务器系统信息
+func (serverService *ServerService) UpdateServerSysInfo(serverID uint, info *SysInfo) error {
+	return global.GVA_DB.Table("v2ray_server").Where("ID = ?", serverID).Updates(map[string]interface{}{
+		"disk_total":  info.DiskTotal,
+		"disk_used":   info.DiskUsed,
+		"mem_total":   info.MemTotal,
+		"mem_used":    info.MemUsed,
+		"cpu_percent": info.CPUPercent,
+		"sysinfo_at":  info.Timestamp,
+	}).Error
 }
