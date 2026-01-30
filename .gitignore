@@ -4,6 +4,7 @@
 dist/
 gin-vue-admin/web/dist/
 gin-vue-admin/server/resource/
+log/
 
 # 临时文件
 *.tmp
