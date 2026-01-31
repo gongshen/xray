@@ -171,11 +171,15 @@ function download_stat() {
   # 获取版本号
   get_project_version || return 1
   
+  # 先停止正在运行的服务，避免 "Text file busy" 错误
+  if systemctl is-active --quiet stat 2>/dev/null; then
+    print_ok "停止 stat 服务..."
+    systemctl stop stat
+    sleep 1
+  fi
+  
   # 检查是否需要覆盖
   confirm_overwrite "${stat_dir}" "stat 二进制文件" || return 0
-  
-  # 停止正在运行的服务，避免 "Text file busy" 错误
-  systemctl stop stat 2>/dev/null
   
   wget -O ${stat_dir} ${github_release_url}/stat
   if [ $? -ne 0 ]; then

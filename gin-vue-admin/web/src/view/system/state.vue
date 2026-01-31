@@ -129,37 +129,6 @@
           </el-card>
         </el-col>
       </el-row>
-
-      <!-- 流量使用情况 -->
-      <el-row :gutter="15" class="system_state">
-        <el-col :span="24">
-          <el-card class="card_item quota-card">
-            <template #header>
-              <div>流量使用情况</div>
-            </template>
-            <div class="quota-container">
-              <div class="quota-stats">
-                <div class="quota-item">
-                  <div class="quota-label">已用流量</div>
-                  <div class="quota-value">{{ formatBytes(currentServer.used_quota) }}</div>
-                </div>
-                <div class="quota-item">
-                  <div class="quota-label">总流量</div>
-                  <div class="quota-value">{{ formatBytes(currentServer.total_quota) }}</div>
-                </div>
-              </div>
-              <div class="quota-progress">
-                <el-progress
-                  type="dashboard"
-                  :percentage="quotaPercent"
-                  :color="colors"
-                  :width="progressWidthSmall"
-                />
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
     </template>
 
     <!-- 无数据提示 -->
@@ -186,7 +155,6 @@ const colors = ref([
 
 // 响应式进度条宽度
 const progressWidth = computed(() => isMobile.value ? 100 : 120)
-const progressWidthSmall = computed(() => isMobile.value ? 80 : 100)
 
 // 检测移动端
 const checkMobile = () => {
@@ -213,11 +181,6 @@ const memPercent = computed(() => {
 const cpuPercent = computed(() => {
   if (!currentServer.value) return 0
   return Math.round(currentServer.value.cpu_percent || 0)
-})
-
-const quotaPercent = computed(() => {
-  if (!currentServer.value || !currentServer.value.total_quota) return 0
-  return Math.round((currentServer.value.used_quota / currentServer.value.total_quota) * 100)
 })
 
 // 判断服务器是否在线 (5分钟内有更新)
@@ -326,15 +289,26 @@ export default {
 
 .system_state {
   margin-bottom: 15px;
+  display: flex;
+}
+
+/* 让同一行的卡片高度一致 */
+.system_state > .el-col {
+  display: flex;
 }
 
 .card_item {
-  min-height: 180px;
+  width: 100%;
   margin-bottom: 15px;
 }
 
-.quota-card {
-  min-height: auto;
+/* 卡片内容区域使用flex布局 */
+.card_item :deep(.el-card__body) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 140px;
 }
 
 .card-header {
@@ -378,12 +352,14 @@ export default {
 .metric-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 15px;
+  justify-content: space-around;
+  gap: 20px;
+  width: 100%;
 }
 
 .metric-info {
   flex: 1;
+  max-width: 200px;
 }
 
 .metric-progress {
@@ -396,47 +372,13 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px 0;
+  width: 100%;
 }
 
 .cpu-text {
   margin-top: 10px;
   font-size: 14px;
   color: #666;
-}
-
-/* 流量容器 */
-.quota-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.quota-stats {
-  display: flex;
-  gap: 30px;
-  flex: 1;
-}
-
-.quota-item {
-  text-align: center;
-}
-
-.quota-label {
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.quota-value {
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.quota-progress {
-  flex-shrink: 0;
 }
 
 /* 移动端适配 */
@@ -455,7 +397,15 @@ export default {
     width: 100%;
   }
 
-  .card_item {
+  .system_state {
+    display: block;
+  }
+
+  .system_state > .el-col {
+    display: block;
+  }
+
+  .card_item :deep(.el-card__body) {
     min-height: auto;
   }
 
@@ -466,48 +416,12 @@ export default {
 
   .metric-info {
     width: 100%;
+    max-width: none;
     margin-bottom: 15px;
-  }
-
-  .quota-container {
-    flex-direction: column;
-  }
-
-  .quota-stats {
-    width: 100%;
-    justify-content: space-around;
-    margin-bottom: 15px;
-  }
-
-  .quota-value {
-    font-size: 18px;
   }
 
   .info-row {
     font-size: 14px;
-  }
-}
-
-/* 超小屏幕 */
-@media screen and (max-width: 480px) {
-  .quota-stats {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .quota-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
-  }
-
-  .quota-label {
-    margin-bottom: 0;
-  }
-
-  .quota-value {
-    font-size: 16px;
   }
 }
 </style>
