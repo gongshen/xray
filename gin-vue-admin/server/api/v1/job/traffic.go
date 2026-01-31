@@ -66,9 +66,17 @@ func collectTraffic(srv *v2ray.Server, createdAt int) {
 		global.GVA_LOG.Error("CollectorJob Do traffic", zap.Error(err), zap.String("ip", srv.Ip))
 		return
 	}
+
+	// Check if response is valid JSON
+	body := resp.Body()
+	if len(body) == 0 {
+		global.GVA_LOG.Debug("CollectorJob traffic: empty response", zap.String("ip", srv.Ip))
+		return
+	}
+
 	statsResp := new(command.QueryStatsResponse)
-	if err := json.Unmarshal(resp.Body(), statsResp); err != nil {
-		global.GVA_LOG.Error("CollectorJob Unmarshal traffic", zap.Error(err))
+	if err := json.Unmarshal(body, statsResp); err != nil {
+		global.GVA_LOG.Error("CollectorJob Unmarshal traffic", zap.Error(err), zap.String("body", string(body)))
 		return
 	}
 
@@ -102,13 +110,20 @@ func collectTraffic(srv *v2ray.Server, createdAt int) {
 		}
 		usedQuota += uint64(stat.Value)
 	}
-	if err := serviceGroup.V2rayAdminServiceGroup.StatsCollector(itemMap); err != nil {
-		global.GVA_LOG.Error("CollectorJob StatsCollector", zap.Error(err))
-		return
+
+	// Only call StatsCollector if there's data to insert
+	if len(itemMap) > 0 {
+		if err := serviceGroup.V2rayAdminServiceGroup.StatsCollector(itemMap); err != nil {
+			global.GVA_LOG.Error("CollectorJob StatsCollector", zap.Error(err))
+			return
+		}
 	}
-	if err := serviceGroup.V2rayAdminServiceGroup.UpdateServerUsedQuota(srv.ID, usedQuota); err != nil {
-		global.GVA_LOG.Error("CollectorJob UpdateServerUsedQuota", zap.Error(err))
-		return
+
+	if usedQuota > 0 {
+		if err := serviceGroup.V2rayAdminServiceGroup.UpdateServerUsedQuota(srv.ID, usedQuota); err != nil {
+			global.GVA_LOG.Error("CollectorJob UpdateServerUsedQuota", zap.Error(err))
+			return
+		}
 	}
 }
 
@@ -124,9 +139,16 @@ func collectSysInfo(srv *v2ray.Server) {
 		return
 	}
 
+	// Check if response is valid JSON
+	body := resp.Body()
+	if len(body) == 0 {
+		global.GVA_LOG.Debug("CollectorJob sysinfo: empty response", zap.String("ip", srv.Ip))
+		return
+	}
+
 	sysInfo := new(v2ray_admin.SysInfo)
-	if err := json.Unmarshal(resp.Body(), sysInfo); err != nil {
-		global.GVA_LOG.Error("CollectorJob Unmarshal sysinfo", zap.Error(err))
+	if err := json.Unmarshal(body, sysInfo); err != nil {
+		global.GVA_LOG.Error("CollectorJob Unmarshal sysinfo", zap.Error(err), zap.String("body", string(body)), zap.String("ip", srv.Ip))
 		return
 	}
 

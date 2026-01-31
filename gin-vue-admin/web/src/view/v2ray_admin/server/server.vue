@@ -95,6 +95,9 @@
         <el-form-item label="总额度(GB):"  prop="resetDate">
           <el-input v-model.number="formData.total_quota" :clearable="false"  placeholder="请输入" />
         </el-form-item>
+        <el-form-item label="统计端口:"  prop="stat_port" >
+          <el-input v-model.number="formData.stat_port" :clearable="true" placeholder="默认: 56611" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -134,6 +137,7 @@ const formData = ref({
         port: 80,
         remark: '',
         total_quota: 1000,
+        stat_port: 0,
         })
 
 // 验证规则
@@ -356,6 +360,8 @@ const closeDialog = () => {
         ip: '',
         port: 0,
         remark: '',
+        total_quota: 1000,
+        stat_port: 0,
         }
 }
 // 弹窗确定

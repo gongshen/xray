@@ -3,6 +3,10 @@ package v2ray_admin
 import (
 	"bytes"
 	"fmt"
+	"sort"
+	"strconv"
+	"time"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -10,9 +14,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
 	v2rayReq "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/request"
 	v2rayResp "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/response"
-	"sort"
-	"strconv"
-	"time"
 )
 
 var (
@@ -151,6 +152,10 @@ func format(used uint64) string {
 }
 
 func (statService *StatService) StatsCollector(statsMap map[string]*v2ray.Stat) (err error) {
+	// Skip if no stats to insert
+	if len(statsMap) == 0 {
+		return nil
+	}
 	buf := bytes.Buffer{}
 	buf.WriteString("INSERT INTO v2ray_stat (tag,down,up,created_at,server_ip) VALUES ")
 	args := make([]interface{}, 0, len(statsMap)*5)
