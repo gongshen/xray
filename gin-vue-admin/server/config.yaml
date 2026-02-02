@@ -66,6 +66,3 @@ timer:
   - tableName: jwt_blacklists
     compareField: created_at
     interval: 168h
-
-# Stat 服务端口
-stat_port: 56611
