@@ -1,7 +1,7 @@
 package v2ray_admin
 
 import (
-	"github.com/flipped-aurora/gin-vue-admin/server/api/v1"
+	v1 "github.com/flipped-aurora/gin-vue-admin/server/api/v1"
 	"github.com/flipped-aurora/gin-vue-admin/server/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +19,8 @@ func (s *ServerRouter) InitServerRouter(Router *gin.RouterGroup) {
 		serverRouter.DELETE("deleteServer", serverApi.DeleteServer)           // 删除Server
 		serverRouter.DELETE("deleteServerByIds", serverApi.DeleteServerByIds) // 批量删除Server
 		serverRouter.PUT("updateServer", serverApi.UpdateServer)              // 更新Server
-		serverRouter.PUT("restartXray", serverApi.RestartXray)
+		serverRouter.PUT("restartXray", serverApi.RestartXray)                // 重启Xray
+		serverRouter.POST("restartVPS", serverApi.RestartVPS)                 // 重启VPS服务器
 	}
 	{
 		serverRouterWithoutRecord.GET("findServer", serverApi.FindServer)       // 根据ID获取Server

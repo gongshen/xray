@@ -15,35 +15,8 @@
         align-items: center;
     }
 
-    .el-aside {
-        width: 100% !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        z-index: 1000;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        
-        &.mobile-visible {
-            transform: translateX(0);
-        }
-        
-        .menu-total {
-            z-index: 999;
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-        }
-    }
+    // 注意：侧边栏的显示/隐藏由 main.scss 中的 .mobile.hideside/.mobile.openside 控制
+    // 这里不要覆盖 transform 属性
 
     // Main content area
     .layout-cont {
@@ -183,26 +156,49 @@
         }
     }
 
-    // Dialogs
+    // Dialogs - 使用rem实现动态缩放
     .el-dialog {
         width: 95% !important;
-        margin: 10px auto !important;
+        margin: 0.625rem auto !important;
         max-height: 90vh;
         overflow-y: auto;
         
+        .el-dialog__header {
+            padding: 0.75rem 1rem;
+            
+            .el-dialog__title {
+                font-size: 1rem;
+            }
+        }
+        
         .el-dialog__body {
-            padding: 15px !important;
+            padding: 1rem !important;
+            
+            .el-form-item {
+                margin-bottom: 0.75rem;
+                
+                .el-form-item__label {
+                    font-size: 0.8125rem;
+                    padding-bottom: 0.25rem;
+                }
+                
+                .el-input__inner {
+                    font-size: 0.875rem;
+                }
+            }
         }
         
         .el-dialog__footer {
-            padding: 10px 15px;
+            padding: 0.625rem 1rem;
             
             .dialog-footer {
                 display: flex;
                 flex-direction: column;
+                gap: 0.5rem;
                 
                 .el-button {
-                    margin: 5px 0;
+                    margin: 0;
+                    width: 100%;
                 }
             }
         }
@@ -335,6 +331,12 @@
 
 // Common styles for both mobile and tablet
 @media screen and (max-width: 768px) {
+    // 动态适配：基于视口宽度计算根字体大小
+    // 设计稿按375px，1rem = 16px，则 16/375 * 100 = 4.267vw
+    html {
+        font-size: clamp(12px, 4vw, 16px);
+    }
+    
     // Fix for fixed position elements
     .fixed-header {
         position: relative !important;
@@ -344,18 +346,86 @@
     .el-button,
     .el-link,
     .el-menu-item {
-        min-height: 44px;
+        min-height: 2.75rem;
     }
 
     // Improve form usability
     .el-input__inner {
-        height: 40px;
+        height: 2.5rem;
     }
 
     // Improve readability
     body {
-        font-size: 14px;
+        font-size: 0.875rem;
         line-height: 1.5;
+    }
+    
+    // 表格动态适配
+    .el-table {
+        font-size: 0.75rem;
+        
+        .cell {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            padding: 0.25rem 0.5rem !important;
+        }
+        
+        th .cell {
+            font-size: 0.75rem;
+        }
+        
+        // 表格操作按钮
+        .table-button {
+            padding: 0.25rem 0.375rem !important;
+            font-size: 0.6875rem !important;
+        }
+    }
+    
+    // 表格容器
+    .gva-table-box {
+        padding: 0.5rem !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; // iOS 平滑滚动
+        
+        .el-table {
+            min-width: 600px;
+            
+            // 改善触摸滚动体验
+            &__body-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+        
+        // 添加滚动提示
+        &::after {
+            content: '← 左右滑动查看更多 →';
+            display: block;
+            text-align: center;
+            color: #999;
+            font-size: 0.75rem;
+            padding: 0.5rem 0;
+            margin-top: 0.5rem;
+        }
+    }
+    
+    // 表单标签
+    .el-form-item__label {
+        font-size: 0.8125rem;
+    }
+    
+    // 卡片
+    .el-card {
+        font-size: 0.8125rem;
+        
+        .el-card__header {
+            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+        }
+        
+        .el-card__body {
+            padding: 0.75rem 1rem;
+        }
     }
     
     // Improve dropdown usability
@@ -377,6 +447,131 @@
     // Fix for cascader
     .el-cascader__dropdown {
         max-width: 90vw;
+    }
+    
+    // 管理区域
+    .admin-box {
+        margin: 5rem 0.125rem 0.625rem !important;
+        padding: 0.5rem 0.625rem !important;
+    }
+    
+    // 搜索框
+    .gva-search-box {
+        padding: 0.625rem !important;
+        
+        .el-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .el-form-item {
+            margin-bottom: 0.5rem !important;
+            margin-right: 0 !important;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            
+            .el-form-item__label {
+                font-size: 0.75rem !important;
+                width: 100% !important;
+                text-align: left !important;
+                padding-right: 0;
+                padding-bottom: 0.25rem;
+                float: none !important;
+            }
+            
+            .el-form-item__content {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-left: 0 !important;
+                width: 100%;
+                
+                .el-date-editor,
+                .el-select,
+                .el-input {
+                    width: 100% !important;
+                    min-width: 0 !important;
+                    flex: 1;
+                }
+                
+                // 日期选择器之间的分隔符
+                > span {
+                    display: none;
+                }
+                
+                // 刷新图标
+                .auto-icon {
+                    position: absolute;
+                    right: 0.5rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    cursor: pointer;
+                    font-size: 1rem;
+                }
+            }
+            
+            // 创建时间的特殊处理
+            &:has(.el-date-editor) {
+                .el-form-item__content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+            }
+            
+            // 按钮组
+            &:last-child {
+                .el-form-item__content {
+                    display: flex;
+                    flex-direction: row;
+                    gap: 0.5rem;
+                    
+                    .el-button {
+                        flex: 1;
+                    }
+                }
+            }
+        }
+    }
+    
+    // 按钮列表
+    .gva-btn-list {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        
+        .el-button {
+            margin-left: 0 !important;
+            font-size: 0.75rem;
+        }
+    }
+    
+    // 分页
+    .gva-pagination {
+        padding: 0.75rem 0.5rem !important;
+        
+        .el-pagination {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            
+            .el-pagination__total,
+            .el-pagination__sizes,
+            .el-pagination__jump {
+                display: none;
+            }
+        }
+    }
+    
+    // 图表容器
+    .gva-card-box {
+        padding: 0.5rem !important;
+        
+        .el-card {
+            margin-bottom: 0.75rem;
+        }
     }
 }
 

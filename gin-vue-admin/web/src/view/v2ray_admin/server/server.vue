@@ -79,7 +79,7 @@
       </el-form>
     </el-dialog>
     <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" title="弹窗操作">
-      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+      <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="100px">
         <el-form-item label="服务器ip:"  prop="ip" >
           <el-input v-model="formData.ip" :clearable="true" placeholder="请输入" />
         </el-form-item>
@@ -405,5 +405,35 @@ const formatFlow = (value) => {
 
 </script>
 
-<style>
+<style scoped>
+/* 移动端优化 */
+@media screen and (max-width: 768px) {
+  /* 表格横向滚动优化 */
+  .gva-table-box {
+    position: relative;
+    
+    /* 添加渐变提示 */
+    &::before {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 3rem;
+      width: 2rem;
+      background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+  
+  /* 配置信息弹窗 */
+  .el-dialog {
+    pre {
+      font-size: 0.75rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  }
+}
 </style>

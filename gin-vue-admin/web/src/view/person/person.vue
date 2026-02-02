@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="24" :md="6" :lg="6">
         <div class="fl-left avatar-box">
           <div class="user-card">
             <div
@@ -44,7 +44,7 @@
           </div>
         </div>
       </el-col>
-      <el-col :span="18">
+      <el-col :xs="24" :sm="24" :md="18" :lg="18">
         <div class="user-addcount">
           <el-tabs v-model="activeName" @tab-click="handleClick">
             <el-tab-pane label="账号绑定" name="second">
@@ -515,5 +515,114 @@ const changeEmail = async() => {
 .code-box{
   display: flex;
   justify-content: space-between;
+}
+
+/* 移动端适配 - 使用rem实现动态缩放 */
+@media screen and (max-width: 768px) {
+  .avatar-box {
+    width: 100% !important;
+    box-shadow: none;
+    margin-bottom: 1rem;
+    
+    .user-card {
+      min-height: auto !important;
+      padding: 1rem 0.75rem;
+      
+      .user-headpic-update {
+        width: 5rem;
+        height: 5rem;
+        line-height: 5rem;
+        
+        .update {
+          width: 5rem;
+          height: 5rem;
+          font-size: 0.75rem;
+        }
+      }
+      
+      .user-personality {
+        padding: 1rem 0;
+        
+        .nickName {
+          font-size: 1.125rem !important;
+        }
+        
+        .person-info {
+          font-size: 0.75rem !important;
+        }
+      }
+    }
+  }
+  
+  .user-addcount {
+    padding: 0.75rem !important;
+    
+    ul li {
+      .title {
+        font-size: 0.875rem !important;
+        padding: 0.5rem !important;
+      }
+      
+      .desc {
+        font-size: 0.8125rem !important;
+        padding: 0 0.5rem 1rem 0.5rem !important;
+        
+        a {
+          float: none !important;
+          display: block;
+          margin-top: 0.5rem;
+        }
+      }
+    }
+  }
+  
+  .el-tabs {
+    .el-tabs__item {
+      font-size: 0.875rem !important;
+      padding: 0 0.625rem !important;
+    }
+  }
+}
+
+/* 超小屏幕 */
+@media screen and (max-width: 480px) {
+  .avatar-box .user-card {
+    padding: 0.625rem 0.5rem;
+    
+    .user-headpic-update {
+      width: 4rem;
+      height: 4rem;
+      line-height: 4rem;
+      
+      .update {
+        width: 4rem;
+        height: 4rem;
+        font-size: 0.625rem;
+      }
+    }
+    
+    .user-personality {
+      padding: 0.625rem 0;
+      
+      .nickName {
+        font-size: 1rem !important;
+      }
+      
+      .person-info {
+        font-size: 0.6875rem !important;
+        margin-top: 0.25rem !important;
+      }
+    }
+  }
+  
+  .user-addcount ul li {
+    .title {
+      font-size: 0.8125rem !important;
+    }
+    
+    .desc {
+      font-size: 0.75rem !important;
+    }
+  }
 }
 </style>

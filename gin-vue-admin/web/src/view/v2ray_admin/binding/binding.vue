@@ -399,5 +399,76 @@ init()
 
 </script>
 
-<style>
+<style scoped>
+/* 移动端优化 */
+@media screen and (max-width: 768px) {
+  .gva-search-box {
+    .el-form-item {
+      /* 服务器ip和用户名的选择器容器 */
+      &:has(.el-select) {
+        position: relative;
+        
+        .el-form-item__content {
+          position: relative;
+          padding-right: 2rem;
+        }
+        
+        .auto-icon {
+          position: absolute;
+          right: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 1.25rem;
+          color: #409eff;
+          cursor: pointer;
+          z-index: 10;
+        }
+      }
+    }
+  }
+  
+  /* 表格横向滚动优化 */
+  .gva-table-box {
+    position: relative;
+    
+    /* 添加渐变提示 */
+    &::before {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 3rem;
+      width: 2rem;
+      background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+  
+  /* 分享弹窗优化 */
+  .el-dialog {
+    .el-dialog__body {
+      text-align: center;
+      
+      h2 {
+        font-size: 1rem;
+        margin: 0.5rem 0;
+      }
+      
+      img {
+        max-width: 100% !important;
+        height: auto !important;
+      }
+      
+      .btn {
+        width: 100%;
+        margin: 0.5rem 0;
+      }
+      
+      .el-divider {
+        margin: 1rem 0;
+      }
+    }
+  }
+}
 </style>

@@ -2,6 +2,9 @@ package v2ray_admin
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
@@ -120,4 +123,47 @@ func (serverService *ServerService) UpdateServerSysInfo(serverID uint, info *Sys
 		"cpu_percent": info.CPUPercent,
 		"sysinfo_at":  info.Timestamp,
 	}).Error
+}
+
+// RestartVPS 重启 VPS 服务器
+func (serverService *ServerService) RestartVPS(server *v2ray.Server) error {
+	// 从全局配置获取 VeID 和 ApiKey
+	bwgConfig := global.GVA_CONFIG.BWG
+	if bwgConfig.VeID == "" || bwgConfig.ApiKey == "" {
+		return fmt.Errorf("BWG 配置未设置，请在 config.yaml 中配置 bwg.veid 和 bwg.apiKey")
+	}
+
+	// 构建请求 URL
+	url := fmt.Sprintf("https://api.64clouds.com/v1/restart?veid=%s&api_key=%s", bwgConfig.VeID, bwgConfig.ApiKey)
+
+	// 发送 HTTP GET 请求
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("请求失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// 读取响应
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("读取响应失败: %v", err)
+	}
+
+	// 检查 HTTP 状态码
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("重启失败 (HTTP %d): %s", resp.StatusCode, string(body))
+	}
+
+	// 解析 JSON 响应
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return fmt.Errorf("解析响应失败: %v", err)
+	}
+
+	// 检查是否有错误信息
+	if errMsg, ok := result["error"].(string); ok && errMsg != "" {
+		return fmt.Errorf("重启失败: %s", errMsg)
+	}
+
+	return nil
 }

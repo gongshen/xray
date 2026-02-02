@@ -62,3 +62,11 @@ export const restartXrayApi = (data) => {
     data
   })
 }
+
+export const restartVPSApi = (data) => {
+  return service({
+    url: '/v2ray_admin/server/restartVPS',
+    method: 'post',
+    data
+  })
+}

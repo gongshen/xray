@@ -11,6 +11,7 @@
         />
       </el-select>
       <el-button type="primary" :icon="Refresh" @click="refreshData" :loading="loading">刷新</el-button>
+      <el-button type="danger" :icon="RefreshRight" @click="restartVPS" :loading="restartLoading">重启服务器</el-button>
     </div>
 
     <template v-if="currentServer">
@@ -137,12 +138,14 @@
 </template>
 
 <script setup>
-import { getAllServerApi } from '@/api/server'
+import { getAllServerApi, restartVPSApi } from '@/api/server'
 import { onUnmounted, onMounted, ref, computed } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, RefreshRight } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const timer = ref(null)
 const loading = ref(false)
+const restartLoading = ref(false)
 const serverList = ref([])
 const selectedServerId = ref(null)
 const isMobile = ref(false)
@@ -241,6 +244,36 @@ const refreshData = () => {
 // 服务器切换
 const onServerChange = () => {
   // 切换服务器时可以做一些额外操作
+}
+
+// 重启VPS服务器
+const restartVPS = () => {
+  if (!currentServer.value) {
+    ElMessage.warning('请先选择服务器')
+    return
+  }
+  
+  ElMessageBox.confirm('确定要重启该服务器吗？重启可能需要几分钟时间。', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    restartLoading.value = true
+    try {
+      const res = await restartVPSApi({ ID: currentServer.value.ID })
+      if (res.code === 0) {
+        ElMessage.success('重启成功')
+      } else {
+        ElMessage.error(res.msg || '重启失败')
+      }
+    } catch (error) {
+      ElMessage.error('重启失败: ' + (error.message || '未知错误'))
+    } finally {
+      restartLoading.value = false
+    }
+  }).catch(() => {
+    // 用户取消
+  })
 }
 
 // 初始化
@@ -381,47 +414,77 @@ export default {
   color: #666;
 }
 
-/* 移动端适配 */
+/* 移动端适配 - 使用rem实现动态缩放 */
 @media screen and (max-width: 768px) {
   .server-state {
-    padding: 8px;
+    padding: 0.5rem;
   }
 
   .server-selector {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.625rem;
+    margin-bottom: 1rem;
   }
 
   .server-select {
     max-width: none;
     width: 100%;
   }
+  
+  /* 按钮容器 */
+  .server-selector {
+    .el-button {
+      width: 100%;
+    }
+  }
 
   .system_state {
     display: block;
+    margin-bottom: 1rem;
   }
 
   .system_state > .el-col {
     display: block;
   }
 
+  .card_item {
+    margin-bottom: 1rem;
+  }
+
   .card_item :deep(.el-card__body) {
     min-height: auto;
+    padding: 0.75rem;
   }
 
   .metric-container {
     flex-direction: column;
     text-align: center;
+    gap: 1rem;
   }
 
   .metric-info {
     width: 100%;
     max-width: none;
-    margin-bottom: 15px;
+    margin-bottom: 0.75rem;
   }
 
   .info-row {
-    font-size: 14px;
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+  }
+
+  .info-label {
+    font-size: 0.8125rem;
+  }
+
+  .info-value {
+    font-size: 0.8125rem;
+  }
+
+  .cpu-text {
+    font-size: 0.875rem;
+    margin-top: 0.625rem;
   }
 }
 </style>

@@ -1,6 +1,8 @@
 package v2ray_admin
 
 import (
+	"net"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -10,7 +12,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"net"
 )
 
 type ServerApi struct {
@@ -229,4 +230,38 @@ func (serverApi *ServerApi) RestartXray(c *gin.Context) {
 		return
 	}
 	response.OkWithMessage("重启成功", c)
+}
+
+// RestartVPS 重启 VPS 服务器
+// @Tags Server
+// @Summary 重启 VPS 服务器
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body v2ray.Server true "重启 VPS 服务器"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"重启成功"}"
+// @Router /server/restartVPS [post]
+func (serverApi *ServerApi) RestartVPS(c *gin.Context) {
+	var server v2ray.Server
+	err := c.ShouldBindJSON(&server)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	// 获取完整的服务器信息
+	fullServer, err := serverService.GetServer(server.ID)
+	if err != nil {
+		global.GVA_LOG.Error("获取服务器信息失败!", zap.Error(err))
+		response.FailWithMessage("获取服务器信息失败", c)
+		return
+	}
+
+	// 调用重启服务
+	if err := serverService.RestartVPS(&fullServer); err != nil {
+		global.GVA_LOG.Error("重启VPS失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("重启成功", c)
+	}
 }

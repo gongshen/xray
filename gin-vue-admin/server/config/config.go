@@ -30,4 +30,13 @@ type Server struct {
 	Cors CORS `mapstructure:"cors" json:"cors" yaml:"cors"`
 
 	STAT_PORT int64 `json:"stat_port" yaml:"stat_port"`
+
+	// BWG VPS 管理配置
+	BWG BWG `mapstructure:"bwg" json:"bwg" yaml:"bwg"`
+}
+
+// BWG VPS 管理配置
+type BWG struct {
+	VeID   string `mapstructure:"veid" json:"veid" yaml:"veid"`
+	ApiKey string `mapstructure:"apiKey" json:"apiKey" yaml:"apiKey"`
 }
