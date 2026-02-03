@@ -427,16 +427,31 @@ init()
     }
   }
   
-  /* 表格横向滚动优化 */
+  /* 表格横向滚动优化 - 确保按钮固定 */
   .gva-table-box {
     position: relative;
+    
+    /* 按钮区域固定，不随表格滚动 */
+    .gva-btn-list {
+      position: relative;
+      z-index: 2;
+      background: #fff;
+      padding: 0.5rem;
+      border-bottom: 1px solid #ebeef5;
+    }
+    
+    /* 表格容器可滚动 */
+    .el-table {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     
     /* 添加渐变提示 */
     &::before {
       content: '';
       position: absolute;
       right: 0;
-      top: 0;
+      top: 4rem; /* 调整位置，避免覆盖按钮 */
       bottom: 3rem;
       width: 2rem;
       background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);

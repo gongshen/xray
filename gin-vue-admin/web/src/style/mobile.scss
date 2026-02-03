@@ -384,11 +384,22 @@
     // 表格容器
     .gva-table-box {
         padding: 0.5rem !important;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch; // iOS 平滑滚动
         
+        // 按钮区域固定
+        .gva-btn-list {
+            position: relative;
+            z-index: 2;
+            background: #fff;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #ebeef5;
+            margin-bottom: 0.5rem;
+        }
+        
+        // 表格可滚动
         .el-table {
             min-width: 600px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; // iOS 平滑滚动
             
             // 改善触摸滚动体验
             &__body-wrapper {
