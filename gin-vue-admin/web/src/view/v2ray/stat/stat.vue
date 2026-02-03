@@ -39,17 +39,7 @@
         <h3>详细流量记录</h3>
         <el-tag>共 {{ total }} 条记录</el-tag>
       </div>
-      
-      <!-- 调试信息 -->
-      <div v-if="tableData.length === 0 && !loading" class="debug-info" style="padding: 20px; background: #f5f5f5; margin-bottom: 20px; border-radius: 8px;">
-        <h4>调试信息:</h4>
-        <p><strong>数据长度:</strong> {{ tableData.length }}</p>
-        <p><strong>总记录数:</strong> {{ total }}</p>
-        <p><strong>当前页:</strong> {{ page }}</p>
-        <p><strong>页大小:</strong> {{ pageSize }}</p>
-        <p><strong>加载状态:</strong> {{ loading }}</p>
-        <el-button @click="testData" type="primary" size="small">加载测试数据</el-button>
-      </div>
+
       
       <el-table
           ref="multipleTable"
@@ -62,16 +52,6 @@
           :empty-text="loading ? '加载中...' : (tableData.length === 0 ? '暂无数据' : '')"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="用户" prop="username" width="120">
-          <template #default="scope">
-            <div class="user-cell">
-              <el-avatar :size="24" class="user-avatar">
-                {{ scope.row.username?.charAt(0)?.toUpperCase() || 'U' }}
-              </el-avatar>
-              <span>{{ scope.row.username }}</span>
-            </div>
-          </template>
-        </el-table-column>
         <el-table-column align="left" label="服务器" prop="server_ip" width="200">
           <template #default="scope">
             <el-tag type="info" size="small">{{ scope.row.server_ip }}</el-tag>
@@ -539,37 +519,6 @@ onMounted(async () => {
   })
 })
 
-// 测试数据函数
-const testData = () => {
-  console.log('加载测试数据')
-  tableData.value = [
-    {
-      "ID": 7684313,
-      "category": "",
-      "tag": "3",
-      "down": "10.67MB",
-      "up": "830.51KB",
-      "total": "11.49MB",
-      "created_at": "2026年1月17日",
-      "username": "龚申",
-      "server_ip": "212.50.244.34"
-    },
-    {
-      "ID": 7677326,
-      "category": "",
-      "tag": "3",
-      "down": "709.07MB",
-      "up": "17.21MB",
-      "total": "726.27MB",
-      "created_at": "2026年1月16日",
-      "username": "龚申",
-      "server_ip": "212.50.244.34"
-    }
-  ]
-  total.value = 2
-  console.log('测试数据已设置:', tableData.value)
-}
-
 const users = ref([])
 </script>
 <style scoped>
@@ -651,19 +600,6 @@ const users = ref([])
 }
 
 /* 表格单元格样式 */
-.user-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.user-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-weight: bold;
-  font-size: 12px;
-}
-
 .traffic-down {
   color: #67c23a;
   font-weight: 500;

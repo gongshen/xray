@@ -103,23 +103,23 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 			ServerIp:  stat.ServerIp,
 		})
 	}
-	// 补充用户名
-	nickNameMap := make(map[string]string)
-	tagsMap := make(map[string]struct{})
-	for _, stat := range stats {
-		tagsMap[stat.Tag] = struct{}{}
-	}
-	tags := make([]string, 0, len(tagsMap))
-	for tag := range tagsMap {
-		tags = append(tags, tag)
-	}
-	nickNameMap, err = findUserNameByIds(tags)
-	for _, v := range ans {
-		v.Username = nickNameMap[v.Tag]
-	}
-	if err != nil {
-		return
-	}
+	// 个人流量使用接口，无需补充用户名
+	// nickNameMap := make(map[string]string)
+	// tagsMap := make(map[string]struct{})
+	// for _, stat := range stats {
+	// 	tagsMap[stat.Tag] = struct{}{}
+	// }
+	// tags := make([]string, 0, len(tagsMap))
+	// for tag := range tagsMap {
+	// 	tags = append(tags, tag)
+	// }
+	// nickNameMap, err = findUserNameByIds(tags)
+	// for _, v := range ans {
+	// 	v.Username = nickNameMap[v.Tag]
+	// }
+	// if err != nil {
+	// 	return
+	// }
 	return ans, total, err
 }
 

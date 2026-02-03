@@ -47,20 +47,133 @@
             />
         </div>
     </div>
-    <el-dialog v-model="shareFormVisible" :before-close="closeShareDialog" title="弹窗操作">
-      <el-form :model="shareInfo" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-        <h2>shadowrocket,qv2ray,v2rayXS</h2>
-        <div>
-          <img :src="shareInfo.share1" alt="二维码" style="width: 300px; height: 300px;"/>
+    <el-dialog 
+      v-model="shareFormVisible" 
+      :before-close="closeShareDialog" 
+      title="分享配置"
+      width="90%"
+      :style="{ maxWidth: '600px' }"
+      class="share-dialog"
+      center
+    >
+      <div class="share-container">
+        <!-- 第一个配置 -->
+        <div class="config-section">
+          <div class="config-header">
+            <div class="config-title">
+              <el-icon class="title-icon"><Monitor /></el-icon>
+              <span>Shadowrocket / Qv2ray / V2rayXS</span>
+            </div>
+            <el-tag type="primary" size="small">通用配置</el-tag>
+          </div>
+          
+          <div class="config-content">
+            <div class="qr-container">
+              <div class="qr-wrapper">
+                <img :src="shareInfo.share1" alt="配置二维码" class="qr-image"/>
+                <div class="qr-overlay">
+                  <el-icon class="qr-icon"><Picture /></el-icon>
+                </div>
+              </div>
+            </div>
+            
+            <div class="config-actions">
+              <el-button 
+                type="primary" 
+                class="copy-btn" 
+                :data-clipboard-text="shareInfo.share1_link"
+                @click="handleCopy('config1')"
+              >
+                <el-icon><DocumentCopy /></el-icon>
+                复制配置链接
+              </el-button>
+              <el-button 
+                type="success" 
+                plain 
+                class="qr-btn"
+                @click="downloadQR(shareInfo.share1, 'shadowrocket-config')"
+              >
+                <el-icon><Download /></el-icon>
+                下载二维码
+              </el-button>
+            </div>
+          </div>
         </div>
-        <el-button class="btn" :data-clipboard-text="shareInfo.share1_link">复制</el-button>
-        <el-divider></el-divider>
-        <h2>v2rayN,v2rayNG,v2rayXS</h2>
-        <div>
-          <img :src="shareInfo.share2" alt="二维码" style="width: 300px; height: 300px;"/>
+
+        <el-divider class="section-divider">
+          <el-icon><Connection /></el-icon>
+        </el-divider>
+
+        <!-- 第二个配置 -->
+        <div class="config-section">
+          <div class="config-header">
+            <div class="config-title">
+              <el-icon class="title-icon"><Cellphone /></el-icon>
+              <span>V2rayN / V2rayNG / V2rayXS</span>
+            </div>
+            <el-tag type="success" size="small">移动端配置</el-tag>
+          </div>
+          
+          <div class="config-content">
+            <div class="qr-container">
+              <div class="qr-wrapper">
+                <img :src="shareInfo.share2" alt="配置二维码" class="qr-image"/>
+                <div class="qr-overlay">
+                  <el-icon class="qr-icon"><Picture /></el-icon>
+                </div>
+              </div>
+            </div>
+            
+            <div class="config-actions">
+              <el-button 
+                type="primary" 
+                class="copy-btn" 
+                :data-clipboard-text="shareInfo.share2_link"
+                @click="handleCopy('config2')"
+              >
+                <el-icon><DocumentCopy /></el-icon>
+                复制配置链接
+              </el-button>
+              <el-button 
+                type="success" 
+                plain 
+                class="qr-btn"
+                @click="downloadQR(shareInfo.share2, 'v2ray-config')"
+              >
+                <el-icon><Download /></el-icon>
+                下载二维码
+              </el-button>
+            </div>
+          </div>
         </div>
-        <el-button class="btn" :data-clipboard-text="shareInfo.share2_link">复制</el-button>
-      </el-form>
+
+        <!-- 使用说明 -->
+        <div class="usage-tips">
+          <el-alert
+            title="使用说明"
+            type="info"
+            :closable="false"
+            show-icon
+          >
+            <template #default>
+              <div class="tips-content">
+                <p><strong>扫码导入：</strong>使用对应客户端扫描二维码即可自动导入配置</p>
+                <p><strong>链接导入：</strong>复制配置链接到客户端中手动导入</p>
+                <p><strong>客户端推荐：</strong>iOS推荐Shadowrocket，Android推荐V2rayNG</p>
+              </div>
+            </template>
+          </el-alert>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeShareDialog" size="large">
+            <el-icon><Close /></el-icon>
+            关闭
+          </el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -83,6 +196,15 @@ import ClipboardJS from 'clipboard';
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import { 
+  Monitor, 
+  Cellphone, 
+  Picture, 
+  DocumentCopy, 
+  Download, 
+  Connection, 
+  Close 
+} from '@element-plus/icons-vue'
 
 const clipboard = new ClipboardJS('.btn');
 
@@ -168,7 +290,271 @@ const closeShareDialog = () => {
   shareFormVisible.value = false
 }
 
+// 处理复制操作
+const handleCopy = (configType) => {
+  ElMessage({
+    type: 'success',
+    message: `${configType === 'config1' ? 'Shadowrocket' : 'V2rayN'} 配置已复制到剪贴板`,
+    duration: 2000
+  })
+}
+
+// 下载二维码
+const downloadQR = (dataUrl, filename) => {
+  const link = document.createElement('a')
+  link.download = `${filename}.png`
+  link.href = dataUrl
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  
+  ElMessage({
+    type: 'success',
+    message: '二维码已下载',
+    duration: 2000
+  })
+}
+
 </script>
 
-<style>
+<style scoped>
+/* 分享弹窗样式 */
+:deep(.share-dialog) {
+  .el-dialog {
+    margin: 0 auto;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .el-dialog__header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 24px;
+    border-radius: 8px 8px 0 0;
+    margin: 0;
+  }
+  
+  .el-dialog__title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .el-dialog__body {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .el-dialog__footer {
+    padding: 0;
+    margin: 0;
+  }
+}
+
+.share-container {
+  padding: 24px;
+  background: #f8f9ff;
+}
+
+.config-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.config-section:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.config-title {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.title-icon {
+  margin-right: 8px;
+  font-size: 20px;
+  color: #409eff;
+}
+
+.config-content {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.qr-container {
+  flex-shrink: 0;
+}
+
+.qr-wrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.qr-wrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.qr-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.qr-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(64, 158, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.qr-wrapper:hover .qr-overlay {
+  opacity: 1;
+}
+
+.qr-icon {
+  font-size: 32px;
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.config-actions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0; /* 防止flex子元素溢出 */
+}
+
+.copy-btn, .qr-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.copy-btn {
+  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  border: none;
+  color: white;
+}
+
+.copy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(64, 158, 255, 0.3);
+}
+
+.qr-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(103, 194, 58, 0.3);
+}
+
+.section-divider {
+  margin: 32px 0;
+  font-size: 18px;
+  color: #909399;
+}
+
+.usage-tips {
+  margin-top: 24px;
+}
+
+.tips-content p {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.dialog-footer {
+  padding: 16px 24px;
+  background: #f8f9ff;
+  border-radius: 0 0 8px 8px;
+  text-align: center;
+  margin: 0;
+}
+
+.dialog-footer .el-button {
+  min-width: 120px;
+  height: 40px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* 移动端优化 */
+@media screen and (max-width: 768px) {
+  :deep(.share-dialog) {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+  
+  .share-container {
+    padding: 16px;
+  }
+  
+  .config-section {
+    padding: 16px;
+  }
+  
+  .config-content {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    align-items: center;
+  }
+  
+  .qr-wrapper {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .config-header {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .config-title {
+    justify-content: center;
+  }
+  
+  .config-actions {
+    width: 100%;
+    max-width: 300px;
+  }
+}
 </style>
