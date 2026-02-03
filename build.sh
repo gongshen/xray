@@ -32,6 +32,16 @@ case $platform_choice in
     ;;
 esac
 
+# 是否清理缓存
+echo -e "\n${Green}是否清理前端缓存? (推荐在代码更新后执行)${Font}"
+read -rp "清理缓存? (y/n, 默认n): " clean_cache
+
+if [[ "$clean_cache" == "y" || "$clean_cache" == "Y" ]]; then
+  CLEAN_CACHE=true
+else
+  CLEAN_CACHE=false
+fi
+
 # 是否编译前端
 echo -e "\n${Green}是否编译前端? (编译前端较耗时)${Font}"
 read -rp "编译前端? (y/n, 默认n): " build_frontend
@@ -44,12 +54,36 @@ fi
 
 echo -e "\n${Blue}========================================${Font}"
 echo -e "${Blue}    目标平台: ${TARGET_OS}${Font}"
+if [ "$CLEAN_CACHE" = true ]; then
+  echo -e "${Yellow}    清理前端缓存${Font}"
+fi
 if [ "$SKIP_FRONTEND" = true ]; then
   echo -e "${Yellow}    跳过前端编译${Font}"
 else
   echo -e "${Green}    编译前端${Font}"
 fi
 echo -e "${Blue}========================================${Font}"
+
+# 清理缓存
+if [ "$CLEAN_CACHE" = true ]; then
+  echo -e "\n${Yellow}[0/3] 清理前端缓存...${Font}"
+  
+  # 删除embed的page目录
+  echo -e "${Yellow}清理embed目录...${Font}"
+  rm -rf gin-vue-admin/server/resource/page/*
+  
+  # 清理前端构建缓存
+  echo -e "${Yellow}清理前端构建缓存...${Font}"
+  cd gin-vue-admin/web
+  rm -rf dist/
+  rm -rf node_modules/.cache/
+  rm -rf .vite/
+  rm -rf .nuxt/
+  rm -rf .output/
+  cd ../..
+  
+  echo -e "${Green}[OK] 缓存清理完成${Font}"
+fi
 
 # 创建输出目录
 mkdir -p dist
@@ -58,14 +92,21 @@ mkdir -p dist
 if [ "$SKIP_FRONTEND" = false ]; then
   echo -e "\n${Green}[1/3] 编译前端...${Font}"
   cd gin-vue-admin/web
-  if [ ! -d "node_modules" ]; then
+  
+  # 如果清理了缓存或者node_modules不存在，重新安装依赖
+  if [ "$CLEAN_CACHE" = true ] || [ ! -d "node_modules" ]; then
     echo -e "${Yellow}安装前端依赖...${Font}"
     npm install --legacy-peer-deps
   fi
+  
+  echo -e "${Yellow}构建前端项目...${Font}"
   npm run build
+  
+  echo -e "${Yellow}复制前端文件到embed目录...${Font}"
   rm -rf ../server/resource/page
   mkdir -p ../server/resource/page
   cp -r dist/* ../server/resource/page/
+  
   cd ../..
   echo -e "${Green}[OK] 前端编译完成${Font}"
 else
@@ -93,3 +134,15 @@ echo -e "\n${Blue}========================================${Font}"
 echo -e "${Green}编译完成！输出文件:${Font}"
 ls -lh dist/
 echo -e "${Blue}========================================${Font}"
+
+# 提示信息
+if [ "$CLEAN_CACHE" = true ] || [ "$SKIP_FRONTEND" = false ]; then
+  echo -e "\n${Yellow}提示:${Font}"
+  if [ "$CLEAN_CACHE" = true ]; then
+    echo -e "${Yellow}- 已清理前端缓存，请重启服务并清除浏览器缓存${Font}"
+  fi
+  if [ "$SKIP_FRONTEND" = false ]; then
+    echo -e "${Yellow}- 前端文件已嵌入到 xray-admin 二进制文件中${Font}"
+    echo -e "${Yellow}- 如果修改了前端代码，需要重新编译才能生效${Font}"
+  fi
+fi
