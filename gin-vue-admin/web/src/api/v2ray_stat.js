@@ -55,3 +55,11 @@ export const getStatCharts = (params) => {
     params
   })
 }
+
+export const getStatRank = (params) => {
+  return service({
+    url: '/v2ray/stat/getStatRank',
+    method: 'get',
+    params
+  })
+}

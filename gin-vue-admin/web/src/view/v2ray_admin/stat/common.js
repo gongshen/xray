@@ -1,8 +1,8 @@
-import {reactive} from "vue";
 import {
     getStatCharts,
     getStatRank,
-} from '@/api/stat'
+} from '@/api/stat';
+import { reactive } from "vue";
 
 const chartData = reactive({data: [], data_axis: [], total: 0, rank: [], rank_axis: []})
 
@@ -13,8 +13,10 @@ export const useChartData = () => {
 export const setChartData = async (searchInfo) => {
     const ans2 = await getStatRank(searchInfo)
     if (ans2.code === 0 && ans2.data != null) {
-        chartData.rank = ans2.data.rank
-        chartData.rank_axis =ans2.data.rank_axis
+        // 限制排行榜只显示前10名
+        const maxRankItems = 10
+        chartData.rank = ans2.data.rank ? ans2.data.rank.slice(0, maxRankItems) : []
+        chartData.rank_axis = ans2.data.rank_axis ? ans2.data.rank_axis.slice(0, maxRankItems) : []
     }else {
         chartData.rank = []
         chartData.rank_axis = []

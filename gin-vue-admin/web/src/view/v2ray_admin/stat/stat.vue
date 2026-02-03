@@ -3,8 +3,8 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
         <el-form-item label="创建时间">
-          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" :default-value="new Date()"></el-date-picker>
-          <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" :default-value="new Date()"></el-date-picker>
+          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" :default-value="sevenDaysAgo"></el-date-picker>
+          <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" :default-value="today"></el-date-picker>
         </el-form-item>
         <el-form-item label="用户名">
           <el-select v-model="searchInfo.tag" clearable filterable style="width:194px">
@@ -26,7 +26,7 @@
     <!-- 统计卡片区域 -->
     <div class="stats-overview">
       <el-row :gutter="20">
-        <el-col :xs="24" :sm="12" :md="8" :lg="6">
+        <el-col :xs="24" :sm="12" :md="8" :lg="8">
           <div class="stat-card total-traffic">
             <div class="stat-icon">
               <el-icon><TrendCharts /></el-icon>
@@ -38,19 +38,7 @@
             </div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="6">
-          <div class="stat-card active-users">
-            <div class="stat-icon">
-              <el-icon><User /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-title">活跃用户</div>
-              <div class="stat-value">{{ activeUsers }}</div>
-              <div class="stat-desc">当前查询时间段</div>
-            </div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="6">
+        <el-col :xs="24" :sm="12" :md="8" :lg="8">
           <div class="stat-card active-servers">
             <div class="stat-icon">
               <el-icon><Monitor /></el-icon>
@@ -62,7 +50,7 @@
             </div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="6">
+        <el-col :xs="24" :sm="12" :md="8" :lg="8">
           <div class="stat-card avg-traffic">
             <div class="stat-icon">
               <el-icon><DataAnalysis /></el-icon>
@@ -102,7 +90,7 @@
                   <el-icon><Trophy /></el-icon>
                   流量排行榜
                 </span>
-                <el-tag type="success" size="small">TOP {{ Math.min(chartData.rank?.length || 0, 10) }}</el-tag>
+                <el-tag type="success" size="small">TOP 10</el-tag>
               </div>
             </template>
             <div ref="rank_echart" class="chart-container rank-chart"></div>
@@ -126,13 +114,13 @@
           stripe
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column align="left" label="用户" prop="username" width="120">
+        <el-table-column align="left" label="用户" prop="tag" width="120">
           <template #default="scope">
             <div class="user-cell">
               <el-avatar :size="24" class="user-avatar">
-                {{ scope.row.username?.charAt(0)?.toUpperCase() || 'U' }}
+                {{ scope.row.tag?.charAt(0)?.toUpperCase() || 'U' }}
               </el-avatar>
-              <span>{{ scope.row.username }}</span>
+              <span>{{ scope.row.tag }}</span>
             </div>
           </template>
         </el-table-column>
@@ -151,10 +139,10 @@
             <span class="traffic-up">{{ formatFlow(scope.row.up) }}</span>
           </template>
         </el-table-column>
-        <el-table-column align="left" label="总流量" prop="total" width="120">
+        <el-table-column align="left" label="总流量" width="120">
           <template #default="scope">
-            <el-tag :type="getTrafficTagType(scope.row.total)" size="small">
-              {{ formatFlow(scope.row.total) }}
+            <el-tag :type="getTrafficTagType(scope.row.down + scope.row.up)" size="small">
+              {{ formatFlow(scope.row.down + scope.row.up) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -198,7 +186,7 @@ import {
 import { getAllServerApi } from '@/api/server'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive, shallowRef, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
-import { TrendCharts, User, Monitor, DataAnalysis, Trophy } from '@element-plus/icons-vue'
+import { TrendCharts, Monitor, DataAnalysis, Trophy } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
 
@@ -214,10 +202,11 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
-const today = new Date().toISOString()
+const today = new Date()
+const sevenDaysAgo = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000) // 7天前（包含今天共7天）
 const searchInfo = ref({
-  startCreatedAt: today,
-  endCreatedAt: today
+  startCreatedAt: sevenDaysAgo.toISOString(),
+  endCreatedAt: today.toISOString()
 })
 
 // 图表相关
@@ -228,19 +217,16 @@ const rank_echart = ref(null)
 const chartData = useChartData()
 
 // 统计数据计算
-const activeUsers = computed(() => {
-  const uniqueUsers = new Set(tableData.value.map(item => item.username))
-  return uniqueUsers.size
-})
-
 const activeServers = computed(() => {
   const uniqueServers = new Set(tableData.value.map(item => item.server_ip))
   return uniqueServers.size
 })
 
 const avgTraffic = computed(() => {
-  if (activeUsers.value === 0) return 0
-  return chartData.total / activeUsers.value
+  const uniqueUsers = new Set(tableData.value.map(item => item.tag))
+  const activeUsers = uniqueUsers.size
+  if (activeUsers === 0) return 0
+  return chartData.total / activeUsers
 })
 
 // 格式化流量
@@ -258,9 +244,10 @@ const formatFlow = (value) => {
 }
 
 // 格式化日期
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
+const formatDate = (timestamp) => {
+  if (!timestamp) return '-'
+  // 如果是秒级时间戳，转换为毫秒
+  const date = new Date(timestamp * 1000)
   return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false })
 }
 
@@ -275,7 +262,7 @@ const getTrafficTagType = (traffic) => {
 // 获取日期范围文本
 const getDateRangeText = () => {
   if (!searchInfo.value.startCreatedAt || !searchInfo.value.endCreatedAt) {
-    return '今日'
+    return '近7天'
   }
   const start = new Date(searchInfo.value.startCreatedAt).toLocaleDateString('zh-CN')
   const end = new Date(searchInfo.value.endCreatedAt).toLocaleDateString('zh-CN')
@@ -283,6 +270,13 @@ const getDateRangeText = () => {
 }
 
 const onReset = () => {
+  // 重置为近7天
+  const today = new Date()
+  const sevenDaysAgo = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000)
+  searchInfo.value = {
+    startCreatedAt: sevenDaysAgo.toISOString(),
+    endCreatedAt: today.toISOString()
+  }
   getTableData()
   setChartData({...searchInfo.value})
 }
@@ -320,12 +314,23 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-  if (table.code === 0) {
-    tableData.value = table.data.list
-    total.value = table.data.total
-    page.value = table.data.page
-    pageSize.value = table.data.pageSize
+  try {
+    const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    if (table.code === 0) {
+      // 确保数据结构正确
+      tableData.value = table.data?.list || []
+      total.value = table.data?.total || 0
+      page.value = table.data?.page || 1
+      pageSize.value = table.data?.pageSize || 10
+    } else {
+      console.error('getStatList error:', table.msg)
+      tableData.value = []
+      total.value = 0
+    }
+  } catch (error) {
+    console.error('getTableData error:', error)
+    tableData.value = []
+    total.value = 0
   }
 }
 
@@ -602,10 +607,6 @@ onMounted(async () => {
 
 .stat-card.total-traffic {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-card.active-users {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
 .stat-card.active-servers {
