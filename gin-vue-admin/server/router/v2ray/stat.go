@@ -16,6 +16,5 @@ func (s *StatRouter) InitStatRouter(Router *gin.RouterGroup) {
 	{
 		statRouter.GET("getStatList", statApi.GetStatList)     // 获取Stat列表
 		statRouter.GET("getStatCharts", statApi.GetStatCharts) // 获取流量统计图表展示
-		statRouter.GET("getStatRank", statApi.GetStatRank)     // 获取流量排行榜
 	}
 }

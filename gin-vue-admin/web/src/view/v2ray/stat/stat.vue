@@ -190,7 +190,12 @@ const onReset = () => {
     endCreatedAt: today.toISOString()
   }
   getTableData()
-  setChartData({...searchInfo.value})
+  setChartData({...searchInfo.value}).then(() => {
+    // 数据加载完成后刷新图表
+    setTimeout(() => {
+      refreshChart()
+    }, 100)
+  })
 }
 
 // 搜索
@@ -209,7 +214,12 @@ const onSubmit = () => {
     searchInfo.value.endCreatedAt = utcEndDate.toISOString()
   }
   getTableData()
-  setChartData({...searchInfo.value})
+  setChartData({...searchInfo.value}).then(() => {
+    // 数据加载完成后刷新图表
+    setTimeout(() => {
+      refreshChart()
+    }, 100)
+  })
 }
 
 // 分页
@@ -248,12 +258,70 @@ const getTableData = async() => {
 
 // 初始化图表
 const initChart = () => {
+  if (!echart.value) {
+    console.error('图表容器不存在，无法初始化图表')
+    return
+  }
+  
+  // 如果图表已存在，先销毁
+  if (chart.value) {
+    chart.value.dispose()
+  }
+  
   chart.value = echarts.init(echart.value)
-  setOptions(chartData)
+  console.log('图表实例创建完成')
+  
+  // 如果已有数据，立即渲染
+  if (chartData.data && chartData.data.length > 0) {
+    console.log('立即渲染已有数据')
+    setOptions(chartData)
+  }
+}
+
+// 强制刷新图表
+const refreshChart = () => {
+  console.log('强制刷新图表')
+  if (chart.value && chartData.data && chartData.data.length > 0) {
+    setOptions(chartData)
+  } else {
+    console.log('重新初始化图表')
+    nextTick(() => {
+      initChart()
+    })
+  }
 }
 
 // 设置图表选项
 const setOptions = (data) => {
+  // 添加调试信息
+  console.log('图表数据:', {
+    data_axis: data.data_axis,
+    data: data.data,
+    data_axis_length: data.data_axis?.length,
+    data_length: data.data?.length
+  })
+
+  // 检查数据是否存在
+  if (!data.data_axis || !data.data || data.data_axis.length === 0 || data.data.length === 0) {
+    console.warn('图表数据为空或格式不正确')
+    return
+  }
+
+  // 格式化日期轴数据
+  const formattedAxisData = data.data_axis.map(dateNum => {
+    const dateStr = dateNum.toString()
+    if (dateStr.length === 8) {
+      // 格式：YYYYMMDD -> YYYY-MM-DD
+      const year = dateStr.substring(0, 4)
+      const month = dateStr.substring(4, 6)
+      const day = dateStr.substring(6, 8)
+      return `${year}-${month}-${day}`
+    }
+    return dateStr
+  })
+
+  console.log('格式化后的日期轴:', formattedAxisData)
+
   // 流量趋势图
   chart.value?.setOption({
     tooltip: {
@@ -285,10 +353,21 @@ const setOptions = (data) => {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: data.data_axis,
+      data: formattedAxisData,
       axisLine: {
         lineStyle: {
           color: '#e6e6e6'
+        }
+      },
+      axisLabel: {
+        rotate: 45, // 旋转标签避免重叠
+        formatter: (value) => {
+          // 简化日期显示，只显示月-日
+          if (value.includes('-')) {
+            const parts = value.split('-')
+            return `${parts[1]}-${parts[2]}`
+          }
+          return value
         }
       }
     },
@@ -343,19 +422,44 @@ const setOptions = (data) => {
 
 // 监听图表数据变化
 watch(() => chartData, (newData) => {
-  if (chart.value) {
+  console.log('图表数据变化:', newData)
+  if (chart.value && newData) {
     setOptions(newData)
+  } else if (!chart.value) {
+    console.warn('图表实例不存在，尝试重新初始化')
+    nextTick(() => {
+      if (echart.value) {
+        initChart()
+      }
+    })
   }
 }, {
   deep: true
 })
 
 onMounted(async () => {
+  console.log('页面挂载，开始初始化')
   getTableData()
-  setChartData({...searchInfo.value})
+  
+  // 先加载数据
+  await setChartData({...searchInfo.value})
   
   await nextTick()
-  initChart()
+  console.log('DOM更新完成，初始化图表')
+  
+  // 确保图表容器存在
+  if (echart.value) {
+    initChart()
+    console.log('图表初始化完成')
+    
+    // 延迟刷新图表，确保数据已加载
+    setTimeout(() => {
+      console.log('延迟刷新图表')
+      refreshChart()
+    }, 500)
+  } else {
+    console.error('图表容器不存在')
+  }
   
   // 监听窗口大小变化
   const handleResize = () => {
