@@ -39,13 +39,27 @@
         <h3>详细流量记录</h3>
         <el-tag>共 {{ total }} 条记录</el-tag>
       </div>
+      
+      <!-- 调试信息 -->
+      <div v-if="tableData.length === 0 && !loading" class="debug-info" style="padding: 20px; background: #f5f5f5; margin-bottom: 20px; border-radius: 8px;">
+        <h4>调试信息:</h4>
+        <p><strong>数据长度:</strong> {{ tableData.length }}</p>
+        <p><strong>总记录数:</strong> {{ total }}</p>
+        <p><strong>当前页:</strong> {{ page }}</p>
+        <p><strong>页大小:</strong> {{ pageSize }}</p>
+        <p><strong>加载状态:</strong> {{ loading }}</p>
+        <el-button @click="testData" type="primary" size="small">加载测试数据</el-button>
+      </div>
+      
       <el-table
           ref="multipleTable"
-          style="width: 100%"
+          style="width: 100%; min-height: 200px;"
           tooltip-effect="dark"
           :data="tableData"
           row-key="ID"
           stripe
+          v-loading="loading"
+          :empty-text="loading ? '加载中...' : (tableData.length === 0 ? '暂无数据' : '')"
       >
         <el-table-column type="selection" width="55" />
         <el-table-column align="left" label="用户" prop="username" width="120">
@@ -65,24 +79,24 @@
         </el-table-column>
         <el-table-column align="left" label="下行流量" prop="down" width="120">
           <template #default="scope">
-            <span class="traffic-down">{{ formatFlow(scope.row.down) }}</span>
+            <span class="traffic-down">{{ scope.row.down }}</span>
           </template>
         </el-table-column>
         <el-table-column align="left" label="上行流量" prop="up" width="120">
           <template #default="scope">
-            <span class="traffic-up">{{ formatFlow(scope.row.up) }}</span>
+            <span class="traffic-up">{{ scope.row.up }}</span>
           </template>
         </el-table-column>
         <el-table-column align="left" label="总流量" width="120">
           <template #default="scope">
-            <el-tag :type="getTrafficTagType(scope.row.down + scope.row.up)" size="small">
-              {{ formatFlow(scope.row.down + scope.row.up) }}
+            <el-tag :type="getTrafficTagType(scope.row.total)" size="small">
+              {{ scope.row.total }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column align="left" label="日期" prop="created_at" width="180">
           <template #default="scope">
-            <span class="date-cell">{{ formatDate(scope.row.created_at) }}</span>
+            <span class="date-cell">{{ scope.row.created_at }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -129,6 +143,7 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
+const loading = ref(false)
 const today = new Date()
 const sevenDaysAgo = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000) // 7天前（包含今天共7天）
 const searchInfo = ref({
@@ -164,10 +179,32 @@ const formatDate = (timestamp) => {
 }
 
 // 获取流量标签类型
-const getTrafficTagType = (traffic) => {
-  if (traffic >= 1024 * 1024 * 1024) return 'danger'  // GB级别
-  if (traffic >= 100 * 1024 * 1024) return 'warning'  // 100MB以上
-  if (traffic >= 10 * 1024 * 1024) return 'success'   // 10MB以上
+const getTrafficTagType = (trafficStr) => {
+  if (!trafficStr || typeof trafficStr !== 'string') return 'info'
+  
+  // 解析流量字符串，如 "726.27MB" -> 726.27 * 1024 * 1024
+  const match = trafficStr.match(/^([\d.]+)\s*(B|KB|MB|GB)$/i)
+  if (!match) return 'info'
+  
+  const value = parseFloat(match[1])
+  const unit = match[2].toUpperCase()
+  
+  let bytes = value
+  switch (unit) {
+    case 'KB':
+      bytes = value * 1024
+      break
+    case 'MB':
+      bytes = value * 1024 * 1024
+      break
+    case 'GB':
+      bytes = value * 1024 * 1024 * 1024
+      break
+  }
+  
+  if (bytes >= 1024 * 1024 * 1024) return 'danger'  // GB级别
+  if (bytes >= 100 * 1024 * 1024) return 'warning'  // 100MB以上
+  if (bytes >= 10 * 1024 * 1024) return 'success'   // 10MB以上
   return 'info'  // 其他
 }
 
@@ -236,23 +273,47 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
+  loading.value = true
   try {
+    console.log('=== 获取表格数据 ===')
+    console.log('请求参数:', { page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    console.log('API响应:', table)
+    
     if (table.code === 0) {
       // 确保数据结构正确
-      tableData.value = table.data?.list || []
+      const list = table.data?.list || []
+      tableData.value = list
       total.value = table.data?.total || 0
       page.value = table.data?.page || 1
       pageSize.value = table.data?.pageSize || 10
+      
+      console.log('表格数据设置完成:', {
+        dataLength: tableData.value.length,
+        total: total.value,
+        sampleData: tableData.value[0] || null
+      })
+      
+      // 如果有数据但表格不显示，可能是响应式问题
+      if (list.length > 0) {
+        console.log('数据样本:', list[0])
+        // 强制触发响应式更新
+        tableData.value = [...list]
+      }
     } else {
       console.error('getStatList error:', table.msg)
+      ElMessage.error(table.msg || '获取数据失败')
       tableData.value = []
       total.value = 0
     }
   } catch (error) {
     console.error('getTableData error:', error)
+    ElMessage.error('网络请求失败')
     tableData.value = []
     total.value = 0
+  } finally {
+    loading.value = false
   }
 }
 
@@ -439,9 +500,11 @@ watch(() => chartData, (newData) => {
 
 onMounted(async () => {
   console.log('页面挂载，开始初始化')
-  getTableData()
   
-  // 先加载数据
+  // 先加载表格数据
+  await getTableData()
+  
+  // 再加载图表数据
   await setChartData({...searchInfo.value})
   
   await nextTick()
@@ -475,6 +538,37 @@ onMounted(async () => {
     }
   })
 })
+
+// 测试数据函数
+const testData = () => {
+  console.log('加载测试数据')
+  tableData.value = [
+    {
+      "ID": 7684313,
+      "category": "",
+      "tag": "3",
+      "down": "10.67MB",
+      "up": "830.51KB",
+      "total": "11.49MB",
+      "created_at": "2026年1月17日",
+      "username": "龚申",
+      "server_ip": "212.50.244.34"
+    },
+    {
+      "ID": 7677326,
+      "category": "",
+      "tag": "3",
+      "down": "709.07MB",
+      "up": "17.21MB",
+      "total": "726.27MB",
+      "created_at": "2026年1月16日",
+      "username": "龚申",
+      "server_ip": "212.50.244.34"
+    }
+  ]
+  total.value = 2
+  console.log('测试数据已设置:', tableData.value)
+}
 
 const users = ref([])
 </script>

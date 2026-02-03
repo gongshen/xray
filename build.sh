@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# 编译脚本 - 用于编译前端、stat 和 xray-admin
+# Xray 项目编译脚本 - 用于编译前端、stat 和 xray-admin
 # 编译后的文件会放到 dist 目录
 
 set -e
@@ -32,75 +32,114 @@ case $platform_choice in
     ;;
 esac
 
-# 是否清理缓存
-echo -e "\n${Green}是否清理前端缓存? (推荐在代码更新后执行)${Font}"
-read -rp "清理缓存? (y/n, 默认n): " clean_cache
-
-if [[ "$clean_cache" == "y" || "$clean_cache" == "Y" ]]; then
-  CLEAN_CACHE=true
-else
-  CLEAN_CACHE=false
-fi
-
-# 是否编译前端
-echo -e "\n${Green}是否编译前端? (编译前端较耗时)${Font}"
-read -rp "编译前端? (y/n, 默认n): " build_frontend
+# 第一层：是否编译前端
+echo -e "\n${Green}[1/4] 是否编译前端?${Font}"
+echo "前端代码有更新时必须选择编译，否则可以跳过以节省时间"
+read -rp "编译前端? (y/n): " build_frontend
 
 if [[ "$build_frontend" == "y" || "$build_frontend" == "Y" ]]; then
-  SKIP_FRONTEND=false
+  BUILD_FRONTEND=true
 else
-  SKIP_FRONTEND=true
+  BUILD_FRONTEND=false
 fi
 
+# 第二层：是否深度清理缓存
+echo -e "\n${Green}[2/4] 是否深度清理缓存?${Font}"
+echo "深度清理会删除所有前端缓存"
+echo "推荐在遇到缓存问题或首次编译时使用"
+read -rp "深度清理缓存? (y/n): " deep_clean
+
+if [[ "$deep_clean" == "y" || "$deep_clean" == "Y" ]]; then
+  DEEP_CLEAN=true
+else
+  DEEP_CLEAN=false
+fi
+
+# 第三层：是否编译xray-admin
+echo -e "\n${Green}[3/4] 是否编译xray-admin?${Font}"
+echo "Web管理界面后端服务"
+read -rp "编译xray-admin? (y/n): " build_admin
+
+if [[ "$build_admin" == "y" || "$build_admin" == "Y" ]]; then
+  BUILD_ADMIN=true
+else
+  BUILD_ADMIN=false
+fi
+
+# 第四层：是否编译stat
+echo -e "\n${Green}[4/4] 是否编译stat?${Font}"
+echo "流量统计服务"
+read -rp "编译stat? (y/n): " build_stat
+
+if [[ "$build_stat" == "y" || "$build_stat" == "Y" ]]; then
+  BUILD_STAT=true
+else
+  BUILD_STAT=false
+fi
+
+# 显示编译配置
 echo -e "\n${Blue}========================================${Font}"
-echo -e "${Blue}    目标平台: ${TARGET_OS}${Font}"
-if [ "$CLEAN_CACHE" = true ]; then
-  echo -e "${Yellow}    清理前端缓存${Font}"
-fi
-if [ "$SKIP_FRONTEND" = true ]; then
-  echo -e "${Yellow}    跳过前端编译${Font}"
-else
-  echo -e "${Green}    编译前端${Font}"
-fi
+echo -e "${Blue}           编译配置确认               ${Font}"
 echo -e "${Blue}========================================${Font}"
-
-# 清理缓存
-if [ "$CLEAN_CACHE" = true ]; then
-  echo -e "\n${Yellow}[0/3] 清理前端缓存...${Font}"
-  
-  # 删除embed的page目录
-  echo -e "${Yellow}清理embed目录...${Font}"
-  rm -rf gin-vue-admin/server/resource/page/*
-  
-  # 清理前端构建缓存
-  echo -e "${Yellow}清理前端构建缓存...${Font}"
-  cd gin-vue-admin/web
-  rm -rf dist/
-  rm -rf node_modules/.cache/
-  rm -rf .vite/
-  rm -rf .nuxt/
-  rm -rf .output/
-  cd ../..
-  
-  echo -e "${Green}[OK] 缓存清理完成${Font}"
-fi
+echo -e "${Yellow}目标平台:     ${TARGET_OS}${Font}"
+echo -e "${Yellow}编译前端:     $([ "$BUILD_FRONTEND" = true ] && echo "是" || echo "否")${Font}"
+echo -e "${Yellow}深度清理:     $([ "$DEEP_CLEAN" = true ] && echo "是" || echo "否")${Font}"
+echo -e "${Yellow}编译xray-admin: $([ "$BUILD_ADMIN" = true ] && echo "是" || echo "否")${Font}"
+echo -e "${Yellow}编译stat:     $([ "$BUILD_STAT" = true ] && echo "是" || echo "否")${Font}"
+echo -e "${Blue}========================================${Font}"
 
 # 创建输出目录
 mkdir -p dist
 
+STEP=1
+TOTAL_STEPS=$((${BUILD_FRONTEND} + ${DEEP_CLEAN} + ${BUILD_ADMIN} + ${BUILD_STAT}))
+
+# 深度清理缓存
+if [ "$DEEP_CLEAN" = true ]; then
+  echo -e "\n${Green}[${STEP}/${TOTAL_STEPS}] 深度清理缓存...${Font}"
+  
+  # 清理embed目录
+  echo -e "${Yellow}清理embed目录...${Font}"
+  rm -rf gin-vue-admin/server/resource/page/*
+  
+  # 清理前端缓存和依赖
+  echo -e "${Yellow}清理前端缓存和依赖...${Font}"
+  cd gin-vue-admin/web
+  rm -rf dist/
+  rm -rf node_modules/
+  rm -rf node_modules/.cache/
+  rm -rf .vite/
+  rm -rf .nuxt/
+  rm -rf .output/
+  rm -rf .temp/
+  rm -rf package-lock.json
+  cd ../..
+  
+  echo -e "${Green}✅ 深度清理完成${Font}"
+  STEP=$((STEP + 1))
+fi
+
 # 编译前端
-if [ "$SKIP_FRONTEND" = false ]; then
-  echo -e "\n${Green}[1/3] 编译前端...${Font}"
+if [ "$BUILD_FRONTEND" = true ]; then
+  echo -e "\n${Green}[${STEP}/${TOTAL_STEPS}] 编译前端...${Font}"
   cd gin-vue-admin/web
   
-  # 如果清理了缓存或者node_modules不存在，重新安装依赖
-  if [ "$CLEAN_CACHE" = true ] || [ ! -d "node_modules" ]; then
+  # 安装依赖
+  if [ ! -d "node_modules" ]; then
     echo -e "${Yellow}安装前端依赖...${Font}"
     npm install --legacy-peer-deps
+    if [ $? -ne 0 ]; then
+      echo -e "${Red}❌ 前端依赖安装失败${Font}"
+      exit 1
+    fi
   fi
   
   echo -e "${Yellow}构建前端项目...${Font}"
   npm run build
+  if [ $? -ne 0 ]; then
+    echo -e "${Red}❌ 前端构建失败${Font}"
+    exit 1
+  fi
   
   echo -e "${Yellow}复制前端文件到embed目录...${Font}"
   rm -rf ../server/resource/page
@@ -108,41 +147,111 @@ if [ "$SKIP_FRONTEND" = false ]; then
   cp -r dist/* ../server/resource/page/
   
   cd ../..
-  echo -e "${Green}[OK] 前端编译完成${Font}"
-else
-  echo -e "\n${Yellow}[1/3] 跳过前端编译${Font}"
+  echo -e "${Green}✅ 前端编译完成${Font}"
+  STEP=$((STEP + 1))
 fi
 
-# 编译 stat
-echo -e "\n${Green}[2/3] 编译 stat...${Font}"
-cd stat
-go mod tidy
-CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat${EXE_SUFFIX} .
-cd ..
-echo -e "${Green}[OK] stat 编译完成${Font}"
+# 编译stat
+if [ "$BUILD_STAT" = true ]; then
+  echo -e "\n${Green}[${STEP}/${TOTAL_STEPS}] 编译 stat 服务...${Font}"
+  cd stat
+  
+  echo -e "${Yellow}整理Go模块依赖...${Font}"
+  go mod tidy
+  if [ $? -ne 0 ]; then
+    echo -e "${Red}❌ stat模块依赖整理失败${Font}"
+    exit 1
+  fi
+  
+  echo -e "${Yellow}编译stat二进制文件...${Font}"
+  CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat${EXE_SUFFIX} .
+  if [ $? -ne 0 ]; then
+    echo -e "${Red}❌ stat编译失败${Font}"
+    exit 1
+  fi
+  
+  cd ..
+  echo -e "${Green}✅ stat 编译完成${Font}"
+  STEP=$((STEP + 1))
+fi
 
-# 编译 xray-admin (前端文件会通过 embed 嵌入到二进制中)
-echo -e "\n${Green}[3/3] 编译 xray-admin...${Font}"
-cd gin-vue-admin/server
-go mod tidy
-CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=amd64 go build -ldflags="-s -w" -o ../../dist/xray-admin${EXE_SUFFIX} .
-cd ../..
-echo -e "${Green}[OK] xray-admin 编译完成 (前端已嵌入二进制)${Font}"
+# 编译xray-admin
+if [ "$BUILD_ADMIN" = true ]; then
+  echo -e "\n${Green}[${STEP}/${TOTAL_STEPS}] 编译 xray-admin...${Font}"
+  cd gin-vue-admin/server
+  
+  echo -e "${Yellow}整理Go模块依赖...${Font}"
+  go mod tidy
+  if [ $? -ne 0 ]; then
+    echo -e "${Red}❌ xray-admin模块依赖整理失败${Font}"
+    exit 1
+  fi
+  
+  echo -e "${Yellow}编译xray-admin二进制文件 (前端已嵌入)...${Font}"
+  CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=amd64 go build -ldflags="-s -w" -o ../../dist/xray-admin${EXE_SUFFIX} .
+  if [ $? -ne 0 ]; then
+    echo -e "${Red}❌ xray-admin编译失败${Font}"
+    exit 1
+  fi
+  
+  cd ../..
+  echo -e "${Green}✅ xray-admin 编译完成${Font}"
+  STEP=$((STEP + 1))
+fi
 
 # 显示结果
 echo -e "\n${Blue}========================================${Font}"
-echo -e "${Green}编译完成！输出文件:${Font}"
-ls -lh dist/
+echo -e "${Green}           编译完成！                 ${Font}"
 echo -e "${Blue}========================================${Font}"
 
-# 提示信息
-if [ "$CLEAN_CACHE" = true ] || [ "$SKIP_FRONTEND" = false ]; then
-  echo -e "\n${Yellow}提示:${Font}"
-  if [ "$CLEAN_CACHE" = true ]; then
-    echo -e "${Yellow}- 已清理前端缓存，请重启服务并清除浏览器缓存${Font}"
+if [ -d "dist" ] && [ "$(ls -A dist 2>/dev/null)" ]; then
+  echo -e "${Green}输出文件:${Font}"
+  ls -lh dist/
+else
+  echo -e "${Yellow}没有生成任何文件${Font}"
+fi
+
+# 验证结果
+if [ "$BUILD_FRONTEND" = true ]; then
+  echo -e "\n${Yellow}验证前端文件嵌入:${Font}"
+  if grep -r "getStatRank" gin-vue-admin/server/resource/page/ 2>/dev/null; then
+    echo -e "${Red}❌ 发现getStatRank引用，可能存在缓存问题${Font}"
+  else
+    echo -e "${Green}✅ 没有发现getStatRank引用${Font}"
   fi
-  if [ "$SKIP_FRONTEND" = false ]; then
-    echo -e "${Yellow}- 前端文件已嵌入到 xray-admin 二进制文件中${Font}"
-    echo -e "${Yellow}- 如果修改了前端代码，需要重新编译才能生效${Font}"
+  
+  if ls gin-vue-admin/server/resource/page/assets/*v2ray_stat* 2>/dev/null; then
+    echo -e "${Green}✅ 找到v2ray_stat相关文件${Font}"
+  else
+    echo -e "${Yellow}⚠️  没有找到v2ray_stat文件${Font}"
   fi
 fi
+
+# 使用提示
+echo -e "\n${Blue}========================================${Font}"
+echo -e "${Green}使用提示:${Font}"
+
+if [ "$BUILD_ADMIN" = true ]; then
+  echo -e "${Yellow}启动xray-admin:${Font}"
+  echo -e "  cd dist"
+  echo -e "  ./xray-admin${EXE_SUFFIX}"
+fi
+
+if [ "$BUILD_STAT" = true ]; then
+  echo -e "${Yellow}启动stat服务:${Font}"
+  echo -e "  cd dist"
+  echo -e "  ./stat${EXE_SUFFIX}"
+fi
+
+if [ "$DEEP_CLEAN" = true ] || [ "$BUILD_FRONTEND" = true ]; then
+  echo -e "\n${Yellow}重要提醒:${Font}"
+  if [ "$DEEP_CLEAN" = true ]; then
+    echo -e "  - 已深度清理缓存，请重启服务并清除浏览器缓存"
+  fi
+  if [ "$BUILD_FRONTEND" = true ]; then
+    echo -e "  - 前端文件已嵌入到xray-admin二进制文件中"
+    echo -e "  - 如需更新前端，必须重新编译"
+  fi
+fi
+
+echo -e "${Blue}========================================${Font}"
