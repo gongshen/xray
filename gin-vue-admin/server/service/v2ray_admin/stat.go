@@ -61,7 +61,7 @@ func (statService *StatService) GetStat(id uint) (stat v2ray.Stat, err error) {
 
 // GetStatInfoList 分页获取Stat记录
 // Author [piexlmax](https://github.com/piexlmax)
-func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list []*v2rayResp.Stat, total int64, err error) {
+func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch, needUserName bool) (list []*v2rayResp.Stat, total int64, err error) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
@@ -103,23 +103,24 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch) (list 
 			ServerIp:  stat.ServerIp,
 		})
 	}
-	// 个人流量使用接口，无需补充用户名
-	// nickNameMap := make(map[string]string)
-	// tagsMap := make(map[string]struct{})
-	// for _, stat := range stats {
-	// 	tagsMap[stat.Tag] = struct{}{}
-	// }
-	// tags := make([]string, 0, len(tagsMap))
-	// for tag := range tagsMap {
-	// 	tags = append(tags, tag)
-	// }
-	// nickNameMap, err = findUserNameByIds(tags)
-	// for _, v := range ans {
-	// 	v.Username = nickNameMap[v.Tag]
-	// }
-	// if err != nil {
-	// 	return
-	// }
+	if needUserName {
+		// 个人流量使用接口，无需补充用户名
+		tagsMap := make(map[string]struct{})
+		for _, stat := range stats {
+			tagsMap[stat.Tag] = struct{}{}
+		}
+		tags := make([]string, 0, len(tagsMap))
+		for tag := range tagsMap {
+			tags = append(tags, tag)
+		}
+		nickNameMap, err := findUserNameByIds(tags)
+		for _, v := range ans {
+			v.Username = nickNameMap[v.Tag]
+		}
+		if err != nil {
+			return nil, -1, err
+		}
+	}
 	return ans, total, err
 }
 

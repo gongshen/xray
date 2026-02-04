@@ -553,6 +553,8 @@ init()
     margin: 0 auto;
     border-radius: 8px;
     overflow: hidden;
+    width: 100% !important;
+    max-width: 600px !important;
   }
   
   .el-dialog__header {
@@ -571,17 +573,23 @@ init()
   .el-dialog__body {
     padding: 0;
     margin: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   .el-dialog__footer {
     padding: 0;
     margin: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 
 .share-container {
   padding: 24px;
   background: #f8f9ff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .config-section {
@@ -621,9 +629,10 @@ init()
 
 .config-content {
   display: flex;
-  gap: 24px;
-  align-items: flex-start;
+  gap: 20px;
+  align-items: center;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .qr-container {
@@ -632,8 +641,8 @@ init()
 
 .qr-wrapper {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -680,8 +689,10 @@ init()
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 0; /* 防止flex子元素溢出 */
+  gap: 16px;
+  justify-content: center;
+  min-width: 0;
+  padding-left: 8px;
 }
 
 .copy-btn, .qr-btn {

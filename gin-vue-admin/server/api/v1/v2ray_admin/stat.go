@@ -1,6 +1,8 @@
 package v2ray_admin
 
 import (
+	"time"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -10,7 +12,6 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"time"
 )
 
 type StatApi struct {
@@ -176,7 +177,7 @@ func (statApi *StatApi) GetStatList(c *gin.Context) {
 		response.FailWithMessage("查询时间不能超过一年", c)
 		return
 	}
-	if list, total, err := statService.GetStatInfoList(pageInfo); err != nil {
+	if list, total, err := statService.GetStatInfoList(pageInfo, true); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {

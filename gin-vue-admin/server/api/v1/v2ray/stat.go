@@ -64,7 +64,7 @@ func (statApi *StatApi) GetStatList(c *gin.Context) {
 	}
 	jwtId := utils.GetUserID(c)
 	pageInfo.Tag = strconv.Itoa(int(jwtId))
-	if list, total, err := statService.GetStatInfoList(pageInfo); err != nil {
+	if list, total, err := statService.GetStatInfoList(pageInfo, false); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage("获取失败", c)
 	} else {
