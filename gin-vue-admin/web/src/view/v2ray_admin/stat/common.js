@@ -13,10 +13,19 @@ export const useChartData = () => {
 export const setChartData = async (searchInfo) => {
     const ans2 = await getStatRank(searchInfo)
     if (ans2.code === 0 && ans2.data != null) {
-        // 限制排行榜只显示前10名
+        // 限制排行榜只显示前10名（流量最大的）
         const maxRankItems = 10
-        chartData.rank = ans2.data.rank ? ans2.data.rank.slice(0, maxRankItems) : []
-        chartData.rank_axis = ans2.data.rank_axis ? ans2.data.rank_axis.slice(0, maxRankItems) : []
+        // 后端数据是从小到大排序，所以取最后10条数据（流量最大的）
+        const rankData = ans2.data.rank || []
+        const rankAxisData = ans2.data.rank_axis || []
+        
+        if (rankData.length > maxRankItems) {
+            chartData.rank = rankData.slice(-maxRankItems)
+            chartData.rank_axis = rankAxisData.slice(-maxRankItems)
+        } else {
+            chartData.rank = rankData
+            chartData.rank_axis = rankAxisData
+        }
     }else {
         chartData.rank = []
         chartData.rank_axis = []
