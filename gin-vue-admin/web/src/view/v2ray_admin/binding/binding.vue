@@ -111,24 +111,25 @@
             </div>
             
             <div class="config-actions">
-              <el-button 
-                type="primary" 
-                class="copy-btn" 
-                :data-clipboard-text="shareInfo.share1_link"
-                @click="handleCopy('config1')"
-              >
-                <el-icon><DocumentCopy /></el-icon>
-                复制配置链接
-              </el-button>
-              <el-button 
-                type="success" 
-                plain 
-                class="qr-btn"
-                @click="downloadQR(shareInfo.share1, 'shadowrocket-config')"
-              >
-                <el-icon><Download /></el-icon>
-                下载二维码
-              </el-button>
+              <div class="button-group">
+                <el-button 
+                  type="primary" 
+                  class="copy-btn" 
+                  @click="handleCopy('config1')"
+                >
+                  <el-icon><DocumentCopy /></el-icon>
+                  复制配置链接
+                </el-button>
+                <el-button 
+                  type="success" 
+                  plain 
+                  class="qr-btn"
+                  @click="downloadQR(shareInfo.share1, 'shadowrocket-config')"
+                >
+                  <el-icon><Download /></el-icon>
+                  下载二维码
+                </el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -158,44 +159,27 @@
             </div>
             
             <div class="config-actions">
-              <el-button 
-                type="primary" 
-                class="copy-btn" 
-                :data-clipboard-text="shareInfo.share2_link"
-                @click="handleCopy('config2')"
-              >
-                <el-icon><DocumentCopy /></el-icon>
-                复制配置链接
-              </el-button>
-              <el-button 
-                type="success" 
-                plain 
-                class="qr-btn"
-                @click="downloadQR(shareInfo.share2, 'v2ray-config')"
-              >
-                <el-icon><Download /></el-icon>
-                下载二维码
-              </el-button>
+              <div class="button-group">
+                <el-button 
+                  type="primary" 
+                  class="copy-btn" 
+                  @click="handleCopy('config2')"
+                >
+                  <el-icon><DocumentCopy /></el-icon>
+                  复制配置链接
+                </el-button>
+                <el-button 
+                  type="success" 
+                  plain 
+                  class="qr-btn"
+                  @click="downloadQR(shareInfo.share2, 'v2ray-config')"
+                >
+                  <el-icon><Download /></el-icon>
+                  下载二维码
+                </el-button>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- 使用说明 -->
-        <div class="usage-tips">
-          <el-alert
-            title="使用说明"
-            type="info"
-            :closable="false"
-            show-icon
-          >
-            <template #default>
-              <div class="tips-content">
-                <p><strong>扫码导入：</strong>使用对应客户端扫描二维码即可自动导入配置</p>
-                <p><strong>链接导入：</strong>复制配置链接到客户端中手动导入</p>
-                <p><strong>客户端推荐：</strong>iOS推荐Shadowrocket，Android推荐V2rayNG</p>
-              </div>
-            </template>
-          </el-alert>
         </div>
       </div>
       
@@ -422,12 +406,37 @@ const closeShareDialog = () => {
 }
 
 // 处理复制操作
-const handleCopy = (configType) => {
-  ElMessage({
-    type: 'success',
-    message: `${configType === 'config1' ? 'Shadowrocket' : 'V2rayN'} 配置已复制到剪贴板`,
-    duration: 2000
-  })
+const handleCopy = async (configType) => {
+  try {
+    const textToCopy = configType === 'config1' ? shareInfo.value.share1_link : shareInfo.value.share2_link
+    await navigator.clipboard.writeText(textToCopy)
+    ElMessage({
+      type: 'success',
+      message: `${configType === 'config1' ? 'Shadowrocket' : 'V2rayN'} 配置已复制到剪贴板`,
+      duration: 2000
+    })
+  } catch (err) {
+    // 如果现代API失败，使用传统方法
+    const textArea = document.createElement('textarea')
+    textArea.value = configType === 'config1' ? shareInfo.value.share1_link : shareInfo.value.share2_link
+    document.body.appendChild(textArea)
+    textArea.select()
+    try {
+      document.execCommand('copy')
+      ElMessage({
+        type: 'success',
+        message: `${configType === 'config1' ? 'Shadowrocket' : 'V2rayN'} 配置已复制到剪贴板`,
+        duration: 2000
+      })
+    } catch (fallbackErr) {
+      ElMessage({
+        type: 'error',
+        message: '复制失败，请手动复制',
+        duration: 2000
+      })
+    }
+    document.body.removeChild(textArea)
+  }
 }
 
 // 下载二维码
@@ -633,10 +642,14 @@ init()
   align-items: center;
   width: 100%;
   box-sizing: border-box;
+  min-height: 180px;
 }
 
 .qr-container {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .qr-wrapper {
@@ -688,11 +701,18 @@ init()
 .config-actions {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
   justify-content: center;
   min-width: 0;
-  padding-left: 8px;
+  height: 180px;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 280px;
 }
 
 .copy-btn, .qr-btn {
@@ -706,12 +726,22 @@ init()
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  padding: 12px 16px;
+  margin: 0;
+  border: 1px solid transparent;
+  line-height: 1;
 }
 
 .copy-btn {
   background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
-  border: none;
+  border: 1px solid transparent;
   color: white;
+}
+
+.qr-btn {
+  background: white;
+  border: 1px solid #67c23a;
+  color: #67c23a;
 }
 
 .copy-btn:hover {

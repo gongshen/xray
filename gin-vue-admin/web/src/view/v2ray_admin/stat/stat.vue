@@ -3,7 +3,7 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
         <el-form-item label="创建时间">
-          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" :default-value="sevenDaysAgo"></el-date-picker>
+          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" :default-value="monthAgo"></el-date-picker>
           <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" :default-value="today"></el-date-picker>
         </el-form-item>
         <el-form-item label="用户名">
@@ -200,9 +200,9 @@ const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
 const today = new Date()
-const sevenDaysAgo = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000) // 7天前（包含今天共7天）
+const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000) // 1个月前
 const searchInfo = ref({
-  startCreatedAt: sevenDaysAgo.toISOString(),
+  startCreatedAt: monthAgo.toISOString(),
   endCreatedAt: today.toISOString()
 })
 
@@ -291,9 +291,9 @@ const getDateRangeText = () => {
 const onReset = () => {
   // 重置为近7天
   const today = new Date()
-  const sevenDaysAgo = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000)
+  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
   searchInfo.value = {
-    startCreatedAt: sevenDaysAgo.toISOString(),
+    startCreatedAt: monthAgo.toISOString(),
     endCreatedAt: today.toISOString()
   }
   getTableData()

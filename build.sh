@@ -113,7 +113,31 @@ if [ "$DEEP_CLEAN" = true ]; then
   rm -rf .output/
   rm -rf .temp/
   rm -rf package-lock.json
+  
+  # 清理更多前端缓存
+  echo -e "${Yellow}清理更多前端缓存...${Font}"
+  rm -rf .cache/
+  rm -rf .parcel-cache/
+  rm -rf .next/
+  rm -rf build/
+  rm -rf coverage/
+  rm -rf .nyc_output/
+  rm -rf .eslintcache
+  rm -rf .stylelintcache
+  
+  # 清理npm缓存
+  echo -e "${Yellow}清理npm缓存...${Font}"
+  npm cache clean --force 2>/dev/null || true
+  
   cd ../..
+  
+  # 清理Go构建缓存
+  echo -e "${Yellow}清理Go构建缓存...${Font}"
+  go clean -cache -modcache -i -r 2>/dev/null || true
+  
+  # 清理dist目录
+  echo -e "${Yellow}清理dist目录...${Font}"
+  rm -rf dist/*
   
   echo -e "${Green}✅ 深度清理完成${Font}"
   STEP=$((STEP + 1))
@@ -123,6 +147,13 @@ fi
 if [ "$BUILD_FRONTEND" = true ]; then
   echo -e "\n${Green}[${STEP}/${TOTAL_STEPS}] 编译前端...${Font}"
   cd gin-vue-admin/web
+  
+  # 强制清理前端构建缓存
+  echo -e "${Yellow}强制清理前端构建缓存...${Font}"
+  rm -rf dist/
+  rm -rf .vite/
+  rm -rf .cache/
+  rm -rf node_modules/.cache/
   
   # 安装依赖
   if [ ! -d "node_modules" ]; then
@@ -135,16 +166,28 @@ if [ "$BUILD_FRONTEND" = true ]; then
   fi
   
   echo -e "${Yellow}构建前端项目...${Font}"
-  npm run build
+  # 强制重新构建，忽略缓存
+  npm run build -- --force
   if [ $? -ne 0 ]; then
-    echo -e "${Red}❌ 前端构建失败${Font}"
-    exit 1
+    echo -e "${Red}❌ 前端构建失败，尝试清理缓存后重新构建...${Font}"
+    rm -rf dist/ .vite/ .cache/ node_modules/.cache/
+    npm run build
+    if [ $? -ne 0 ]; then
+      echo -e "${Red}❌ 前端构建失败${Font}"
+      exit 1
+    fi
   fi
   
   echo -e "${Yellow}复制前端文件到embed目录...${Font}"
   rm -rf ../server/resource/page
   mkdir -p ../server/resource/page
   cp -r dist/* ../server/resource/page/
+  
+  # 验证文件复制
+  if [ ! -f "../server/resource/page/index.html" ]; then
+    echo -e "${Red}❌ 前端文件复制失败${Font}"
+    exit 1
+  fi
   
   cd ../..
   echo -e "${Green}✅ 前端编译完成${Font}"
@@ -211,22 +254,6 @@ else
   echo -e "${Yellow}没有生成任何文件${Font}"
 fi
 
-# 验证结果
-if [ "$BUILD_FRONTEND" = true ]; then
-  echo -e "\n${Yellow}验证前端文件嵌入:${Font}"
-  if grep -r "getStatRank" gin-vue-admin/server/resource/page/ 2>/dev/null; then
-    echo -e "${Red}❌ 发现getStatRank引用，可能存在缓存问题${Font}"
-  else
-    echo -e "${Green}✅ 没有发现getStatRank引用${Font}"
-  fi
-  
-  if ls gin-vue-admin/server/resource/page/assets/*v2ray_stat* 2>/dev/null; then
-    echo -e "${Green}✅ 找到v2ray_stat相关文件${Font}"
-  else
-    echo -e "${Yellow}⚠️  没有找到v2ray_stat文件${Font}"
-  fi
-fi
-
 # 使用提示
 echo -e "\n${Blue}========================================${Font}"
 echo -e "${Green}使用提示:${Font}"
@@ -247,10 +274,13 @@ if [ "$DEEP_CLEAN" = true ] || [ "$BUILD_FRONTEND" = true ]; then
   echo -e "\n${Yellow}重要提醒:${Font}"
   if [ "$DEEP_CLEAN" = true ]; then
     echo -e "  - 已深度清理缓存，请重启服务并清除浏览器缓存"
+    echo -e "  - 建议按 Ctrl+F5 或 Ctrl+Shift+R 强制刷新浏览器"
+    echo -e "  - 或者在浏览器开发者工具中右键刷新按钮选择'清空缓存并硬性重新加载'"
   fi
   if [ "$BUILD_FRONTEND" = true ]; then
     echo -e "  - 前端文件已嵌入到xray-admin二进制文件中"
     echo -e "  - 如需更新前端，必须重新编译"
+    echo -e "  - 请重启xray-admin服务以加载新的前端文件"
   fi
 fi
 
