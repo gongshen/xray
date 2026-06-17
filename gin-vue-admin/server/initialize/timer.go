@@ -36,13 +36,13 @@ func Timer() {
 		time.Sleep(1 * time.Minute)
 		location, _ := time.LoadLocation("Asia/Shanghai")
 
-		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", "@every 1m", job.CollectorJob{}, cron.WithLocation(location)); err != nil {
+		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", "@every 1h", job.CollectorJob{}, cron.WithLocation(location)); err != nil {
 			fmt.Println("add timer error:", err)
 		}
 		if _, err := global.GVA_Timer.AddTaskByJob("calc_traffic_limit", "@every 10m", job.CalculateMonthlyTrafficLimitJob{}, cron.WithLocation(location)); err != nil {
 			fmt.Println("add timer error:", err)
 		}
-		if _, err := global.GVA_Timer.AddTaskByJob("reset_traffic_limit", "@monthly", job.ResetMonthlyTrafficLimitJob{}, cron.WithLocation(location)); err != nil {
+		if _, err := global.GVA_Timer.AddTaskByJob("reset_traffic_limit", "@daily", job.ResetMonthlyTrafficLimitJob{}, cron.WithLocation(location)); err != nil {
 			fmt.Println("add timer error:", err)
 		}
 		if _, err := global.GVA_Timer.AddTaskByJob("quota_reset", "@daily", job.QuotaResetJob{}, cron.WithLocation(location)); err != nil {

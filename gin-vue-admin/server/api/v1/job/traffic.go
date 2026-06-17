@@ -3,7 +3,6 @@ package job
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -12,122 +11,34 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/v2ray_admin"
 	"github.com/valyala/fasthttp"
-	"github.com/xtls/xray-core/app/stats/command"
 	"go.uber.org/zap"
 )
 
 var serviceGroup = service.ServiceGroupApp
 
-type Traffic struct {
-	Category string // inbound outbound user
-	Tag      string //
-	Label    string // downlink uplink
-	Value    int64
-}
-
-var trafficRegex = regexp.MustCompile("(inbound|outbound|user)>>>([^>]+)>>>traffic>>>(downlink|uplink)")
-
 type CollectorJob struct{}
 
 func (job CollectorJob) Run() {
-	// 获取所有的服务器
 	srvs, err := serviceGroup.V2rayAdminServiceGroup.GetAllServer()
 	if err != nil {
 		global.GVA_LOG.Error("CollectorJob GetAllServer", zap.Error(err))
 		return
 	}
-	// 转换为东八时区
 	location, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	now := time.Now().In(location)
-	year := now.Year()
-	month := now.Month()
-	day := now.Day()
-	createdAt := year*10000 + int(month)*100 + day
+	createdAt := now.Year()*10000 + int(now.Month())*100 + now.Day()
 	for _, srv := range srvs {
-		// 收集流量统计
-		collectTraffic(srv, createdAt)
-		// 收集系统信息
+		if err := serviceGroup.V2rayAdminServiceGroup.CollectServerTrafficWithRetry(srv, createdAt, 3); err != nil {
+			global.GVA_LOG.Error("CollectorJob CollectServerTraffic", zap.Error(err), zap.String("ip", srv.Ip))
+		}
 		collectSysInfo(srv)
 	}
 }
 
-// collectTraffic 收集流量统计
-func collectTraffic(srv *v2ray.Server, createdAt int) {
-	req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)
-	defer fasthttp.ReleaseResponse(resp)
-
-	req.SetRequestURI(fmt.Sprintf("http://%s:%d/stat/traffic", srv.Ip, srv.GetStatPort()))
-	if err := global.HTTP_CLI.Do(req, resp); err != nil {
-		global.GVA_LOG.Error("CollectorJob Do traffic", zap.Error(err), zap.String("ip", srv.Ip))
-		return
-	}
-
-	// Check if response is valid JSON
-	body := resp.Body()
-	if len(body) == 0 {
-		global.GVA_LOG.Debug("CollectorJob traffic: empty response", zap.String("ip", srv.Ip))
-		return
-	}
-
-	statsResp := new(command.QueryStatsResponse)
-	if err := json.Unmarshal(body, statsResp); err != nil {
-		global.GVA_LOG.Error("CollectorJob Unmarshal traffic", zap.Error(err), zap.String("body", string(body)))
-		return
-	}
-
-	var usedQuota uint64
-	itemMap := make(map[string]*v2ray.Stat)
-	for _, stat := range statsResp.Stat {
-		if stat.Value <= 0 {
-			continue
-		}
-		matchs := trafficRegex.FindStringSubmatch(stat.Name)
-		if len(matchs) != 4 {
-			global.GVA_LOG.Error("CollectorJob FindStringSubmatch")
-			return
-		}
-		if matchs[1] != "user" {
-			continue
-		}
-		item, ok := itemMap[matchs[2]]
-		if !ok {
-			item = &v2ray.Stat{
-				Tag:       matchs[2],
-				CreatedAt: createdAt,
-				ServerIp:  srv.Ip,
-			}
-			itemMap[matchs[2]] = item
-		}
-		if matchs[3] == "downlink" {
-			item.Down += uint64(stat.Value)
-		} else {
-			item.Up += uint64(stat.Value)
-		}
-		usedQuota += uint64(stat.Value)
-	}
-
-	// Only call StatsCollector if there's data to insert
-	if len(itemMap) > 0 {
-		if err := serviceGroup.V2rayAdminServiceGroup.StatsCollector(itemMap); err != nil {
-			global.GVA_LOG.Error("CollectorJob StatsCollector", zap.Error(err))
-			return
-		}
-	}
-
-	if usedQuota > 0 {
-		if err := serviceGroup.V2rayAdminServiceGroup.UpdateServerUsedQuota(srv.ID, usedQuota); err != nil {
-			global.GVA_LOG.Error("CollectorJob UpdateServerUsedQuota", zap.Error(err))
-			return
-		}
-	}
-}
-
-// collectSysInfo 收集系统信息
 func collectSysInfo(srv *v2ray.Server) {
 	req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
@@ -139,7 +50,6 @@ func collectSysInfo(srv *v2ray.Server) {
 		return
 	}
 
-	// Check if response is valid JSON
 	body := resp.Body()
 	if len(body) == 0 {
 		global.GVA_LOG.Debug("CollectorJob sysinfo: empty response", zap.String("ip", srv.Ip))
@@ -161,14 +71,12 @@ func collectSysInfo(srv *v2ray.Server) {
 type QuotaResetJob struct{}
 
 func (job QuotaResetJob) Run() {
-	// 转换为东八时区
 	location, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	now := time.Now().In(location)
-	// 获取所有的服务器
 	srvs, err := serviceGroup.V2rayAdminServiceGroup.GetAllServer()
 	if err != nil {
 		global.GVA_LOG.Error("CollectorJob GetAllServer", zap.Error(err))
@@ -176,8 +84,8 @@ func (job QuotaResetJob) Run() {
 	}
 	zeroTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
 	for _, srv := range srvs {
-		if srv.ResetDate == now.Day() {
-			global.GVA_LOG.Info("服务器流量重置", zap.String("服务器ip", srv.Ip), zap.Uint64("使用流量", srv.TotalQuota))
+		if v2ray_admin.IsTrafficResetDay(now, srv.ResetDate) {
+			global.GVA_LOG.Info("server traffic quota reset", zap.String("server_ip", srv.Ip), zap.Uint64("used_quota", srv.TotalQuota))
 			if err = serviceGroup.V2rayAdminServiceGroup.SaveServerUsedQuotaLog(&v2ray.ServerQuotaLog{
 				ServerID:  int(srv.ID),
 				UsedQuota: srv.UsedQuota,
@@ -197,8 +105,6 @@ func (job QuotaResetJob) Run() {
 type CalculateMonthlyTrafficLimitJob struct{}
 
 func (job CalculateMonthlyTrafficLimitJob) Run() {
-	// TODO 确保是每月一号
-	// 转换为东八时区
 	location, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		fmt.Println(err)
@@ -206,45 +112,40 @@ func (job CalculateMonthlyTrafficLimitJob) Run() {
 	}
 	now := time.Now().In(location)
 	global.GVA_LOG.Info("CollectorJob")
-	// 获取所有的用户
-	users, err := service.ServiceGroupApp.SystemServiceGroup.UserService.GetAllUser()
+
+	bindings, err := serviceGroup.V2rayAdminServiceGroup.GetAllBindings()
 	if err != nil {
-		global.GVA_LOG.Error("CollectorJob GetAllUser", zap.Error(err))
+		global.GVA_LOG.Error("CollectorJob GetAllBindings", zap.Error(err))
 		return
 	}
-	var needLimitUser []uint
-	for _, user := range users {
-		if user.TrafficLimit < 0 {
-			continue
-		}
-		if user.TrafficLimit == 0 {
-			needLimitUser = append(needLimitUser, user.ID)
-			continue
-		}
-		traffic, err := serviceGroup.V2rayAdminServiceGroup.MonthlyUserTraffic(now, strconv.Itoa(int(user.ID)))
-		if err != nil {
-			global.GVA_LOG.Error("CollectorJob MonthlyGetUserStat:", zap.Error(err))
-			return
-		}
-		if traffic >= uint64(user.TrafficLimit*1024*1024*1024) {
-			needLimitUser = append(needLimitUser, user.ID)
-		}
-	}
+
 	needUpdateServer := make(map[int]*v2ray.Server)
-	for _, user := range needLimitUser {
-		bindings, err := serviceGroup.V2rayAdminServiceGroup.GetBindingByUserID(user)
-		if err != nil {
-			global.GVA_LOG.Error("CollectorJob GetBindingByUserID:", zap.Error(err))
+	for _, binding := range bindings {
+		if binding == nil || binding.UserID <= 0 || binding.ServerID <= 0 {
+			continue
+		}
+
+		shouldLimit := v2ray_admin.ShouldLimitTraffic(0, binding.User.TrafficLimit)
+		if binding.User.TrafficLimit > 0 {
+			startCreatedAt := v2ray_admin.TrafficLimitStartCreatedAt(now, binding.Server.ResetDate)
+			traffic, err := serviceGroup.V2rayAdminServiceGroup.UserTrafficSince(startCreatedAt, strconv.Itoa(binding.UserID), binding.Server.Ip)
+			if err != nil {
+				global.GVA_LOG.Error("CollectorJob UserTrafficSince:", zap.Error(err))
+				return
+			}
+			shouldLimit = v2ray_admin.ShouldLimitTraffic(traffic, binding.User.TrafficLimit)
+		}
+
+		if binding.IsLimited == shouldLimit {
+			continue
+		}
+		if err = serviceGroup.V2rayAdminServiceGroup.SetBindingTrafficLimit(binding.ID, shouldLimit); err != nil {
+			global.GVA_LOG.Error("CollectorJob SetBindingTrafficLimit:", zap.Error(err))
 			return
 		}
-		if err = serviceGroup.V2rayAdminServiceGroup.SetTrafficLimit(user); err != nil {
-			global.GVA_LOG.Error("CollectorJob SetTrafficLimit:", zap.Error(err))
-			return
-		}
-		for _, binding := range bindings {
-			needUpdateServer[binding.ServerID] = &binding.Server
-		}
+		needUpdateServer[binding.ServerID] = &binding.Server
 	}
+
 	for _, srv := range needUpdateServer {
 		if err = serviceGroup.V2rayAdminServiceGroup.ReportBinding(srv); err != nil {
 			global.GVA_LOG.Error("CollectorJob ReportBinding:", zap.Error(err))
@@ -256,16 +157,25 @@ func (job CalculateMonthlyTrafficLimitJob) Run() {
 type ResetMonthlyTrafficLimitJob struct{}
 
 func (job ResetMonthlyTrafficLimitJob) Run() {
-	if err := serviceGroup.V2rayAdminServiceGroup.ResetTrafficLimit(); err != nil {
-		global.GVA_LOG.Error("ResetMonthlyTrafficLimitJob ResetTrafficLimit:", zap.Error(err))
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
+	now := time.Now().In(location)
 	srvs, err := serviceGroup.V2rayAdminServiceGroup.GetAllServer()
 	if err != nil {
 		global.GVA_LOG.Error("ResetMonthlyTrafficLimitJob GetAllServer:", zap.Error(err))
 		return
 	}
 	for _, srv := range srvs {
+		if !v2ray_admin.IsTrafficResetDay(now, srv.ResetDate) {
+			continue
+		}
+		if err = serviceGroup.V2rayAdminServiceGroup.ResetTrafficLimitByServerID(srv.ID); err != nil {
+			global.GVA_LOG.Error("ResetMonthlyTrafficLimitJob ResetTrafficLimitByServerID:", zap.Error(err))
+			return
+		}
 		if err = serviceGroup.V2rayAdminServiceGroup.ReportBinding(srv); err != nil {
 			global.GVA_LOG.Error("ResetMonthlyTrafficLimitJob ReportBinding:", zap.Error(err))
 			return

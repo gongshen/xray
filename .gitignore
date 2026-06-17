@@ -3,7 +3,7 @@
 # 编译输出
 dist/
 gin-vue-admin/web/dist/
-gin-vue-admin/server/resource/
+gin-vue-admin/server/resource/page/
 log/
 
 # 临时文件

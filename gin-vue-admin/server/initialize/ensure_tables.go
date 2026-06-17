@@ -57,6 +57,9 @@ func (e *ensureTables) MigrateTable(ctx context.Context) (context.Context, error
 		example.ExaFileUploadAndDownload{},
 
 		v2ray.Stat{},
+		v2ray.StatSnapshot{},
+		v2ray.StatSyncCursor{},
+		v2ray.TrafficAnomaly{},
 		v2ray.Binding{},
 		v2ray.Server{},
 		v2ray.ServerQuotaLog{},
@@ -95,6 +98,9 @@ func (e *ensureTables) TableCreated(ctx context.Context) bool {
 		example.ExaFileUploadAndDownload{},
 
 		v2ray.Stat{},
+		v2ray.StatSnapshot{},
+		v2ray.StatSyncCursor{},
+		v2ray.TrafficAnomaly{},
 		v2ray.Binding{},
 		v2ray.Server{},
 		v2ray.ServerQuotaLog{},

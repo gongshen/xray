@@ -14,6 +14,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
 	v2rayReq "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/request"
 	v2rayResp "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/response"
+	"gorm.io/gorm"
 )
 
 var (
@@ -104,8 +105,8 @@ func (statService *StatService) GetStatInfoList(info v2rayReq.StatSearch, needUs
 		})
 	}
 	if needUserName {
-		// 个人流量使用接口，无需补充用户名
 		tagsMap := make(map[string]struct{})
+		// 个人流量使用接口，无需补充用户名
 		for _, stat := range stats {
 			tagsMap[stat.Tag] = struct{}{}
 		}
@@ -153,6 +154,10 @@ func format(used uint64) string {
 }
 
 func (statService *StatService) StatsCollector(statsMap map[string]*v2ray.Stat) (err error) {
+	return statsCollector(global.GVA_DB, statsMap)
+}
+
+func statsCollector(db *gorm.DB, statsMap map[string]*v2ray.Stat) error {
 	// Skip if no stats to insert
 	if len(statsMap) == 0 {
 		return nil
@@ -170,8 +175,7 @@ func (statService *StatService) StatsCollector(statsMap map[string]*v2ray.Stat) 
 		i++
 	}
 	buf.WriteString(" ON DUPLICATE KEY UPDATE down=down+VALUES(down),up=up+VALUES(up)")
-	err = global.GVA_DB.Exec(buf.String(), args...).Error
-	return
+	return db.Exec(buf.String(), args...).Error
 }
 
 func (statService *StatService) GetStatCharts(info *v2rayReq.StatSearch) (*response.StatChartResponse, error) {
@@ -257,6 +261,27 @@ func (statService *StatService) MonthlyUserTraffic(createdAt time.Time, tag stri
 	db = db.Where("created_at > ?", startCreatedAt)
 	if tag != "" {
 		db = db.Where("tag = ?", tag)
+	}
+	if err := db.Find(&stats).Error; err != nil {
+		return 0, err
+	}
+	var traffic uint64
+	for _, stat := range stats {
+		traffic += stat.Up
+		traffic += stat.Down
+	}
+	return traffic, nil
+}
+
+func (statService *StatService) UserTrafficSince(startCreatedAt int, tag string, serverIP string) (uint64, error) {
+	db := global.GVA_DB.Debug().Model(&v2ray.Stat{})
+	stats := make([]*v2ray.Stat, 0)
+	db = db.Where("created_at >= ?", startCreatedAt)
+	if tag != "" {
+		db = db.Where("tag = ?", tag)
+	}
+	if serverIP != "" {
+		db = db.Where("server_ip = ?", serverIP)
 	}
 	if err := db.Find(&stats).Error; err != nil {
 		return 0, err

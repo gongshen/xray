@@ -334,12 +334,8 @@ const handleCurrentChange = (val) => {
 // 查询
 const getTableData = async() => {
   try {
-    console.log('=== V2RAY_ADMIN 获取表格数据 ===')
-    console.log('请求参数:', { page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-    
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-    console.log('API响应:', table)
-    
+
     if (table.code === 0) {
       // 确保数据结构正确
       const list = table.data?.list || []
@@ -347,16 +343,9 @@ const getTableData = async() => {
       total.value = table.data?.total || 0
       page.value = table.data?.page || 1
       pageSize.value = table.data?.pageSize || 10
-      
-      console.log('表格数据设置完成:', {
-        dataLength: tableData.value.length,
-        total: total.value,
-        sampleData: tableData.value[0] || null
-      })
-      
+
       // 如果有数据但表格不显示，可能是响应式问题
       if (list.length > 0) {
-        console.log('数据样本:', list[0])
         // 强制触发响应式更新
         tableData.value = [...list]
       }

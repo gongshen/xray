@@ -47,7 +47,14 @@ func RegisterTables() {
 		example.ExaFile{},
 		example.ExaCustomer{},
 		example.ExaFileChunk{},
-		example.ExaFileUploadAndDownload{}, v2ray.Stat{}, v2ray.Server{}, v2ray.Binding{}, v2ray.ServerQuotaLog{},
+		example.ExaFileUploadAndDownload{},
+		v2ray.Stat{},
+		v2ray.StatSnapshot{},
+		v2ray.StatSyncCursor{},
+		v2ray.TrafficAnomaly{},
+		v2ray.Server{},
+		v2ray.Binding{},
+		v2ray.ServerQuotaLog{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))

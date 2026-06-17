@@ -133,6 +133,10 @@ func (serverService *ServerService) RestartVPS(server *v2ray.Server) error {
 		return fmt.Errorf("BWG 配置未设置，请在 config.yaml 中配置 bwg.veid 和 bwg.apiKey")
 	}
 
+	if err := (&StatService{}).PreCollectServerTraffic(server); err != nil {
+		return err
+	}
+
 	// 构建请求 URL
 	url := fmt.Sprintf("https://api.64clouds.com/v1/restart?veid=%s&api_key=%s", bwgConfig.VeID, bwgConfig.ApiKey)
 

@@ -255,7 +255,6 @@ const shareFormVisible = ref(false)
 const shareBindingFunc = async(row) => {
   const res = await shareBinding({ ID: row.ID })
   if (res.code === 0) {
-    console.log("aaa:", res.data.share1)
     shareInfo.value.share1_link = res.data.share1
     shareInfo.value.share2_link = res.data.share2
     QRCode.toDataURL(res.data.share1)

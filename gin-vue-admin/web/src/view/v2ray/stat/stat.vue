@@ -255,12 +255,8 @@ const handleCurrentChange = (val) => {
 const getTableData = async() => {
   loading.value = true
   try {
-    console.log('=== 获取表格数据 ===')
-    console.log('请求参数:', { page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-    
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-    console.log('API响应:', table)
-    
+
     if (table.code === 0) {
       // 确保数据结构正确
       const list = table.data?.list || []
@@ -268,16 +264,9 @@ const getTableData = async() => {
       total.value = table.data?.total || 0
       page.value = table.data?.page || 1
       pageSize.value = table.data?.pageSize || 10
-      
-      console.log('表格数据设置完成:', {
-        dataLength: tableData.value.length,
-        total: total.value,
-        sampleData: tableData.value[0] || null
-      })
-      
+
       // 如果有数据但表格不显示，可能是响应式问题
       if (list.length > 0) {
-        console.log('数据样本:', list[0])
         // 强制触发响应式更新
         tableData.value = [...list]
       }
@@ -310,22 +299,18 @@ const initChart = () => {
   }
   
   chart.value = echarts.init(echart.value)
-  console.log('图表实例创建完成')
   
   // 如果已有数据，立即渲染
   if (chartData.data && chartData.data.length > 0) {
-    console.log('立即渲染已有数据')
     setOptions(chartData)
   }
 }
 
 // 强制刷新图表
 const refreshChart = () => {
-  console.log('强制刷新图表')
   if (chart.value && chartData.data && chartData.data.length > 0) {
     setOptions(chartData)
   } else {
-    console.log('重新初始化图表')
     nextTick(() => {
       initChart()
     })
@@ -334,14 +319,6 @@ const refreshChart = () => {
 
 // 设置图表选项
 const setOptions = (data) => {
-  // 添加调试信息
-  console.log('图表数据:', {
-    data_axis: data.data_axis,
-    data: data.data,
-    data_axis_length: data.data_axis?.length,
-    data_length: data.data?.length
-  })
-
   // 检查数据是否存在
   if (!data.data_axis || !data.data || data.data_axis.length === 0 || data.data.length === 0) {
     console.warn('图表数据为空或格式不正确')
@@ -360,8 +337,6 @@ const setOptions = (data) => {
     }
     return dateStr
   })
-
-  console.log('格式化后的日期轴:', formattedAxisData)
 
   // 流量趋势图
   chart.value?.setOption({
@@ -463,7 +438,6 @@ const setOptions = (data) => {
 
 // 监听图表数据变化
 watch(() => chartData, (newData) => {
-  console.log('图表数据变化:', newData)
   if (chart.value && newData) {
     setOptions(newData)
   } else if (!chart.value) {
@@ -479,8 +453,6 @@ watch(() => chartData, (newData) => {
 })
 
 onMounted(async () => {
-  console.log('页面挂载，开始初始化')
-  
   // 先加载表格数据
   await getTableData()
   
@@ -488,16 +460,13 @@ onMounted(async () => {
   await setChartData({...searchInfo.value})
   
   await nextTick()
-  console.log('DOM更新完成，初始化图表')
   
   // 确保图表容器存在
   if (echart.value) {
     initChart()
-    console.log('图表初始化完成')
     
     // 延迟刷新图表，确保数据已加载
     setTimeout(() => {
-      console.log('延迟刷新图表')
       refreshChart()
     }, 500)
   } else {

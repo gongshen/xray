@@ -3,13 +3,13 @@ package v2ray_admin
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
 	v2rayReq "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/request"
 	"github.com/valyala/fasthttp"
+	"go.uber.org/zap"
 )
 
 type BindingService struct {
@@ -100,36 +100,51 @@ func (bindingService *BindingService) GetAllBindings() (bindings []*v2ray.Bindin
 
 // ReportBinding 上报绑定
 func (bindingService *BindingService) ReportBinding(srv *v2ray.Server) error {
+	fullSrv := srv
+	if srv.ID > 0 {
+		dbSrv, err := (&ServerService{}).GetServer(srv.ID)
+		if err != nil {
+			return err
+		}
+		fullSrv = &dbSrv
+	}
+
+	statService := &StatService{}
+	if err := statService.PreCollectServerTraffic(fullSrv); err != nil {
+		return err
+	}
 	// 获取所有该服务器的绑定
-	bindings, err := bindingService.GetBindingsByServerID(int(srv.ID))
+	bindings, err := bindingService.GetBindingsByServerID(int(fullSrv.ID))
 	if err != nil {
 		return err
 	}
-	settingsCli := make([]*v2ray.XrayConfigSettingsClient, 0, len(bindings))
-	for _, binding := range bindings {
-		settingsCli = append(settingsCli, &v2ray.XrayConfigSettingsClient{
-			Id:      binding.User.UUID.String(),
-			Level:   binding.Level,
-			AlterId: binding.AlterID,
-			Email:   strconv.Itoa(binding.UserID),
-		})
+	config, alerts := BuildXRayConfigFromBindings(fullSrv.Port, bindings)
+	for i := range alerts {
+		alerts[i].ServerIp = fullSrv.Ip
 	}
-	config := v2ray.NewXRayConfig(srv.Port)
-	config.InboundConfigs[0].Settings.Clients = settingsCli
+	logTrafficCollectionAlerts(alerts)
+	statService.saveTrafficCollectionAlerts(alerts)
 	data, err := json.Marshal(config)
 	if err != nil {
 		return err
 	}
 	srv.Config = data
 	req, resp := fasthttp.AcquireRequest(), fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
 	req.Header.SetMethod("POST")
 	req.SetBody(data)
-	req.SetRequestURI(fmt.Sprintf("http://%s:%d/conf/update", srv.Ip, srv.GetStatPort()))
-	if err = global.HTTP_CLI.Do(req, nil); err != nil {
+	req.SetRequestURI(fmt.Sprintf("http://%s:%d/conf/update", fullSrv.Ip, fullSrv.GetStatPort()))
+	if err = global.HTTP_CLI.Do(req, resp); err != nil {
 		return err
 	}
-	fasthttp.ReleaseRequest(req)
-	fasthttp.ReleaseResponse(resp)
+	if status := resp.StatusCode(); status < fasthttp.StatusOK || status >= fasthttp.StatusMultipleChoices {
+		err = fmt.Errorf("update xray config returned status %d: %s", status, string(resp.Body()))
+		if global.GVA_LOG != nil {
+			global.GVA_LOG.Error("ReportBinding update config failed", zap.Error(err), zap.String("ip", fullSrv.Ip))
+		}
+		return err
+	}
 	return nil
 }
 
@@ -143,8 +158,16 @@ func (bindingService *BindingService) ResetTrafficLimit() error {
 	return global.GVA_DB.Model(&v2ray.Binding{}).UpdateColumn("is_limited", false).Error
 }
 
+func (bindingService *BindingService) ResetTrafficLimitByServerID(serverID uint) error {
+	return global.GVA_DB.Model(&v2ray.Binding{}).Where("server_id = ?", serverID).UpdateColumn("is_limited", false).Error
+}
+
 func (bindingService *BindingService) SetTrafficLimit(userID uint) error {
 	return global.GVA_DB.Model(&v2ray.Binding{}).Where("user_id = ?", userID).UpdateColumn("is_limited", true).Error
+}
+
+func (bindingService *BindingService) SetBindingTrafficLimit(id uint, limited bool) error {
+	return global.GVA_DB.Model(&v2ray.Binding{}).Where("id = ?", id).UpdateColumn("is_limited", limited).Error
 }
 
 func (bindingService *BindingService) RemoveTrafficLimit(id uint) error {

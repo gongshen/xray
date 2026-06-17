@@ -12,10 +12,10 @@ func StartServer(port int) error {
 	h := requestHandler
 	s := &fasthttp.Server{
 		Handler:            h,
-		DisableKeepalive:   false, // 开启长连接支持
+		DisableKeepalive:   false,
 		ReadBufferSize:     1024 * 4,
 		WriteBufferSize:    1024 * 4,
-		MaxRequestBodySize: 1024 * 1024 * 2, // 最大请求体大小为 2MB
+		MaxRequestBodySize: 1024 * 1024 * 2,
 	}
 	addr := fmt.Sprintf(":%d", port)
 	fmt.Printf("Server listening on %s\n", addr)
@@ -31,6 +31,10 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	switch string(ctx.Path()) {
 	case "/stat/traffic":
 		business.CollectTraffic(ctx)
+	case "/stat/traffic/collect":
+		business.CollectTrafficToLocalStoreHandler(ctx)
+	case "/stat/traffic/sync":
+		business.SyncLocalTraffic(ctx)
 	case "/stat/sysinfo":
 		business.CollectSysInfo(ctx)
 	case "/conf/update":
