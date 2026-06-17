@@ -28,6 +28,9 @@ xray_admin_dir="/usr/local/bin/xray-admin"
 xray_admin_conf_dir="/usr/local/etc/xray-admin"
 xray_admin_service_dir="/etc/systemd/system/xray_admin.service"
 stat_service_dir="/etc/systemd/system/stat.service"
+stat_data_dir="/var/lib/xray-stat"
+stat_db_path="${stat_data_dir}/stat.db"
+stat_collect_interval="5s"
 xray_conf_dir="/usr/local/etc/xray"
 iptables_conf_dir="/usr/local/etc/xray/iptables"
 
@@ -129,6 +132,8 @@ function dependency_install() {
 
   mkdir -p /usr/local/bin >/dev/null 2>&1
   mkdir -p ${xray_conf_dir} >/dev/null 2>&1
+  mkdir -p ${stat_data_dir} >/dev/null 2>&1
+  chmod 755 ${stat_data_dir} >/dev/null 2>&1
 }
 
 function basic_optimization() {
@@ -258,14 +263,7 @@ function create_xray_config() {
       "port": 80,
       "protocol": "vmess",
       "settings": {
-        "clients": [
-          {
-            "id": "",
-            "alterId": 64,
-            "level": 0,
-            "email": "admin"
-          }
-        ]
+        "clients": []
       },
       "streamSettings": {
         "network": "tcp",
@@ -311,12 +309,8 @@ function create_xray_config() {
 }
 XRAYEOF
 
-  # 生成UUID并写入配置
-  UUID=$(cat /proc/sys/kernel/random/uuid)
-  sed -i "s/\"id\": \"\"/\"id\": \"${UUID}\"/" ${xray_conf_dir}/config.json
-  
   print_ok "Xray 配置文件已创建"
-  echo -e "${Blue}UUID: ${UUID}${Font}"
+  echo -e "${Yellow}Xray 初始 clients 为空，用户配置将由 xray-admin 数据库绑定生成。${Font}"
 }
 
 function create_stat_service() {
@@ -331,7 +325,7 @@ After=network.target nss-lookup.target
 [Service]
 User=root
 Environment="REMOTE_IP=__REMOTE_IP__"
-ExecStart=/usr/local/bin/stat -port __STAT_PORT__
+ExecStart=/usr/local/bin/stat -port __STAT_PORT__ -traffic-db __STAT_DB_PATH__ -collect-interval __COLLECT_INTERVAL__
 Restart=on-failure
 RestartPreventExitStatus=23
 
@@ -479,6 +473,8 @@ function bbr_boost_sh() {
 }
 
 function install_stat() {
+  mkdir -p ${stat_data_dir}
+  chmod 755 ${stat_data_dir}
   print_ok "安装 Stat 服务"
   
   # 从 GitHub 下载 stat
@@ -493,6 +489,8 @@ function install_stat() {
   read -rp "请输入Stat监听端口(默认56611)：" statPort
   [ -z "$statPort" ] && statPort="56611"
   sed -i "s|__STAT_PORT__|${statPort}|" ${stat_service_dir}
+  sed -i "s|__STAT_DB_PATH__|${stat_db_path}|" ${stat_service_dir}
+  sed -i "s|__COLLECT_INTERVAL__|${stat_collect_interval}|" ${stat_service_dir}
   
   systemctl daemon-reload
   systemctl enable stat
