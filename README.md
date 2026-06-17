@@ -155,6 +155,11 @@ zap:
   level: info             # 日志级别
   prefix: '[xray-admin]'  # 日志前缀
   director: log           # 日志目录
+
+# 节点统计配置
+stat_port: 56611          # 节点 stat 默认端口
+traffic_collect_interval: 1h # xray-admin 拉取节点流量的间隔，未配置默认 1h
+sysinfo_collect_interval: 5m # xray-admin 刷新在线状态/CPU/内存/磁盘的间隔，未配置默认 5m；10 分钟未更新显示离线
 ```
 
 ## 🔧 服务管理

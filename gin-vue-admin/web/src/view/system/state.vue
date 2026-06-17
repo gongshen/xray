@@ -149,6 +149,7 @@ const restartLoading = ref(false)
 const serverList = ref([])
 const selectedServerId = ref(null)
 const isMobile = ref(false)
+const offlineThresholdSeconds = 10 * 60
 
 const colors = ref([
   { color: '#5cb87a', percentage: 20 },
@@ -186,11 +187,11 @@ const cpuPercent = computed(() => {
   return Math.round(currentServer.value.cpu_percent || 0)
 })
 
-// 判断服务器是否在线 (5分钟内有更新)
+// 判断服务器是否在线 (10分钟内有更新)
 const isOnline = computed(() => {
   if (!currentServer.value || !currentServer.value.sysinfo_at) return false
   const now = Math.floor(Date.now() / 1000)
-  return (now - currentServer.value.sysinfo_at) < 300
+  return (now - currentServer.value.sysinfo_at) < offlineThresholdSeconds
 })
 
 // 格式化时间

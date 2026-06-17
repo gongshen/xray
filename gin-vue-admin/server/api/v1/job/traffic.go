@@ -35,6 +35,18 @@ func (job CollectorJob) Run() {
 		if err := serviceGroup.V2rayAdminServiceGroup.CollectServerTrafficWithRetry(srv, createdAt, 3); err != nil {
 			global.GVA_LOG.Error("CollectorJob CollectServerTraffic", zap.Error(err), zap.String("ip", srv.Ip))
 		}
+	}
+}
+
+type SysInfoCollectorJob struct{}
+
+func (job SysInfoCollectorJob) Run() {
+	srvs, err := serviceGroup.V2rayAdminServiceGroup.GetAllServer()
+	if err != nil {
+		global.GVA_LOG.Error("SysInfoCollectorJob GetAllServer", zap.Error(err))
+		return
+	}
+	for _, srv := range srvs {
 		collectSysInfo(srv)
 	}
 }
@@ -46,24 +58,24 @@ func collectSysInfo(srv *v2ray.Server) {
 
 	req.SetRequestURI(fmt.Sprintf("http://%s:%d/stat/sysinfo", srv.Ip, srv.GetStatPort()))
 	if err := global.HTTP_CLI.Do(req, resp); err != nil {
-		global.GVA_LOG.Error("CollectorJob Do sysinfo", zap.Error(err), zap.String("ip", srv.Ip))
+		global.GVA_LOG.Error("SysInfoCollectorJob Do sysinfo", zap.Error(err), zap.String("ip", srv.Ip))
 		return
 	}
 
 	body := resp.Body()
 	if len(body) == 0 {
-		global.GVA_LOG.Debug("CollectorJob sysinfo: empty response", zap.String("ip", srv.Ip))
+		global.GVA_LOG.Debug("SysInfoCollectorJob sysinfo: empty response", zap.String("ip", srv.Ip))
 		return
 	}
 
 	sysInfo := new(v2ray_admin.SysInfo)
 	if err := json.Unmarshal(body, sysInfo); err != nil {
-		global.GVA_LOG.Error("CollectorJob Unmarshal sysinfo", zap.Error(err), zap.String("body", string(body)), zap.String("ip", srv.Ip))
+		global.GVA_LOG.Error("SysInfoCollectorJob Unmarshal sysinfo", zap.Error(err), zap.String("body", string(body)), zap.String("ip", srv.Ip))
 		return
 	}
 
 	if err := serviceGroup.V2rayAdminServiceGroup.UpdateServerSysInfo(srv.ID, sysInfo); err != nil {
-		global.GVA_LOG.Error("CollectorJob UpdateServerSysInfo", zap.Error(err))
+		global.GVA_LOG.Error("SysInfoCollectorJob UpdateServerSysInfo", zap.Error(err))
 		return
 	}
 }

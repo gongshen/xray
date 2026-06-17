@@ -29,7 +29,9 @@ type Server struct {
 	// 跨域配置
 	Cors CORS `mapstructure:"cors" json:"cors" yaml:"cors"`
 
-	STAT_PORT int64 `json:"stat_port" yaml:"stat_port"`
+	STAT_PORT              int64  `mapstructure:"stat_port" json:"stat_port" yaml:"stat_port"`
+	TrafficCollectInterval string `mapstructure:"traffic_collect_interval" json:"traffic_collect_interval" yaml:"traffic_collect_interval"`
+	SysInfoCollectInterval string `mapstructure:"sysinfo_collect_interval" json:"sysinfo_collect_interval" yaml:"sysinfo_collect_interval"`
 
 	// BWG VPS 管理配置
 	BWG BWG `mapstructure:"bwg" json:"bwg" yaml:"bwg"`

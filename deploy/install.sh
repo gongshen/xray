@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-stty erase ^?
+if [ -t 0 ]; then
+  stty erase ^?
+fi
 
 cd "$(
   cd "$(dirname "$0")" || exit
@@ -415,32 +417,386 @@ local:
   store-path: uploads/file
 
 stat_port: 56611
+traffic_collect_interval: 1h
+sysinfo_collect_interval: 5m
 ADMINCONFIGEOF
   print_ok "xray_admin config.yaml 文件已创建"
 }
 
+function is_yes() {
+  [[ "$1" == "y" || "$1" == "Y" || "$1" == "yes" || "$1" == "YES" ]]
+}
+
+function ask_yes_no() {
+  local prompt=$1
+  local default_answer=${2:-N}
+  local answer
+  local suffix
+
+  if [[ "$default_answer" == "Y" || "$default_answer" == "y" ]]; then
+    suffix="[Y/n]"
+  else
+    suffix="[y/N]"
+  fi
+
+  read -rp "${prompt} ${suffix}: " answer
+  if [[ -z "$answer" ]]; then
+    answer="$default_answer"
+  fi
+  is_yes "$answer"
+}
+
+function valid_ipv4() {
+  local ip=$1
+  local a b c d
+  [[ "$ip" =~ ^[0-9]+(\.[0-9]+){3}$ ]] || return 1
+  IFS=. read -r a b c d <<< "$ip"
+  for part in "$a" "$b" "$c" "$d"; do
+    [[ "$part" =~ ^[0-9]+$ ]] || return 1
+    ((part >= 0 && part <= 255)) || return 1
+  done
+}
+
+function normalize_port_list() {
+  local input=$1
+  local item
+  local ports=()
+  local seen=","
+
+  input="${input//，/,}"
+  input="${input//;/,}"
+  input="${input// /,}"
+  input="${input//$'\t'/,}"
+
+  IFS=',' read -ra raw_ports <<< "$input"
+  for item in "${raw_ports[@]}"; do
+    item="$(echo "$item" | tr -d '[:space:]')"
+    [[ -z "$item" ]] && continue
+    [[ "$item" =~ ^[0-9]+$ ]] || return 1
+    ((item >= 1 && item <= 65535)) || return 1
+    if [[ "$seen" != *",$item,"* ]]; then
+      ports+=("$item")
+      seen="${seen}${item},"
+    fi
+  done
+
+  [[ ${#ports[@]} -gt 0 ]] || return 1
+  (IFS=,; echo "${ports[*]}")
+}
+
+function merge_port_lists() {
+  local merged=""
+  local item
+  for item in "$@"; do
+    [[ -z "$item" ]] && continue
+    if [[ -z "$merged" ]]; then
+      merged="$item"
+    else
+      merged="${merged},${item}"
+    fi
+  done
+  normalize_port_list "$merged"
+}
+
+function port_list_contains() {
+  local ports=",$1,"
+  local port=$2
+  [[ "$ports" == *",$port,"* ]]
+}
+
+function require_port_list() {
+  local label=$1
+  local detected=$2
+  local default_value=$3
+  local input
+  local normalized
+
+  if [[ -n "$detected" ]]; then
+    if ask_yes_no "检测到${label}: ${detected}，是否使用" "Y"; then
+      echo "$detected"
+      return 0
+    fi
+  fi
+
+  while true; do
+    read -rp "请输入${label}(默认${default_value}，多个端口用逗号分隔): " input
+    [[ -z "$input" ]] && input="$default_value"
+    if normalized="$(normalize_port_list "$input")"; then
+      echo "$normalized"
+      return 0
+    fi
+    print_error "${label}格式不正确，请输入 1-65535 的端口，多个端口用逗号分隔"
+  done
+}
+
+function require_ipv4() {
+  local label=$1
+  local detected=$2
+  local input
+
+  if [[ -n "$detected" ]] && valid_ipv4 "$detected"; then
+    if ask_yes_no "检测到${label}: ${detected}，是否使用" "Y"; then
+      echo "$detected"
+      return 0
+    fi
+  fi
+
+  while true; do
+    read -rp "请输入${label}: " input
+    if valid_ipv4 "$input"; then
+      echo "$input"
+      return 0
+    fi
+    print_error "${label}必须是 IPv4 地址"
+  done
+}
+
+function detect_ssh_port() {
+  local file
+  local port
+  for file in /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf; do
+    [[ -f "$file" ]] || continue
+    port="$(awk 'tolower($1) == "port" && $2 ~ /^[0-9]+$/ {print $2}' "$file" | tail -n 1)"
+    [[ -n "$port" ]] && echo "$port" && return 0
+  done
+  if command -v ss >/dev/null 2>&1; then
+    ss -tlnp 2>/dev/null | awk '/sshd/ {n=split($4,a,":"); print a[n]; exit}'
+  fi
+}
+
+function detect_xray_ports() {
+  local config_file=${1:-${xray_conf_dir}/config.json}
+  [[ -f "$config_file" ]] || return 0
+  if command -v jq >/dev/null 2>&1; then
+    jq -r '
+      .inbounds[]?
+      | select((.port // empty) != "")
+      | select((.tag // "") != "api")
+      | select((.listen // "0.0.0.0") != "127.0.0.1")
+      | select((.listen // "0.0.0.0") != "localhost")
+      | select((.listen // "0.0.0.0") != "::1")
+      | .port
+    ' "$config_file" 2>/dev/null | grep -E '^[0-9]+$' | awk '!seen[$0]++' | paste -sd, -
+    return 0
+  fi
+
+  awk '
+    function trim_value(v) {
+      gsub(/^[[:space:]"]+|[[:space:]",]+$/, "", v)
+      return v
+    }
+    function flush_port() {
+      if (port != "" && listen != "127.0.0.1" && listen != "localhost" && listen != "::1" && tag != "api") {
+        if (!seen[port]++) {
+          if (out != "") out = out ","
+          out = out port
+        }
+      }
+      port = ""
+      listen = "0.0.0.0"
+      tag = ""
+    }
+    /"inbounds"[[:space:]]*:/ {in_inbounds = 1}
+    in_inbounds && /"outbounds"[[:space:]]*:/ {in_inbounds = 0}
+    in_inbounds {
+      line = $0
+      if (line ~ /"port"[[:space:]]*:/) {
+        value = line
+        sub(/^.*"port"[[:space:]]*:[[:space:]]*"?/, "", value)
+        sub(/[^0-9].*$/, "", value)
+        value = trim_value(value)
+        if (value ~ /^[0-9]+$/) port = value
+      }
+      if (line ~ /"listen"[[:space:]]*:/) {
+        value = line
+        sub(/^.*"listen"[[:space:]]*:[[:space:]]*"/, "", value)
+        sub(/".*$/, "", value)
+        listen = trim_value(value)
+      }
+      if (line ~ /"tag"[[:space:]]*:/) {
+        value = line
+        sub(/^.*"tag"[[:space:]]*:[[:space:]]*"/, "", value)
+        sub(/".*$/, "", value)
+        tag = trim_value(value)
+      }
+      if (line ~ /}/ && port != "") {
+        flush_port()
+      }
+    }
+    END { print out }
+  ' "$config_file"
+  return 0
+}
+
+function detect_stat_port() {
+  local service_file=${1:-${stat_service_dir}}
+  [[ -f "$service_file" ]] || return 0
+  sed -nE 's/.*(^|[[:space:]])-port[= ]+([0-9]+).*/\2/p' "$service_file" | head -n 1
+}
+
+function detect_stat_remote_ip() {
+  local service_file=${1:-${stat_service_dir}}
+  [[ -f "$service_file" ]] || return 0
+  grep -Eo 'REMOTE_IP=[^"[:space:]]+' "$service_file" | head -n 1 | cut -d= -f2
+}
+
+function detect_admin_port() {
+  local config_file=${1:-${xray_admin_conf_dir}/config.yaml}
+  [[ -f "$config_file" ]] || return 0
+  awk '
+    /^[[:space:]]*system:/ {in_system=1; next}
+    in_system && /^[^[:space:]]/ {in_system=0}
+    in_system && /^[[:space:]]*addr:/ {
+      gsub(/"/, "", $2)
+      if ($2 ~ /^[0-9]+$/) {
+        print $2
+        exit
+      }
+    }
+  ' "$config_file"
+}
+
+function append_tcp_accept_rules() {
+  local ports=$1
+  local source_ip=${2:-}
+  local port
+  [[ -n "$ports" ]] || return 0
+  IFS=',' read -ra port_array <<< "$ports"
+  for port in "${port_array[@]}"; do
+    [[ -z "$port" ]] && continue
+    if [[ -n "$source_ip" ]]; then
+      echo "-A INPUT -p tcp -s ${source_ip} -m tcp --dport ${port} -j ACCEPT"
+    else
+      echo "-A INPUT -p tcp -m tcp --dport ${port} -j ACCEPT"
+    fi
+  done
+}
+
+function generate_iptables_config() {
+  local output_file=$1
+  local ssh_ports=$2
+  local xray_ports=$3
+  local stat_port=$4
+  local stat_source_ip=$5
+  local admin_ports=${6:-}
+  local extra_ports=${7:-}
+
+  mkdir -p "$(dirname "$output_file")"
+  {
+    echo "*filter"
+    echo ":INPUT DROP [0:0]"
+    echo ":FORWARD DROP [0:0]"
+    echo ":OUTPUT ACCEPT [0:0]"
+    echo ""
+    echo "-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
+    echo "-A INPUT -i lo -j ACCEPT"
+    echo "-A INPUT -p icmp -j ACCEPT"
+    append_tcp_accept_rules "$ssh_ports"
+    append_tcp_accept_rules "$admin_ports"
+    if [[ -n "$stat_port" && -n "$stat_source_ip" ]]; then
+      append_tcp_accept_rules "$stat_port" "$stat_source_ip"
+    fi
+    append_tcp_accept_rules "$xray_ports"
+    append_tcp_accept_rules "$extra_ports"
+    echo ""
+    echo "COMMIT"
+  } > "$output_file"
+}
+
+function disable_ipv6() {
+  print_ok "禁用 IPv6"
+  cat > /etc/sysctl.d/99-xray-disable-ipv6.conf <<'SYSCTLEOF'
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+SYSCTLEOF
+  sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1 || true
+  sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>&1 || true
+  sysctl -w net.ipv6.conf.lo.disable_ipv6=1 >/dev/null 2>&1 || true
+  sysctl -p /etc/sysctl.d/99-xray-disable-ipv6.conf >/dev/null 2>&1 || true
+}
+
+function save_iptables_rules() {
+  if [[ -f /etc/os-release ]]; then
+    source /etc/os-release
+  fi
+
+  if [[ "${ID:-}" == "centos" || "${ID:-}" == "ol" ]]; then
+    service iptables save
+    return $?
+  fi
+
+  if command -v netfilter-persistent >/dev/null 2>&1; then
+    netfilter-persistent save
+    return $?
+  fi
+
+  if [[ -d /etc/iptables ]]; then
+    iptables-save > /etc/iptables/rules.v4
+    return $?
+  fi
+
+  print_error "未找到持久化 iptables 规则的工具，请安装 iptables-persistent 或手动保存规则"
+  return 1
+}
+
+function apply_iptables_with_rollback() {
+  local config_file=$1
+  local backup_file="${xray_conf_dir}/iptables.backup.$(date +%Y%m%d%H%M%S)"
+  local marker="/tmp/xray-iptables-rollback.$$"
+  local rollback_pid
+
+  command -v iptables-save >/dev/null 2>&1 || {
+    print_error "未找到 iptables-save"
+    return 1
+  }
+  command -v iptables-restore >/dev/null 2>&1 || {
+    print_error "未找到 iptables-restore"
+    return 1
+  }
+
+  iptables-save > "$backup_file" || {
+    print_error "备份当前 iptables 规则失败"
+    return 1
+  }
+  print_ok "当前 iptables 已备份到 ${backup_file}"
+
+  iptables-restore < "$config_file" || {
+    print_error "应用 iptables 规则失败，正在恢复旧规则"
+    iptables-restore < "$backup_file" 2>/dev/null || true
+    return 1
+  }
+
+  touch "$marker"
+  (
+    sleep 120
+    if [[ -f "$marker" ]]; then
+      iptables-restore < "$backup_file" 2>/dev/null || true
+      rm -f "$marker"
+    fi
+  ) &
+  rollback_pid=$!
+
+  echo -e "${Yellow}防火墙规则已临时应用。请立刻新开一个 SSH 窗口确认可以登录。${Font}"
+  echo -e "${Yellow}如果 120 秒内没有确认，脚本会自动恢复旧规则。${Font}"
+  if ask_yes_no "已确认 SSH 和必要服务可访问，是否保存为持久规则" "N"; then
+    rm -f "$marker"
+    kill "$rollback_pid" >/dev/null 2>&1 || true
+    save_iptables_rules || return 1
+    print_ok "iptables 规则已保存"
+    return 0
+  fi
+
+  rm -f "$marker"
+  kill "$rollback_pid" >/dev/null 2>&1 || true
+  iptables-restore < "$backup_file" 2>/dev/null || true
+  print_error "未确认保存，已恢复旧规则"
+  return 1
+}
+
 function create_iptables_config() {
-  mkdir -p ${xray_conf_dir}
-  
-  # 检查是否需要覆盖
-  confirm_overwrite "${iptables_conf_dir}" "iptables 配置文件" || return 0
-  
-  cat > ${iptables_conf_dir} << 'IPTABLESEOF'
-*filter
-:INPUT DROP [0:0]
-:FORWARD DROP [0:0]
-:OUTPUT ACCEPT [0:0]
-
--A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -p tcp -m state --state NEW -m tcp --dport __SSHPORT__ -j ACCEPT
-###-A INPUT -p tcp -m state --state NEW -m tcp --dport __ADMINPORT__ -j ACCEPT
--A INPUT -p tcp -s __ADMINIP__ --dport __STATPORT__ -j ACCEPT
--A INPUT -p tcp --dport __XRAYPORT__ -j ACCEPT
-
-COMMIT
-IPTABLESEOF
-  print_ok "iptables 配置文件已创建"
+  generate_iptables_config "$iptables_conf_dir" "$FIREWALL_SSH_PORTS" "$FIREWALL_XRAY_PORTS" "$FIREWALL_STAT_PORT" "$FIREWALL_ADMIN_IP" "$FIREWALL_ADMIN_PORTS" "$FIREWALL_EXTRA_PORTS"
+  print_ok "iptables 配置文件已创建: ${iptables_conf_dir}"
 }
 
 # ==================== 安装函数 ====================
@@ -564,53 +920,75 @@ function init_admin_db() {
 
 function config_iptables() {
   print_ok "配置 iptables 防火墙"
-  
-  # 创建iptables配置文件
-  create_iptables_config
-  
-  # SSH端口
-  while true; do
-    read -rp "请输入SSH端口号：" SSHPORT
-    if [[ -n "$SSHPORT" ]]; then
-      break
-    else
-      print_error "SSH端口不能为空，请重新输入"
+
+  is_root
+
+  local is_admin_node=0
+  local is_proxy_node=0
+  local detected
+
+  FIREWALL_SSH_PORTS="$(require_port_list "SSH端口" "$(detect_ssh_port)" "22")"
+  FIREWALL_ADMIN_PORTS=""
+  FIREWALL_XRAY_PORTS=""
+  FIREWALL_STAT_PORT=""
+  FIREWALL_ADMIN_IP=""
+  FIREWALL_EXTRA_PORTS=""
+
+  if ask_yes_no "当前服务器是否存在 xray-admin 管理端" "N"; then
+    is_admin_node=1
+    detected="$(detect_admin_port)"
+    FIREWALL_ADMIN_PORTS="$(require_port_list "xray-admin管理端端口" "$detected" "8888")"
+  fi
+
+  if ask_yes_no "当前服务器是否是代理节点" "Y"; then
+    is_proxy_node=1
+    detected="$(detect_xray_ports)"
+    FIREWALL_XRAY_PORTS="$(require_port_list "Xray代理端口" "$detected" "80")"
+
+    detected="$(detect_stat_port)"
+    FIREWALL_STAT_PORT="$(require_port_list "Stat端口" "$detected" "56611")"
+
+    detected="$(detect_stat_remote_ip)"
+    FIREWALL_ADMIN_IP="$(require_ipv4 "允许访问Stat的管理端IP" "$detected")"
+  fi
+
+  if [[ "$is_admin_node" -eq 0 && "$is_proxy_node" -eq 0 ]]; then
+    print_error "当前服务器既不是管理端也不是代理节点，不应配置此防火墙模板"
+    return 1
+  fi
+
+  if ! port_list_contains "$(merge_port_lists "$FIREWALL_SSH_PORTS" "$FIREWALL_ADMIN_PORTS" "$FIREWALL_XRAY_PORTS" "$FIREWALL_STAT_PORT")" "80"; then
+    if ask_yes_no "是否额外放行 80 端口(用于 HTTP/ACME standalone 等)" "N"; then
+      FIREWALL_EXTRA_PORTS="$(merge_port_lists "$FIREWALL_EXTRA_PORTS" "80")"
     fi
-  done
-  sed -i "s|__SSHPORT__|${SSHPORT}|" ${iptables_conf_dir}
-  
-  # 管理端IP
-  read -rp "请输入管理端IP地址：" remoteIp
-  sed -i "s|__ADMINIP__|${remoteIp}|" ${iptables_conf_dir}
-  
-  # Xray端口
-  read -rp "请输入Xray端口(默认80)：" xray_port
-  [ -z "$xray_port" ] && xray_port="80"
-  sed -i "s|__XRAYPORT__|${xray_port}|" ${iptables_conf_dir}
-  
-  # Stat端口
-  read -rp "请输入Stat端口(默认56611)：" stat_port
-  [ -z "$stat_port" ] && stat_port="56611"
-  sed -i "s|__STATPORT__|${stat_port}|" ${iptables_conf_dir}
-  
-  # 是否是管理员服务器
-  read -rp "是否是管理员服务器? (y/n): " is_admin
-  if [[ "$is_admin" == "y" || "$is_admin" == "Y" ]]; then
-    read -rp "请输入管理员端口号(默认8888)：" ADMINPORT
-    [ -z "$ADMINPORT" ] && ADMINPORT="8888"
-    sed -i "s|###||" ${iptables_conf_dir}
-    sed -i "s|__ADMINPORT__|${ADMINPORT}|" ${iptables_conf_dir}
   fi
-  
-  iptables-restore < ${iptables_conf_dir}
-  
-  # 保存iptables规则
-  if [[ "${ID}" == "centos" || "${ID}" == "ol" ]]; then
-    service iptables save
-  else
-    netfilter-persistent save
+
+  if ! port_list_contains "$(merge_port_lists "$FIREWALL_SSH_PORTS" "$FIREWALL_ADMIN_PORTS" "$FIREWALL_XRAY_PORTS" "$FIREWALL_STAT_PORT" "$FIREWALL_EXTRA_PORTS")" "443"; then
+    if ask_yes_no "是否额外放行 443 端口(用于 HTTPS/TLS 等)" "N"; then
+      FIREWALL_EXTRA_PORTS="$(merge_port_lists "$FIREWALL_EXTRA_PORTS" "443")"
+    fi
   fi
-  
+
+  echo ""
+  echo -e "${Blue}即将生成的最小放行规则:${Font}"
+  echo "  SSH端口: ${FIREWALL_SSH_PORTS}"
+  [[ -n "$FIREWALL_ADMIN_PORTS" ]] && echo "  xray-admin端口: ${FIREWALL_ADMIN_PORTS}"
+  [[ -n "$FIREWALL_XRAY_PORTS" ]] && echo "  Xray代理端口: ${FIREWALL_XRAY_PORTS}"
+  [[ -n "$FIREWALL_STAT_PORT" ]] && echo "  Stat端口: ${FIREWALL_STAT_PORT}，仅允许 ${FIREWALL_ADMIN_IP} 访问"
+  [[ -n "$FIREWALL_EXTRA_PORTS" ]] && echo "  额外放行端口: ${FIREWALL_EXTRA_PORTS}"
+  echo "  MySQL/Redis/数据库端口: 不放行"
+  echo "  IPv6: 禁用"
+  echo ""
+
+  if ! ask_yes_no "确认生成并应用以上防火墙规则" "N"; then
+    print_ok "已取消 iptables 配置"
+    return 0
+  fi
+
+  confirm_overwrite "${iptables_conf_dir}" "iptables 配置文件" || return 0
+  create_iptables_config
+  disable_ipv6
+  apply_iptables_with_rollback "$iptables_conf_dir"
   judge "iptables 配置"
 }
 
@@ -725,4 +1103,6 @@ menu() {
   esac
 }
 
-menu "$@"
+if [[ "${XRAY_INSTALL_TEST_MODE:-0}" != "1" ]]; then
+  menu "$@"
+fi

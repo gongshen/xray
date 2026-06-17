@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-//go:embed page
+//go:embed all:page
 var pageFS embed.FS
 
 func GetPageFS() http.FileSystem {

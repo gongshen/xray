@@ -38,30 +38,6 @@
             </div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="8">
-          <div class="stat-card active-servers">
-            <div class="stat-icon">
-              <el-icon><Monitor /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-title">活跃服务器</div>
-              <div class="stat-value">{{ activeServers }}</div>
-              <div class="stat-desc">有流量产生的服务器</div>
-            </div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="8" :lg="8">
-          <div class="stat-card avg-traffic">
-            <div class="stat-icon">
-              <el-icon><DataAnalysis /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-title">平均流量</div>
-              <div class="stat-value">{{ formatFlow(avgTraffic) }}</div>
-              <div class="stat-desc">每用户平均使用</div>
-            </div>
-          </div>
-        </el-col>
       </el-row>
     </div>
 
@@ -182,8 +158,8 @@ import {
 } from '@/api/user'
 import { getAllServerApi } from '@/api/server'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive, shallowRef, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
-import { TrendCharts, Monitor, DataAnalysis, Trophy } from '@element-plus/icons-vue'
+import { ref, reactive, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
+import { TrendCharts, Trophy } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
 
@@ -212,19 +188,6 @@ const rank_chart = shallowRef(null)
 const echart = ref(null)
 const rank_echart = ref(null)
 const chartData = useChartData()
-
-// 统计数据计算
-const activeServers = computed(() => {
-  const uniqueServers = new Set(tableData.value.map(item => item.server_ip))
-  return uniqueServers.size
-})
-
-const avgTraffic = computed(() => {
-  const uniqueUsers = new Set(tableData.value.map(item => item.tag))
-  const activeUsers = uniqueUsers.size
-  if (activeUsers === 0) return 0
-  return chartData.total / activeUsers
-})
 
 // 格式化流量
 const formatFlow = (value) => {
@@ -636,14 +599,6 @@ onMounted(async () => {
 
 .stat-card.total-traffic {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-card.active-servers {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.stat-card.avg-traffic {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
 .stat-icon {

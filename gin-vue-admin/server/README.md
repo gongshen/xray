@@ -59,6 +59,20 @@ go build -ldflags="-s -w" -o ../../dist/xray-admin .
 
 如果不传 `-c`，程序会按 gin-vue-admin 默认规则读取当前目录下的配置文件。
 
+## xray-admin 配置项
+
+`/usr/local/etc/xray-admin/config.yaml` 中和节点采集相关的配置：
+
+```yaml
+stat_port: 56611
+traffic_collect_interval: 1h
+sysinfo_collect_interval: 5m
+```
+
+- `stat_port`：节点 `stat` 服务默认端口，单个服务器记录未单独配置端口时使用。
+- `traffic_collect_interval`：`xray-admin` 拉取各节点本地 SQLite 流量事件的间隔，支持 Go duration 格式，例如 `10m`、`30m`、`1h`；未配置或配置非法时默认 `1h`。
+- `sysinfo_collect_interval`：`xray-admin` 刷新节点在线状态、CPU、内存、磁盘信息的间隔，支持 Go duration 格式；未配置或配置非法时默认 `5m`。前端超过 10 分钟未收到更新会显示离线。
+
 ## 静态资源说明
 
 后端路由中通过 `/fe` 挂载前端页面：

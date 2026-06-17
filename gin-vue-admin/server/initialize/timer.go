@@ -2,13 +2,19 @@ package initialize
 
 import (
 	"fmt"
-	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/job"
-	"github.com/robfig/cron/v3"
+	"strings"
 	"time"
 
+	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/job"
 	"github.com/flipped-aurora/gin-vue-admin/server/config"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/robfig/cron/v3"
+)
+
+const (
+	defaultTrafficCollectInterval = "1h"
+	defaultSysInfoCollectInterval = "5m"
 )
 
 func Timer() {
@@ -35,8 +41,20 @@ func Timer() {
 	go func() {
 		time.Sleep(1 * time.Minute)
 		location, _ := time.LoadLocation("Asia/Shanghai")
+		trafficCollectSpec, ok := trafficCollectCronSpec(global.GVA_CONFIG.TrafficCollectInterval)
+		if !ok {
+			fmt.Printf("invalid traffic_collect_interval %q, use default %s\n", global.GVA_CONFIG.TrafficCollectInterval, defaultTrafficCollectInterval)
+		}
 
-		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", "@every 1h", job.CollectorJob{}, cron.WithLocation(location)); err != nil {
+		if _, err := global.GVA_Timer.AddTaskByJob("traffic_collect", trafficCollectSpec, job.CollectorJob{}, cron.WithLocation(location)); err != nil {
+			fmt.Println("add timer error:", err)
+		}
+		sysInfoCollectSpec, ok := sysInfoCollectCronSpec(global.GVA_CONFIG.SysInfoCollectInterval)
+		if !ok {
+			fmt.Printf("invalid sysinfo_collect_interval %q, use default %s\n", global.GVA_CONFIG.SysInfoCollectInterval, defaultSysInfoCollectInterval)
+		}
+		go job.SysInfoCollectorJob{}.Run()
+		if _, err := global.GVA_Timer.AddTaskByJob("sysinfo_collect", sysInfoCollectSpec, job.SysInfoCollectorJob{}, cron.WithLocation(location)); err != nil {
 			fmt.Println("add timer error:", err)
 		}
 		if _, err := global.GVA_Timer.AddTaskByJob("calc_traffic_limit", "@every 10m", job.CalculateMonthlyTrafficLimitJob{}, cron.WithLocation(location)); err != nil {
@@ -50,4 +68,24 @@ func Timer() {
 		}
 	}()
 
+}
+
+func trafficCollectCronSpec(interval string) (string, bool) {
+	return durationCronSpec(interval, defaultTrafficCollectInterval)
+}
+
+func sysInfoCollectCronSpec(interval string) (string, bool) {
+	return durationCronSpec(interval, defaultSysInfoCollectInterval)
+}
+
+func durationCronSpec(interval string, defaultInterval string) (string, bool) {
+	interval = strings.TrimSpace(interval)
+	if interval == "" {
+		return "@every " + defaultInterval, true
+	}
+	duration, err := time.ParseDuration(interval)
+	if err != nil || duration <= 0 {
+		return "@every " + defaultInterval, false
+	}
+	return "@every " + interval, true
 }
