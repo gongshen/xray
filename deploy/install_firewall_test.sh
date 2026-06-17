@@ -58,4 +58,23 @@ if grep -q -- "--dport 3306" "${rules_file}"; then
   exit 1
 fi
 
+logrotate_file="${tmp_dir}/xray-logrotate"
+create_xray_logrotate_config "${logrotate_file}"
+
+grep -q -- "/var/log/xray/access.log /var/log/xray/error.log" "${logrotate_file}"
+grep -q -- "daily" "${logrotate_file}"
+grep -q -- "rotate 365" "${logrotate_file}"
+grep -q -- "maxage 365" "${logrotate_file}"
+grep -q -- "missingok" "${logrotate_file}"
+grep -q -- "notifempty" "${logrotate_file}"
+grep -q -- "compress" "${logrotate_file}"
+grep -q -- "delaycompress" "${logrotate_file}"
+grep -q -- "copytruncate" "${logrotate_file}"
+grep -q -- "dateext" "${logrotate_file}"
+
+menu_logrotate_file="${tmp_dir}/menu-xray-logrotate"
+xray_logrotate_conf_dir="${menu_logrotate_file}"
+printf '11\n' | menu >/dev/null
+grep -q -- "/var/log/xray/access.log /var/log/xray/error.log" "${menu_logrotate_file}"
+
 echo "install_firewall_test passed"

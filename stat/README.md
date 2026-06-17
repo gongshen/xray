@@ -28,7 +28,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat 
 ## 启动参数
 
 ```bash
-./stat -port 56611 -level info -traffic-db /var/lib/xray-stat/stat.db -collect-interval 5s
+./stat -port 56611 -level info -traffic-db /var/lib/xray-stat/stat.db -collect-interval 5s -log-clean-dir /root/log -log-retention-months 12 -xray-log-dir /var/log/xray -xray-log-retention-months 12
 ```
 
 参数说明：
@@ -37,6 +37,14 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat 
 - `-level`：日志级别，默认 `info`
 - `-traffic-db`：本地 SQLite 文件路径，默认 `/var/lib/xray-stat/stat.db`
 - `-collect-interval`：本地采集间隔，默认 `5s`
+- `-log-clean-dir`：xray-admin 按日期目录清理的根目录，默认 `/root/log`
+- `-log-retention-months`：xray-admin 日期目录保留月数，默认 `12`
+- `-xray-log-dir`：Xray 日志目录，默认 `/var/log/xray`
+- `-xray-log-retention-months`：Xray 轮转日志文件保留月数，默认 `12`
+
+`stat` 启动后会每天清理一次 `-log-clean-dir` 下的 xray-admin 一级日期目录。只会删除目录名严格为 `YYYY-MM-DD` 且早于保留期限的目录，普通文件和非日期目录不会删除。
+
+同时会每天清理一次 `-xray-log-dir` 下的 Xray 轮转日志文件，例如 `access.log-20250616`、`access.log-20250616.gz`、`error.log.1.gz`。活跃日志文件 `access.log` 和 `error.log` 不会被改写。
 
 ## 本地 SQLite
 

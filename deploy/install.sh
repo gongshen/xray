@@ -35,6 +35,7 @@ stat_db_path="${stat_data_dir}/stat.db"
 stat_collect_interval="5s"
 xray_conf_dir="/usr/local/etc/xray"
 iptables_conf_dir="/usr/local/etc/xray/iptables"
+xray_logrotate_conf_dir="/etc/logrotate.d/xray"
 
 # GitHub 下载地址 (在获取版本号后设置)
 github_release_url=""
@@ -115,7 +116,7 @@ function system_check() {
 }
 
 function dependency_install() {
-  ${INS} lsof tar wget curl unzip jq
+  ${INS} lsof tar wget curl unzip jq logrotate
   judge "安装基础依赖"
 
   if [[ "${ID}" == "centos" || "${ID}" == "ol" ]]; then
@@ -219,6 +220,59 @@ function download_xray_admin() {
 }
 
 # ==================== 配置文件创建函数 ====================
+
+function create_xray_logrotate_config() {
+  local output_file=${1:-${xray_logrotate_conf_dir}}
+  mkdir -p "$(dirname "${output_file}")"
+
+  cat > "${output_file}" <<'LOGROTATEEOF'
+/var/log/xray/access.log /var/log/xray/error.log {
+    daily
+    rotate 365
+    maxage 365
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    dateext
+    su root root
+}
+LOGROTATEEOF
+
+  print_ok "Xray 日志轮转配置已创建: ${output_file}"
+}
+
+function ensure_logrotate_installed() {
+  if command -v logrotate >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "${XRAY_INSTALL_TEST_MODE:-0}" == "1" ]]; then
+    return 0
+  fi
+
+  if command -v apt-get >/dev/null 2>&1; then
+    apt-get update
+    apt-get install -y logrotate
+  elif command -v yum >/dev/null 2>&1; then
+    yum install -y logrotate
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y logrotate
+  else
+    print_error "未找到可用的包管理器，请先手动安装 logrotate"
+    return 1
+  fi
+  judge "安装 logrotate"
+}
+
+function configure_xray_logrotate() {
+  if [[ "${XRAY_INSTALL_TEST_MODE:-0}" != "1" ]]; then
+    is_root
+  fi
+  ensure_logrotate_installed
+  create_xray_logrotate_config
+}
 
 function create_xray_config() {
   mkdir -p ${xray_conf_dir}
@@ -809,6 +863,7 @@ function xray_install() {
 
 function configure_xray() {
   create_xray_config
+  configure_xray_logrotate
   systemctl enable xray
   systemctl restart xray
   judge "Xray 启动"
@@ -1059,6 +1114,7 @@ menu() {
   echo -e "${Green}8.${Font}  配置 iptables 防火墙"
   echo -e "${Green}9.${Font}  安装 acme.sh (SSL证书工具)"
   echo -e "${Green}10.${Font} 续期 SSL 证书"
+  echo -e "${Green}11.${Font} 配置 Xray 日志轮转"
   echo -e "${Green}99.${Font} 退出"
   echo -e "————————————————————————————————————"
   read -rp "请输入数字：" menu_num
@@ -1092,6 +1148,9 @@ menu() {
     ;;
   10)
     renew_cert
+    ;;
+  11)
+    configure_xray_logrotate
     ;;
   99)
     exit 0

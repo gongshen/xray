@@ -12,10 +12,14 @@ import (
 )
 
 var (
-	level           string
-	port            int
-	trafficDBPath   string
-	collectInterval time.Duration
+	level                  string
+	port                   int
+	trafficDBPath          string
+	collectInterval        time.Duration
+	logCleanupDir          string
+	logRetentionMonths     int
+	xrayLogDir             string
+	xrayLogRetentionMonths int
 )
 
 func init() {
@@ -23,6 +27,10 @@ func init() {
 	flag.IntVar(&port, "port", 56611, "listen port")
 	flag.StringVar(&trafficDBPath, "traffic-db", "/var/lib/xray-stat/stat.db", "traffic sqlite db path")
 	flag.DurationVar(&collectInterval, "collect-interval", 5*time.Second, "traffic collect interval")
+	flag.StringVar(&logCleanupDir, "log-clean-dir", "/root/log", "xray-admin date directory cleanup root")
+	flag.IntVar(&logRetentionMonths, "log-retention-months", 12, "xray-admin date directory retention months")
+	flag.StringVar(&xrayLogDir, "xray-log-dir", "/var/log/xray", "xray log directory")
+	flag.IntVar(&xrayLogRetentionMonths, "xray-log-retention-months", 12, "xray rotated log retention months")
 }
 
 func main() {
@@ -46,6 +54,14 @@ func main() {
 	stopCollector := make(chan struct{})
 	go business.StartLocalTrafficCollector(store, collectInterval, stopCollector)
 	defer close(stopCollector)
+
+	stopLogCleaner := make(chan struct{})
+	go business.StartLogDirectoryCleaner(logCleanupDir, logRetentionMonths, 24*time.Hour, stopLogCleaner)
+	defer close(stopLogCleaner)
+
+	stopXrayLogCleaner := make(chan struct{})
+	go business.StartXrayLogFileCleaner(xrayLogDir, xrayLogRetentionMonths, 24*time.Hour, stopXrayLogCleaner)
+	defer close(stopXrayLogCleaner)
 
 	if err := server.StartServer(port); err != nil {
 		logrus.Println(err)
