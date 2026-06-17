@@ -53,7 +53,9 @@ func TestCleanupXrayLogFilesRemovesOnlyOldRotatedFiles(t *testing.T) {
 	mustWriteFile(t, filepath.Join(logDir, "access.log"), "2025/01/01 active access log must stay\n")
 	mustWriteFile(t, filepath.Join(logDir, "error.log"), "2025/01/01 active error log must stay\n")
 	mustWriteFile(t, filepath.Join(logDir, "access.log-20250616"), "old rotated access\n")
+	mustWriteFile(t, filepath.Join(logDir, "access.log-20250616.gz"), "old compressed rotated access\n")
 	mustWriteFile(t, filepath.Join(logDir, "access.log-20250617"), "boundary rotated access\n")
+	mustWriteFile(t, filepath.Join(logDir, "error.log-20250616.gz"), "old compressed rotated error\n")
 	mustWriteFile(t, filepath.Join(logDir, "error.log-2025-06-16.gz"), "old rotated error\n")
 	mustWriteFile(t, filepath.Join(logDir, "error.log.1.gz"), "old numeric rotated error\n")
 	mustWriteFile(t, filepath.Join(logDir, "other.log-20250616"), "unrelated log\n")
@@ -65,14 +67,16 @@ func TestCleanupXrayLogFilesRemovesOnlyOldRotatedFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CleanupXrayLogFiles returned error: %v", err)
 	}
-	if removed != 3 {
-		t.Fatalf("removed = %d, want 3", removed)
+	if removed != 5 {
+		t.Fatalf("removed = %d, want 5", removed)
 	}
 
 	assertExists(t, filepath.Join(logDir, "access.log"))
 	assertExists(t, filepath.Join(logDir, "error.log"))
 	assertNotExists(t, filepath.Join(logDir, "access.log-20250616"))
+	assertNotExists(t, filepath.Join(logDir, "access.log-20250616.gz"))
 	assertExists(t, filepath.Join(logDir, "access.log-20250617"))
+	assertNotExists(t, filepath.Join(logDir, "error.log-20250616.gz"))
 	assertNotExists(t, filepath.Join(logDir, "error.log-2025-06-16.gz"))
 	assertNotExists(t, filepath.Join(logDir, "error.log.1.gz"))
 	assertExists(t, filepath.Join(logDir, "other.log-20250616"))

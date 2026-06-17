@@ -138,7 +138,7 @@ func positiveLocalStatNames(stats []*statsservice.Stat) []string {
 
 func StartLocalTrafficCollector(store *TrafficStore, interval time.Duration, stop <-chan struct{}) {
 	if interval <= 0 {
-		interval = 5 * time.Second
+		interval = 10 * time.Second
 	}
 	_ = CollectTrafficToLocalStore(store)
 	ticker := time.NewTicker(interval)

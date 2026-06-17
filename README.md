@@ -82,6 +82,7 @@ bash install.sh
 9. **安装 SSL 工具** - 安装 acme.sh SSL 证书工具
 10. **续期 SSL 证书** - 自动续期 SSL 证书
 11. **配置 Xray 日志轮转** - 为 Xray access.log/error.log 配置按天轮转
+12. **分析用户流量明细** - 按用户 tag/id 查询 stat SQLite 采集周期流量和 Xray access.log 访问明细，单次时间区间最多 1 天
 
 #### 管理端安装
 

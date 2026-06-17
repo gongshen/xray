@@ -28,7 +28,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat 
 ## 启动参数
 
 ```bash
-./stat -port 56611 -level info -traffic-db /var/lib/xray-stat/stat.db -collect-interval 5s -log-clean-dir /root/log -log-retention-months 12 -xray-log-dir /var/log/xray -xray-log-retention-months 12
+./stat -port 56611 -level info -traffic-db /var/lib/xray-stat/stat.db -collect-interval 10s -log-clean-dir /root/log -log-retention-months 12 -xray-log-dir /var/log/xray -xray-log-retention-months 12
 ```
 
 参数说明：
@@ -36,7 +36,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat 
 - `-port`：stat HTTP 服务端口，默认 `56611`
 - `-level`：日志级别，默认 `info`
 - `-traffic-db`：本地 SQLite 文件路径，默认 `/var/lib/xray-stat/stat.db`
-- `-collect-interval`：本地采集间隔，默认 `5s`
+- `-collect-interval`：本地采集间隔，默认 `10s`
 - `-log-clean-dir`：xray-admin 按日期目录清理的根目录，默认 `/root/log`
 - `-log-retention-months`：xray-admin 日期目录保留月数，默认 `12`
 - `-xray-log-dir`：Xray 日志目录，默认 `/var/log/xray`

@@ -26,7 +26,7 @@ func init() {
 	flag.StringVar(&level, "level", "info", "log level")
 	flag.IntVar(&port, "port", 56611, "listen port")
 	flag.StringVar(&trafficDBPath, "traffic-db", "/var/lib/xray-stat/stat.db", "traffic sqlite db path")
-	flag.DurationVar(&collectInterval, "collect-interval", 5*time.Second, "traffic collect interval")
+	flag.DurationVar(&collectInterval, "collect-interval", 10*time.Second, "traffic collect interval")
 	flag.StringVar(&logCleanupDir, "log-clean-dir", "/root/log", "xray-admin date directory cleanup root")
 	flag.IntVar(&logRetentionMonths, "log-retention-months", 12, "xray-admin date directory retention months")
 	flag.StringVar(&xrayLogDir, "xray-log-dir", "/var/log/xray", "xray log directory")

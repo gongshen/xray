@@ -32,10 +32,11 @@ xray_admin_service_dir="/etc/systemd/system/xray_admin.service"
 stat_service_dir="/etc/systemd/system/stat.service"
 stat_data_dir="/var/lib/xray-stat"
 stat_db_path="${stat_data_dir}/stat.db"
-stat_collect_interval="5s"
+stat_collect_interval="10s"
 xray_conf_dir="/usr/local/etc/xray"
 iptables_conf_dir="/usr/local/etc/xray/iptables"
 xray_logrotate_conf_dir="/etc/logrotate.d/xray"
+xray_log_dir="/var/log/xray"
 
 # GitHub 下载地址 (在获取版本号后设置)
 github_release_url=""
@@ -272,6 +273,322 @@ function configure_xray_logrotate() {
   fi
   ensure_logrotate_installed
   create_xray_logrotate_config
+}
+
+function ensure_sqlite3_installed() {
+  if command -v sqlite3 >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "${XRAY_INSTALL_TEST_MODE:-0}" == "1" ]]; then
+    return 0
+  fi
+
+  if command -v apt-get >/dev/null 2>&1; then
+    apt-get update
+    apt-get install -y sqlite3
+  elif command -v yum >/dev/null 2>&1; then
+    yum install -y sqlite
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y sqlite
+  else
+    print_error "未找到可用的包管理器，请先手动安装 sqlite3"
+    return 1
+  fi
+  judge "安装 sqlite3"
+}
+
+function sqlite_quote() {
+  local value=${1:-}
+  value=${value//\'/\'\'}
+  printf "'%s'" "${value}"
+}
+
+function normalize_positive_int() {
+  local value=${1:-}
+  local default_value=${2:-50}
+  local max_value=${3:-1000}
+  if [[ ! "${value}" =~ ^[0-9]+$ ]] || [[ "${value}" -le 0 ]]; then
+    value="${default_value}"
+  fi
+  if [[ "${value}" -gt "${max_value}" ]]; then
+    value="${max_value}"
+  fi
+  printf "%s" "${value}"
+}
+
+function analysis_time_to_epoch() {
+  local value=${1:-}
+  [[ -n "${value}" ]] || return 1
+  date -d "${value}" +%s 2>/dev/null
+}
+
+function analysis_epoch_to_time() {
+  local value=$1
+  date -d "@${value}" "+%Y-%m-%d %H:%M:%S" 2>/dev/null
+}
+
+function normalize_analysis_time_range() {
+  local start_time=${1:-}
+  local end_time=${2:-}
+  local max_seconds=86400
+  local start_epoch
+  local end_epoch
+
+  if [[ -z "${start_time}" && -z "${end_time}" ]]; then
+    end_epoch=$(date +%s)
+    start_epoch=$((end_epoch - max_seconds))
+  elif [[ -n "${start_time}" && -z "${end_time}" ]]; then
+    if ! start_epoch=$(analysis_time_to_epoch "${start_time}"); then
+      echo "开始时间格式无效: ${start_time}"
+      return 1
+    fi
+    end_epoch=$((start_epoch + max_seconds))
+  elif [[ -z "${start_time}" && -n "${end_time}" ]]; then
+    if ! end_epoch=$(analysis_time_to_epoch "${end_time}"); then
+      echo "结束时间格式无效: ${end_time}"
+      return 1
+    fi
+    start_epoch=$((end_epoch - max_seconds))
+  else
+    if ! start_epoch=$(analysis_time_to_epoch "${start_time}"); then
+      echo "开始时间格式无效: ${start_time}"
+      return 1
+    fi
+    if ! end_epoch=$(analysis_time_to_epoch "${end_time}"); then
+      echo "结束时间格式无效: ${end_time}"
+      return 1
+    fi
+  fi
+
+  if [[ "${end_epoch}" -lt "${start_epoch}" ]]; then
+    echo "结束时间不能早于开始时间"
+    return 1
+  fi
+  if [[ $((end_epoch - start_epoch)) -gt "${max_seconds}" ]]; then
+    echo "时间区间不能超过 1 天"
+    return 1
+  fi
+
+  printf "%s|%s" "$(analysis_epoch_to_time "${start_epoch}")" "$(analysis_epoch_to_time "${end_epoch}")"
+}
+
+function build_traffic_event_where() {
+  local user_tag=$1
+  local start_time=${2:-}
+  local end_time=${3:-}
+  local where="tag = $(sqlite_quote "${user_tag}")"
+  if [[ -n "${start_time}" ]]; then
+    where="${where} AND collected_at >= strftime('%s', $(sqlite_quote "${start_time}"))"
+  fi
+  if [[ -n "${end_time}" ]]; then
+    where="${where} AND collected_at <= strftime('%s', $(sqlite_quote "${end_time}"))"
+  fi
+  printf "%s" "${where}"
+}
+
+function build_traffic_summary_sql() {
+  local where
+  where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
+  cat <<SQL
+SELECT
+  COALESCE(datetime(MIN(collected_at), 'unixepoch', 'localtime'), '-'),
+  COALESCE(datetime(MAX(collected_at), 'unixepoch', 'localtime'), '-'),
+  COUNT(*),
+  COALESCE(SUM(down), 0),
+  COALESCE(SUM(up), 0),
+  COALESCE(SUM(down + up), 0)
+FROM traffic_event
+WHERE ${where};
+SQL
+}
+
+function build_traffic_detail_sql() {
+  local where
+  local limit
+  where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
+  limit=$(normalize_positive_int "${4:-50}" 50 1000)
+  cat <<SQL
+SELECT
+  datetime(collected_at, 'unixepoch', 'localtime') AS collected_at,
+  down,
+  up,
+  down + up AS total
+FROM traffic_event
+WHERE ${where}
+ORDER BY collected_at DESC, id DESC
+LIMIT ${limit};
+SQL
+}
+
+function format_bytes() {
+  local bytes=${1:-0}
+  awk -v bytes="${bytes}" 'BEGIN {
+    split("B KiB MiB GiB TiB", units, " ");
+    value = bytes + 0;
+    unit = 1;
+    while (value >= 1024 && unit < 5) {
+      value = value / 1024;
+      unit++;
+    }
+    if (unit == 1) {
+      printf "%d %s", value, units[unit];
+    } else {
+      printf "%.2f %s", value, units[unit];
+    }
+  }'
+}
+
+function escape_grep_regex() {
+  printf "%s" "${1:-}" | sed 's/[][(){}.^$*+?|\\]/\\&/g'
+}
+
+function build_access_log_email_pattern() {
+  printf "email: %s$" "$(escape_grep_regex "$1")"
+}
+
+function is_xray_access_log_file() {
+  local name
+  name=$(basename "$1")
+  [[ "${name}" == "access.log" ]] && return 0
+  [[ "${name}" =~ ^access\.log[-.]([0-9]{8}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]+)(\.gz)?$ ]]
+}
+
+function find_xray_access_log_files() {
+  local log_dir=${1:-${xray_log_dir}}
+  [[ -d "${log_dir}" ]] || return 0
+  find "${log_dir}" -maxdepth 1 -type f \( -name "access.log" -o -name "access.log-*" -o -name "access.log.*" \) | while IFS= read -r file; do
+    if is_xray_access_log_file "${file}"; then
+      printf "%s\n" "${file}"
+    fi
+  done
+}
+
+function normalize_access_log_time() {
+  local value=${1:-}
+  value=${value//-/\/}
+  printf "%s" "${value}"
+}
+
+function filter_access_log_time_range() {
+  local start_time
+  local end_time
+  start_time=$(normalize_access_log_time "${1:-}")
+  end_time=$(normalize_access_log_time "${2:-}")
+  awk -v start_time="${start_time}" -v end_time="${end_time}" '
+    {
+      log_time = substr($0, 1, 19)
+      if (log_time ~ /^[0-9][0-9][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]$/) {
+        if (start_time != "" && log_time < start_time) next
+        if (end_time != "" && log_time > end_time) next
+      }
+      print
+    }
+  '
+}
+
+function emit_access_log_matches() {
+  local user_tag=$1
+  local log_dir=${2:-${xray_log_dir}}
+  local pattern
+  pattern=$(build_access_log_email_pattern "${user_tag}")
+  find_xray_access_log_files "${log_dir}" | sort | while IFS= read -r file; do
+    if [[ "${file}" == *.gz ]]; then
+      gzip -cd -- "${file}" 2>/dev/null | grep -hE -- "${pattern}" || true
+    else
+      grep -hE -- "${pattern}" "${file}" 2>/dev/null || true
+    fi
+  done
+}
+
+function analyze_user_traffic_sqlite() {
+  local db_path=$1
+  local user_tag=$2
+  local start_time=${3:-}
+  local end_time=${4:-}
+  local limit
+  limit=$(normalize_positive_int "${5:-50}" 50 1000)
+
+  if [[ ! -f "${db_path}" ]]; then
+    print_error "SQLite 数据库不存在: ${db_path}"
+    return 0
+  fi
+  ensure_sqlite3_installed || return 1
+
+  if ! sqlite3 "${db_path}" "SELECT 1 FROM traffic_event LIMIT 1;" >/dev/null 2>&1; then
+    print_error "SQLite 中未找到 traffic_event 表: ${db_path}"
+    return 0
+  fi
+
+  echo
+  echo -e "${Blue}===== SQLite 采集周期流量明细 =====${Font}"
+  local summary
+  summary=$(sqlite3 -separator "|" "${db_path}" "$(build_traffic_summary_sql "${user_tag}" "${start_time}" "${end_time}")")
+  local first_time last_time event_count down up total
+  IFS="|" read -r first_time last_time event_count down up total <<<"${summary}"
+  echo "用户 tag/id: ${user_tag}"
+  echo "时间范围: ${first_time} ~ ${last_time}"
+  echo "事件数: ${event_count}"
+  echo "下载: $(format_bytes "${down}") (${down} bytes)"
+  echo "上传: $(format_bytes "${up}") (${up} bytes)"
+  echo "合计: $(format_bytes "${total}") (${total} bytes)"
+  echo
+  echo "最近 ${limit} 条采集事件:"
+  sqlite3 -header -column "${db_path}" "$(build_traffic_detail_sql "${user_tag}" "${start_time}" "${end_time}" "${limit}")"
+}
+
+function analyze_user_access_logs() {
+  local log_dir=$1
+  local user_tag=$2
+  local start_time=${3:-}
+  local end_time=${4:-}
+  local limit
+  limit=$(normalize_positive_int "${5:-200}" 200 2000)
+
+  echo
+  echo -e "${Blue}===== Xray access.log 访问明细 =====${Font}"
+  if [[ ! -d "${log_dir}" ]]; then
+    print_error "Xray 日志目录不存在: ${log_dir}"
+    return 0
+  fi
+
+  local tmp_file
+  tmp_file=$(mktemp)
+  emit_access_log_matches "${user_tag}" "${log_dir}" | filter_access_log_time_range "${start_time}" "${end_time}" > "${tmp_file}"
+  local count
+  count=$(wc -l < "${tmp_file}" | tr -d " ")
+  echo "匹配规则: grep -E '$(build_access_log_email_pattern "${user_tag}")'"
+  echo "匹配行数: ${count}"
+  echo "最近 ${limit} 条访问日志:"
+  tail -n "${limit}" "${tmp_file}"
+  rm -f "${tmp_file}"
+}
+
+function analyze_user_traffic_detail() {
+  read -rp "请输入用户 tag/id（例如 8）: " user_tag
+  if [[ -z "${user_tag}" ]]; then
+    print_error "用户 tag/id 不能为空"
+    return 1
+  fi
+
+  read -rp "SQLite 数据库路径(默认 ${stat_db_path}): " db_path
+  [[ -z "${db_path}" ]] && db_path="${stat_db_path}"
+
+  read -rp "开始时间(可空，格式 2026-06-17 00:00:00，默认最近24小时): " start_time
+  read -rp "结束时间(可空，格式 2026-06-17 23:59:59，默认最近24小时): " end_time
+  local normalized_range
+  if ! normalized_range=$(normalize_analysis_time_range "${start_time}" "${end_time}"); then
+    print_error "${normalized_range}"
+    return 1
+  fi
+  IFS="|" read -r start_time end_time <<<"${normalized_range}"
+  echo "实际查询时间范围: ${start_time} ~ ${end_time}"
+
+  read -rp "流量采集明细显示条数(默认 50，最多 1000): " traffic_limit
+  read -rp "访问日志显示条数(默认 200，最多 2000): " access_limit
+
+  analyze_user_traffic_sqlite "${db_path}" "${user_tag}" "${start_time}" "${end_time}" "${traffic_limit}"
+  analyze_user_access_logs "${xray_log_dir}" "${user_tag}" "${start_time}" "${end_time}" "${access_limit}"
 }
 
 function create_xray_config() {
@@ -1018,12 +1335,6 @@ function config_iptables() {
     fi
   fi
 
-  if ! port_list_contains "$(merge_port_lists "$FIREWALL_SSH_PORTS" "$FIREWALL_ADMIN_PORTS" "$FIREWALL_XRAY_PORTS" "$FIREWALL_STAT_PORT" "$FIREWALL_EXTRA_PORTS")" "443"; then
-    if ask_yes_no "是否额外放行 443 端口(用于 HTTPS/TLS 等)" "N"; then
-      FIREWALL_EXTRA_PORTS="$(merge_port_lists "$FIREWALL_EXTRA_PORTS" "443")"
-    fi
-  fi
-
   echo ""
   echo -e "${Blue}即将生成的最小放行规则:${Font}"
   echo "  SSH端口: ${FIREWALL_SSH_PORTS}"
@@ -1115,6 +1426,7 @@ menu() {
   echo -e "${Green}9.${Font}  安装 acme.sh (SSL证书工具)"
   echo -e "${Green}10.${Font} 续期 SSL 证书"
   echo -e "${Green}11.${Font} 配置 Xray 日志轮转"
+  echo -e "${Green}12.${Font} 分析用户流量明细"
   echo -e "${Green}99.${Font} 退出"
   echo -e "————————————————————————————————————"
   read -rp "请输入数字：" menu_num
@@ -1151,6 +1463,9 @@ menu() {
     ;;
   11)
     configure_xray_logrotate
+    ;;
+  12)
+    analyze_user_traffic_detail
     ;;
   99)
     exit 0

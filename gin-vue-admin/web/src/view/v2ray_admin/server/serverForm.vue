@@ -39,8 +39,9 @@ import {
 // 自动获取字典
 import { getDictFunc } from '@/utils/format'
 import { useRoute, useRouter } from "vue-router"
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import { buildServerPortChangeReminder } from './serverPortReminder.mjs'
 const route = useRoute()
 const router = useRouter()
 
@@ -51,6 +52,7 @@ const formData = ref({
             remark: '',
             stat_port: 0,
         })
+const originalFormData = ref(null)
 // 验证规则
 const rule = reactive({})
 const elFormRef = ref()
@@ -62,19 +64,40 @@ const init = async () => {
       const res = await findServer({ ID: route.query.id })
       if (res.code === 0) {
         formData.value = res.data.reserver
+        originalFormData.value = { ...res.data.reserver }
         type.value = 'update'
       }
     } else {
       type.value = 'create'
+      originalFormData.value = null
     }
 }
 
 init()
+const confirmPortChangeReminder = async () => {
+  const reminder = buildServerPortChangeReminder(originalFormData.value, formData.value)
+  if (!reminder) {
+    return true
+  }
+
+  try {
+    await ElMessageBox.confirm(reminder, '端口变更提醒', {
+      confirmButtonText: '已同步，继续保存',
+      cancelButtonText: '返回修改',
+      type: 'warning'
+    })
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
 // 保存按钮
 const save = async() => {
       elFormRef.value?.validate( async (valid) => {
-         if (!valid) return
-            let res
+          if (!valid) return
+            if (!(await confirmPortChangeReminder())) return
+             let res
            switch (type.value) {
              case 'create':
                res = await createServer(formData.value)
@@ -86,9 +109,10 @@ const save = async() => {
                res = await createServer(formData.value)
                break
            }
-           if (res.code === 0) {
-             ElMessage({
-               type: 'success',
+            if (res.code === 0) {
+              originalFormData.value = { ...formData.value }
+              ElMessage({
+                type: 'success',
                message: '创建/更改成功'
              })
            }

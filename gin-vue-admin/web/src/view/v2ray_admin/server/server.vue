@@ -130,6 +130,7 @@ import {
 import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import { buildServerPortChangeReminder } from './serverPortReminder.mjs'
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -139,6 +140,7 @@ const formData = ref({
         total_quota: 1000,
         stat_port: 0,
         })
+const originalFormData = ref(null)
 
 // 验证规则
 const rule  = reactive({
@@ -298,6 +300,7 @@ const updateServerFunc = async(row) => {
             // Get the server data directly from the row parameter
             // This ensures we have all the necessary fields including total_quota
             formData.value = { ...row }
+            originalFormData.value = { ...row }
             
             dialogFormVisible.value = true
         } else {
@@ -350,12 +353,14 @@ const dialogFormVisible = ref(false)
 // 打开弹窗
 const openDialog = () => {
     type.value = 'create'
+    originalFormData.value = null
     dialogFormVisible.value = true
 }
 
 // 关闭弹窗
 const closeDialog = () => {
     dialogFormVisible.value = false
+    originalFormData.value = null
     formData.value = {
         ip: '',
         port: 0,
@@ -364,10 +369,29 @@ const closeDialog = () => {
         stat_port: 0,
         }
 }
+const confirmPortChangeReminder = async () => {
+  const reminder = buildServerPortChangeReminder(originalFormData.value, formData.value)
+  if (!reminder) {
+    return true
+  }
+
+  try {
+    await ElMessageBox.confirm(reminder, '端口变更提醒', {
+      confirmButtonText: '已同步，继续保存',
+      cancelButtonText: '返回修改',
+      type: 'warning'
+    })
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
 // 弹窗确定
 const enterDialog = async () => {
      elFormRef.value?.validate( async (valid) => {
              if (!valid) return
+              if (!(await confirmPortChangeReminder())) return
               let res
               switch (type.value) {
                 case 'create':
