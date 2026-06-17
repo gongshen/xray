@@ -84,7 +84,7 @@ https://<domain>
 | 8 | 配置 iptables 防火墙 |
 | 9 | 安装 acme.sh 证书工具 |
 | 10 | 续期 SSL 证书 |
-| 11 | 配置 Xray 日志轮转 |
+| 11 | 配置 Xray 日志轮转和时区 |
 | 12 | 分析用户流量明细 |
 | 99 | 退出 |
 
@@ -98,6 +98,7 @@ https://<domain>
 - 提示输入 stat 监听端口，默认 `56611`。
 - 本地 SQLite 默认路径为 `/var/lib/xray-stat/stat.db`。
 - 默认本地采集间隔为 `10s`，写入 systemd 参数 `-collect-interval 10s`。
+- `stat.service` 会写入 `TZ=Asia/Shanghai`；`traffic_event.collected_at` 存储 Unix 秒，菜单分析时会按北京时间转换显示和过滤。
 - stat 会连接本机 Xray API 读取用户流量统计，因此代理节点需要先完成菜单 `2` 的 Xray 配置。
 
 安装完成后可以检查：
@@ -149,13 +150,21 @@ nc -vz <node-ip> 80
 
 确认 SSH 和必要服务都可访问后，再在原窗口输入 `y` 保存为持久规则。
 
-### 11. 配置 Xray 日志轮转
+### 11. 配置 Xray 日志轮转和时区
 
 菜单 `11` 会安装/确认 `logrotate`，并写入：
 
 ```text
 /etc/logrotate.d/xray
 ```
+
+同时会写入 Xray 的 systemd drop-in：
+
+```text
+/etc/systemd/system/xray.service.d/timezone.conf
+```
+
+其中包含 `Environment="TZ=Asia/Shanghai"`，用于让后续 `/var/log/xray/access.log` 按北京时间写入。已有旧日志不会被改写。
 
 轮转对象为：
 
@@ -205,15 +214,17 @@ ls -lh /var/log/xray
 
 菜单 `12` 用于在代理节点本机排查某个用户的流量明细：
 
+- 输入分析日期，例如 `20260617`。
+- 输入开始时间和结束时间，格式为 `小时:分钟`，例如 `8:10` 到 `9:00`；开始和结束不能超过 2 小时，结束时间会自动包含这一整分钟，即 `9:00:59`。
 - 输入用户 `tag/id`，例如 `8`。
-- 输入分析日期，例如 `2026-06-17`；脚本会自动查询这一天的 `00:00:00` 到 `23:59:59`。
 - 查询 stat 本地 SQLite，默认 `/var/lib/xray-stat/stat.db`。
 - 查询 `traffic_event` 中该用户的采集周期流量，当前默认采集间隔为 `10s`。
-- 输出高流量时间段 Top 10，按 1 分钟聚合并按总流量倒序排列。
+- 菜单输入和输出都按北京时间处理：SQLite 的 `collected_at` 查询会把北京时间转换为 Unix 秒比较，展示时再从 Unix 秒转换回北京时间。
 - 同时扫描 `/var/log/xray/access.log` 和同目录下的轮转文件。
 - access.log 使用后缀匹配，例如 `grep -E 'email: 8$'`，避免把 `18` 匹配成 `8`。
-- 输出访问目标 Top 20，按 access.log 连接次数统计；这个指标用于辅助判断访问内容，不代表精确流量占比。
-- 如果 SQLite 和 access.log 都可用，会把高流量时间段和该时间段内的主要访问目标做关联展示。
+- 输出一张按分钟聚合的表格，每分钟展示该用户的流量采集汇总和这一分钟访问过的目标域名/IP。
+- 访问目标按 access.log 连接次数聚合，例如 `googlevideo.com(3), youtube.com(1)`；这个指标用于辅助判断访问内容，不代表精确流量占比。
+- 不再直接打印原始采集事件和原始 access.log 明细，避免长时间段输出过多流水日志。
 
 菜单 `12` 会读取这些 access 日志文件：
 
@@ -239,6 +250,7 @@ access.log-2026-06-17.gz
 | Xray 配置目录 | `/usr/local/etc/xray` |
 | Xray 日志目录 | `/var/log/xray` |
 | Xray 日志轮转配置 | `/etc/logrotate.d/xray` |
+| Xray systemd 时区配置 | `/etc/systemd/system/xray.service.d/timezone.conf` |
 | iptables 规则文件 | `/usr/local/etc/xray/iptables` |
 
 ## 默认端口

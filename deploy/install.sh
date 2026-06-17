@@ -37,6 +37,11 @@ xray_conf_dir="/usr/local/etc/xray"
 iptables_conf_dir="/usr/local/etc/xray/iptables"
 xray_logrotate_conf_dir="/etc/logrotate.d/xray"
 xray_log_dir="/var/log/xray"
+service_time_zone="Asia/Shanghai"
+xray_timezone_conf_dir="/etc/systemd/system/xray.service.d"
+xray_timezone_conf_file="${xray_timezone_conf_dir}/timezone.conf"
+sqlite_utc_to_shanghai_modifier="+8 hours"
+sqlite_shanghai_to_utc_modifier="-8 hours"
 
 # GitHub 下载地址 (在获取版本号后设置)
 github_release_url=""
@@ -275,6 +280,28 @@ function configure_xray_logrotate() {
   create_xray_logrotate_config
 }
 
+function create_xray_timezone_config() {
+  local output_file=${1:-${xray_timezone_conf_file}}
+  mkdir -p "$(dirname "${output_file}")"
+
+  cat > "${output_file}" <<XRAYTIMEZONEEOF
+[Service]
+Environment="TZ=${service_time_zone}"
+XRAYTIMEZONEEOF
+
+  print_ok "Xray systemd 时区配置已创建: ${output_file}"
+}
+
+function configure_xray_timezone() {
+  if [[ "${XRAY_INSTALL_TEST_MODE:-0}" != "1" ]]; then
+    is_root
+  fi
+  create_xray_timezone_config
+  if [[ "${XRAY_INSTALL_TEST_MODE:-0}" != "1" ]]; then
+    systemctl daemon-reload
+  fi
+}
+
 function ensure_sqlite3_installed() {
   if command -v sqlite3 >/dev/null 2>&1; then
     return 0
@@ -317,10 +344,13 @@ function normalize_positive_int() {
   printf "%s" "${value}"
 }
 
-function analysis_date_to_time_range() {
+function normalize_analysis_date() {
   local analysis_date=${1:-}
+  if [[ "${analysis_date}" =~ ^[0-9]{8}$ ]]; then
+    analysis_date="${analysis_date:0:4}-${analysis_date:4:2}-${analysis_date:6:2}"
+  fi
   if [[ ! "${analysis_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-    echo "日期格式无效，请输入 YYYY-MM-DD，例如 2026-06-17"
+    echo "日期格式无效，请输入 YYYYMMDD，例如 20260617"
     return 1
   fi
 
@@ -334,7 +364,72 @@ function analysis_date_to_time_range() {
     return 1
   fi
 
-  printf "%s 00:00:00|%s 23:59:59" "${analysis_date}" "${analysis_date}"
+  printf "%s" "${analysis_date}"
+}
+
+function normalize_analysis_clock() {
+  local clock_value=${1:-}
+  local boundary=${2:-start}
+  if [[ ! "${clock_value}" =~ ^([0-9]{1,2}):([0-9]{2})$ ]]; then
+    echo "时间格式无效，请输入 小时:分钟，例如 8:10 或 09:00"
+    return 1
+  fi
+
+  local hour=$((10#${BASH_REMATCH[1]}))
+  local minute=$((10#${BASH_REMATCH[2]}))
+  if (( hour < 0 || hour > 23 || minute < 0 || minute > 59 )); then
+    echo "时间无效: ${clock_value}"
+    return 1
+  fi
+
+  local second="00"
+  if [[ "${boundary}" == "end" ]]; then
+    second="59"
+  fi
+  printf "%02d:%02d:%s" "${hour}" "${minute}" "${second}"
+}
+
+function normalized_clock_to_minutes() {
+  local clock_value=${1:-}
+  local hour=$((10#${clock_value:0:2}))
+  local minute=$((10#${clock_value:3:2}))
+  printf "%s" $((hour * 60 + minute))
+}
+
+function analysis_datetime_range_from_parts() {
+  local analysis_date
+  local start_clock
+  local end_clock
+  if ! analysis_date=$(normalize_analysis_date "${1:-}"); then
+    echo "${analysis_date}"
+    return 1
+  fi
+  if ! start_clock=$(normalize_analysis_clock "${2:-}" "start"); then
+    echo "${start_clock}"
+    return 1
+  fi
+  if ! end_clock=$(normalize_analysis_clock "${3:-}" "end"); then
+    echo "${end_clock}"
+    return 1
+  fi
+
+  local start_time="${analysis_date} ${start_clock}"
+  local end_time="${analysis_date} ${end_clock}"
+  if [[ "${start_time}" > "${end_time}" ]]; then
+    echo "结束时间不能早于开始时间"
+    return 1
+  fi
+
+  local start_minutes
+  local end_minutes
+  start_minutes=$(normalized_clock_to_minutes "${start_clock}")
+  end_minutes=$(normalized_clock_to_minutes "${end_clock}")
+  if (( end_minutes - start_minutes > 120 )); then
+    echo "开始时间和结束时间不能超过 2 小时"
+    return 1
+  fi
+
+  printf "%s|%s" "${start_time}" "${end_time}"
 }
 
 function build_traffic_event_where() {
@@ -343,105 +438,28 @@ function build_traffic_event_where() {
   local end_time=${3:-}
   local where="tag = $(sqlite_quote "${user_tag}")"
   if [[ -n "${start_time}" ]]; then
-    where="${where} AND collected_at >= strftime('%s', $(sqlite_quote "${start_time}"))"
+    where="${where} AND collected_at >= strftime('%s', $(sqlite_quote "${start_time}"), '${sqlite_shanghai_to_utc_modifier}')"
   fi
   if [[ -n "${end_time}" ]]; then
-    where="${where} AND collected_at <= strftime('%s', $(sqlite_quote "${end_time}"))"
+    where="${where} AND collected_at <= strftime('%s', $(sqlite_quote "${end_time}"), '${sqlite_shanghai_to_utc_modifier}')"
   fi
   printf "%s" "${where}"
 }
 
-function build_traffic_summary_sql() {
+function build_traffic_minute_summary_sql() {
   local where
   where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
   cat <<SQL
 SELECT
-  COALESCE(datetime(MIN(collected_at), 'unixepoch', 'localtime'), '-'),
-  COALESCE(datetime(MAX(collected_at), 'unixepoch', 'localtime'), '-'),
-  COUNT(*),
-  COALESCE(SUM(down), 0),
-  COALESCE(SUM(up), 0),
-  COALESCE(SUM(down + up), 0)
-FROM traffic_event
-WHERE ${where};
-SQL
-}
-
-function build_traffic_detail_sql() {
-  local where
-  local limit
-  where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
-  limit=$(normalize_positive_int "${4:-50}" 50 1000)
-  cat <<SQL
-SELECT
-  datetime(collected_at, 'unixepoch', 'localtime') AS collected_at,
-  down,
-  up,
-  printf('%.2fM', (down + up) / 1048576.0) AS total
+  strftime('%Y-%m-%d %H:%M', collected_at, 'unixepoch', '${sqlite_utc_to_shanghai_modifier}') AS minute,
+  COUNT(*) AS events,
+  COALESCE(SUM(down), 0) AS down,
+  COALESCE(SUM(up), 0) AS up,
+  COALESCE(SUM(down + up), 0) AS total
 FROM traffic_event
 WHERE ${where}
-ORDER BY collected_at DESC, id DESC
-LIMIT ${limit};
-SQL
-}
-
-function build_traffic_top_windows_sql() {
-  local where
-  local window_seconds
-  local limit
-  where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
-  window_seconds=$(normalize_positive_int "${4:-60}" 60 3600)
-  limit=$(normalize_positive_int "${5:-10}" 10 100)
-  cat <<SQL
-WITH bucketed AS (
-  SELECT
-    (collected_at / ${window_seconds}) * ${window_seconds} AS bucket_start,
-    down,
-    up
-  FROM traffic_event
-  WHERE ${where}
-)
-SELECT
-  datetime(bucket_start, 'unixepoch', 'localtime') AS window_start,
-  datetime(bucket_start + ${window_seconds} - 1, 'unixepoch', 'localtime') AS window_end,
-  COUNT(*) AS events,
-  printf('%.2fM', SUM(down + up) / 1048576.0) AS total,
-  printf('%.2fM', SUM(down) / 1048576.0) AS down,
-  printf('%.2fM', SUM(up) / 1048576.0) AS up
-FROM bucketed
-GROUP BY bucket_start
-ORDER BY SUM(down + up) DESC
-LIMIT ${limit};
-SQL
-}
-
-function build_traffic_top_windows_raw_sql() {
-  local where
-  local window_seconds
-  local limit
-  where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
-  window_seconds=$(normalize_positive_int "${4:-60}" 60 3600)
-  limit=$(normalize_positive_int "${5:-5}" 5 50)
-  cat <<SQL
-WITH bucketed AS (
-  SELECT
-    (collected_at / ${window_seconds}) * ${window_seconds} AS bucket_start,
-    down,
-    up
-  FROM traffic_event
-  WHERE ${where}
-)
-SELECT
-  datetime(bucket_start, 'unixepoch', 'localtime'),
-  datetime(bucket_start + ${window_seconds} - 1, 'unixepoch', 'localtime'),
-  COUNT(*),
-  COALESCE(SUM(down), 0),
-  COALESCE(SUM(up), 0),
-  COALESCE(SUM(down + up), 0)
-FROM bucketed
-GROUP BY bucket_start
-ORDER BY SUM(down + up) DESC
-LIMIT ${limit};
+GROUP BY minute
+ORDER BY minute ASC;
 SQL
 }
 
@@ -471,29 +489,52 @@ function build_access_log_email_pattern() {
   printf "email: %s$" "$(escape_grep_regex "$1")"
 }
 
-function summarize_access_log_targets() {
-  local limit
-  limit=$(normalize_positive_int "${1:-20}" 20 200)
+function summarize_access_log_targets_by_minute() {
   awk '
-    {
-      for (i = 1; i <= NF; i++) {
-        if ($i ~ /^(tcp|udp):/) {
-          target = $i
+    function extract_target(line, fields, field_count, i, target) {
+      field_count = split(line, fields, /[[:space:]]+/)
+      for (i = 1; i <= field_count; i++) {
+        if (fields[i] ~ /^(tcp|udp):/) {
+          target = fields[i]
           sub(/^(tcp|udp):/, "", target)
           sub(/:[0-9]+$/, "", target)
-          if (target != "") {
-            print target
-          }
-          break
+          return target
         }
       }
+      return ""
     }
-  ' | sort | uniq -c | sort -nr | head -n "${limit}" | awk '{
-    count = $1
-    $1 = ""
-    sub(/^ +/, "")
-    printf "%-8s %s\n", count, $0
-  }'
+    {
+      log_minute = substr($0, 1, 16)
+      if (log_minute !~ /^[0-9][0-9][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]$/) {
+        next
+      }
+      gsub("/", "-", log_minute)
+      target = extract_target($0)
+      if (target == "") {
+        next
+      }
+      key = log_minute SUBSEP target
+      count[key]++
+      minutes[log_minute] = 1
+    }
+    END {
+      for (minute in minutes) {
+        targets = ""
+        for (key in count) {
+          split(key, parts, SUBSEP)
+          if (parts[1] == minute) {
+            item = parts[2] "(" count[key] ")"
+            if (targets == "") {
+              targets = item
+            } else {
+              targets = targets ", " item
+            }
+          }
+        }
+        print minute "|" targets
+      }
+    }
+  ' | sort
 }
 
 function is_xray_access_log_file() {
@@ -550,141 +591,126 @@ function emit_access_log_matches() {
   done
 }
 
-function print_traffic_top_windows() {
+function collect_traffic_minute_summary() {
   local db_path=$1
   local user_tag=$2
   local start_time=${3:-}
   local end_time=${4:-}
-  local window_seconds=${5:-60}
-  local limit=${6:-10}
+  local output_file=$5
 
-  echo
-  echo "高流量时间段 Top ${limit}（按 1 分钟聚合，总流量倒序）"
-  sqlite3 -header -column "${db_path}" "$(build_traffic_top_windows_sql "${user_tag}" "${start_time}" "${end_time}" "${window_seconds}" "${limit}")"
-}
-
-function print_access_target_summary() {
-  local matched_log_file=$1
-  local limit=${2:-20}
-  local targets
-
-  echo
-  echo "访问目标 Top ${limit}（按连接次数，不代表流量占比）"
-  targets=$(summarize_access_log_targets "${limit}" < "${matched_log_file}")
-  if [[ -z "${targets}" ]]; then
-    echo "无匹配访问目标"
-    return 0
-  fi
-  printf "count    target\n"
-  printf "%s\n" "${targets}"
-}
-
-function print_traffic_window_access_correlation() {
-  local db_path=$1
-  local matched_log_file=$2
-  local user_tag=$3
-  local start_time=${4:-}
-  local end_time=${5:-}
-  local window_seconds=${6:-60}
-  local limit=${7:-5}
-  local target_limit=${8:-5}
-
-  if [[ ! -f "${db_path}" ]] || [[ ! -s "${matched_log_file}" ]] || ! command -v sqlite3 >/dev/null 2>&1; then
-    return 0
-  fi
-  if ! sqlite3 "${db_path}" "SELECT 1 FROM traffic_event LIMIT 1;" >/dev/null 2>&1; then
-    return 0
-  fi
-
-  local rows
-  rows=$(sqlite3 -noheader -separator "|" "${db_path}" "$(build_traffic_top_windows_raw_sql "${user_tag}" "${start_time}" "${end_time}" "${window_seconds}" "${limit}")" 2>/dev/null || true)
-  if [[ -z "${rows}" ]]; then
-    return 0
-  fi
-
-  echo
-  echo "高流量时间段访问目标关联 Top ${limit}（目标按连接次数）"
-  while IFS="|" read -r window_start window_end event_count down up total; do
-    [[ -z "${window_start}" ]] && continue
-    echo "$(format_bytes "${total}")  ${window_start} ~ ${window_end}  events=${event_count}"
-    local targets
-    targets=$(filter_access_log_time_range "${window_start}" "${window_end}" < "${matched_log_file}" | summarize_access_log_targets "${target_limit}")
-    if [[ -z "${targets}" ]]; then
-      echo "  该时间段 access.log 无匹配目标"
-    else
-      printf "%s\n" "${targets}" | sed 's/^/  /'
-    fi
-  done <<< "${rows}"
-}
-
-function analyze_user_traffic_sqlite() {
-  local db_path=$1
-  local user_tag=$2
-  local start_time=${3:-}
-  local end_time=${4:-}
-  local limit
-  limit=$(normalize_positive_int "${5:-50}" 50 1000)
-
+  : > "${output_file}"
   if [[ ! -f "${db_path}" ]]; then
-    print_error "SQLite 数据库不存在: ${db_path}"
+    print_error "SQLite 数据库不存在: ${db_path}，仅展示 access.log 聚合"
     return 0
   fi
   ensure_sqlite3_installed || return 1
-
   if ! sqlite3 "${db_path}" "SELECT 1 FROM traffic_event LIMIT 1;" >/dev/null 2>&1; then
-    print_error "SQLite 中未找到 traffic_event 表: ${db_path}"
+    print_error "SQLite 中未找到 traffic_event 表: ${db_path}，仅展示 access.log 聚合"
     return 0
   fi
 
-  echo
-  echo -e "${Blue}===== SQLite 采集周期流量明细 =====${Font}"
-  local summary
-  summary=$(sqlite3 -separator "|" "${db_path}" "$(build_traffic_summary_sql "${user_tag}" "${start_time}" "${end_time}")")
-  local first_time last_time event_count down up total
-  IFS="|" read -r first_time last_time event_count down up total <<<"${summary}"
-  echo "用户 tag/id: ${user_tag}"
-  echo "时间范围: ${first_time} ~ ${last_time}"
-  echo "事件数: ${event_count}"
-  echo "下载: $(format_bytes "${down}") (${down} bytes)"
-  echo "上传: $(format_bytes "${up}") (${up} bytes)"
-  echo "合计: $(format_bytes "${total}") (${total} bytes)"
-  print_traffic_top_windows "${db_path}" "${user_tag}" "${start_time}" "${end_time}" "60" "10"
-  echo
-  echo "最近 ${limit} 条采集事件:"
-  sqlite3 -header -column "${db_path}" "$(build_traffic_detail_sql "${user_tag}" "${start_time}" "${end_time}" "${limit}")"
+  sqlite3 -noheader -separator "|" "${db_path}" "$(build_traffic_minute_summary_sql "${user_tag}" "${start_time}" "${end_time}")" > "${output_file}"
 }
 
-function analyze_user_access_logs() {
+function collect_access_minute_summary() {
   local log_dir=$1
   local user_tag=$2
   local start_time=${3:-}
   local end_time=${4:-}
-  local limit
-  limit=$(normalize_positive_int "${5:-200}" 200 2000)
-  local db_path=${6:-}
+  local matched_log_file=$5
+  local output_file=$6
 
-  echo
-  echo -e "${Blue}===== Xray access.log 访问明细 =====${Font}"
+  : > "${matched_log_file}"
+  : > "${output_file}"
   if [[ ! -d "${log_dir}" ]]; then
-    print_error "Xray 日志目录不存在: ${log_dir}"
+    print_error "Xray 日志目录不存在: ${log_dir}，仅展示 SQLite 流量聚合"
     return 0
   fi
 
-  local tmp_file
-  tmp_file=$(mktemp)
-  emit_access_log_matches "${user_tag}" "${log_dir}" | filter_access_log_time_range "${start_time}" "${end_time}" > "${tmp_file}"
-  local count
-  count=$(wc -l < "${tmp_file}" | tr -d " ")
-  echo "匹配规则: grep -E '$(build_access_log_email_pattern "${user_tag}")'"
-  echo "匹配行数: ${count}"
-  print_access_target_summary "${tmp_file}" "20"
-  print_traffic_window_access_correlation "${db_path}" "${tmp_file}" "${user_tag}" "${start_time}" "${end_time}" "60" "5" "5"
-  echo "最近 ${limit} 条访问日志:"
-  tail -n "${limit}" "${tmp_file}"
-  rm -f "${tmp_file}"
+  emit_access_log_matches "${user_tag}" "${log_dir}" | filter_access_log_time_range "${start_time}" "${end_time}" > "${matched_log_file}"
+  summarize_access_log_targets_by_minute < "${matched_log_file}" > "${output_file}"
+}
+
+function print_minute_traffic_access_table() {
+  local traffic_file=$1
+  local access_file=$2
+  local rows
+
+  rows=$(awk -F'|' '
+    FILENAME == ARGV[1] {
+      events[$1] = $2
+      down[$1] = $3
+      up[$1] = $4
+      total[$1] = $5
+      seen[$1] = 1
+      next
+    }
+    FILENAME == ARGV[2] {
+      targets[$1] = $2
+      seen[$1] = 1
+      next
+    }
+    END {
+      for (minute in seen) {
+        printf "%s|%s|%s|%s|%s|%s\n", minute, events[minute] + 0, down[minute] + 0, up[minute] + 0, total[minute] + 0, targets[minute]
+      }
+    }
+  ' "${traffic_file}" "${access_file}" | sort)
+
+  if [[ -z "${rows}" ]]; then
+    echo "该时间段没有匹配的流量采集或访问日志"
+    return 0
+  fi
+
+  printf "%-16s %-6s %-12s %-12s %-12s %s\n" "minute" "events" "down" "up" "total" "targets"
+  printf "%-16s %-6s %-12s %-12s %-12s %s\n" "----------------" "------" "------------" "------------" "------------" "-------"
+  while IFS="|" read -r minute events down up total targets; do
+    [[ -z "${targets}" ]] && targets="-"
+    printf "%-16s %-6s %-12s %-12s %-12s %s\n" "${minute}" "${events}" "$(format_bytes "${down}")" "$(format_bytes "${up}")" "$(format_bytes "${total}")" "${targets}"
+  done <<< "${rows}"
+}
+
+function analyze_user_minute_report() {
+  local db_path=$1
+  local log_dir=$2
+  local user_tag=$3
+  local start_time=$4
+  local end_time=$5
+  local traffic_file
+  local matched_log_file
+  local access_file
+  traffic_file=$(mktemp)
+  matched_log_file=$(mktemp)
+  access_file=$(mktemp)
+
+  collect_traffic_minute_summary "${db_path}" "${user_tag}" "${start_time}" "${end_time}" "${traffic_file}" || {
+    rm -f "${traffic_file}" "${matched_log_file}" "${access_file}"
+    return 1
+  }
+  collect_access_minute_summary "${log_dir}" "${user_tag}" "${start_time}" "${end_time}" "${matched_log_file}" "${access_file}"
+
+  echo
+  echo -e "${Blue}===== 用户分钟级流量和访问目标聚合 =====${Font}"
+  echo "用户 tag/id: ${user_tag}"
+  echo "时间范围: ${start_time} ~ ${end_time}"
+  echo "access.log 匹配行数: $(wc -l < "${matched_log_file}" | tr -d " ")"
+  echo
+  print_minute_traffic_access_table "${traffic_file}" "${access_file}"
+
+  rm -f "${traffic_file}" "${matched_log_file}" "${access_file}"
 }
 
 function analyze_user_traffic_detail() {
+  read -rp "请输入分析日期(格式 20260617): " analysis_date
+  read -rp "请输入开始时间(格式 小时:分钟，例如 8:10): " start_clock
+  read -rp "请输入结束时间(格式 小时:分钟，例如 9:00): " end_clock
+  local normalized_range
+  if ! normalized_range=$(analysis_datetime_range_from_parts "${analysis_date}" "${start_clock}" "${end_clock}"); then
+    print_error "${normalized_range}"
+    return 1
+  fi
+  IFS="|" read -r start_time end_time <<<"${normalized_range}"
+
   read -rp "请输入用户 tag/id（例如 8）: " user_tag
   if [[ -z "${user_tag}" ]]; then
     print_error "用户 tag/id 不能为空"
@@ -694,21 +720,7 @@ function analyze_user_traffic_detail() {
   read -rp "SQLite 数据库路径(默认 ${stat_db_path}): " db_path
   [[ -z "${db_path}" ]] && db_path="${stat_db_path}"
 
-  read -rp "请输入分析日期(格式 2026-06-17): " analysis_date
-  local normalized_range
-  if ! normalized_range=$(analysis_date_to_time_range "${analysis_date}"); then
-    print_error "${normalized_range}"
-    return 1
-  fi
-  IFS="|" read -r start_time end_time <<<"${normalized_range}"
-  echo "实际查询日期: ${analysis_date}"
-  echo "实际查询时间范围: ${start_time} ~ ${end_time}"
-
-  read -rp "流量采集明细显示条数(默认 50，最多 1000): " traffic_limit
-  read -rp "访问日志显示条数(默认 200，最多 2000): " access_limit
-
-  analyze_user_traffic_sqlite "${db_path}" "${user_tag}" "${start_time}" "${end_time}" "${traffic_limit}"
-  analyze_user_access_logs "${xray_log_dir}" "${user_tag}" "${start_time}" "${end_time}" "${access_limit}" "${db_path}"
+  analyze_user_minute_report "${db_path}" "${xray_log_dir}" "${user_tag}" "${start_time}" "${end_time}"
 }
 
 function create_xray_config() {
@@ -818,6 +830,7 @@ After=network.target nss-lookup.target
 [Service]
 User=root
 Environment="REMOTE_IP=__REMOTE_IP__"
+Environment="TZ=Asia/Shanghai"
 ExecStart=/usr/local/bin/stat -port __STAT_PORT__ -traffic-db __STAT_DB_PATH__ -collect-interval __COLLECT_INTERVAL__
 Restart=on-failure
 RestartPreventExitStatus=23
@@ -1301,6 +1314,8 @@ function xray_install() {
 function configure_xray() {
   create_xray_config
   configure_xray_logrotate
+  create_xray_timezone_config
+  systemctl daemon-reload
   systemctl enable xray
   systemctl restart xray
   judge "Xray 启动"
@@ -1583,6 +1598,10 @@ menu() {
     ;;
   11)
     configure_xray_logrotate
+    configure_xray_timezone
+    if [[ "${XRAY_INSTALL_TEST_MODE:-0}" != "1" ]]; then
+      systemctl restart xray 2>/dev/null && print_ok "xray 重启完成"
+    fi
     ;;
   12)
     analyze_user_traffic_detail
