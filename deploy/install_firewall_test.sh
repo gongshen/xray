@@ -97,11 +97,13 @@ grep -q -- "tag = '8'" <<<"${traffic_where}"
 grep -q -- "collected_at >= strftime('%s', '2026-06-17 00:00:00')" <<<"${traffic_where}"
 grep -q -- "collected_at <= strftime('%s', '2026-06-18 00:00:00')" <<<"${traffic_where}"
 
-assert_eq "2026-06-17 00:00:00|2026-06-18 00:00:00" "$(normalize_analysis_time_range "2026-06-17 00:00:00" "2026-06-18 00:00:00")" "allow exactly one day"
-assert_eq "2026-06-17 00:00:00|2026-06-18 00:00:00" "$(normalize_analysis_time_range "2026-06-17 00:00:00" "")" "fill end time from start time"
-assert_eq "2026-06-17 00:00:00|2026-06-18 00:00:00" "$(normalize_analysis_time_range "" "2026-06-18 00:00:00")" "fill start time from end time"
-if normalize_analysis_time_range "2026-06-17 00:00:00" "2026-06-18 00:00:01" >/dev/null; then
-  echo "FAIL: time range greater than one day must be rejected" >&2
+assert_eq "2026-06-17 00:00:00|2026-06-17 23:59:59" "$(analysis_date_to_time_range "2026-06-17")" "date expands to one day"
+if analysis_date_to_time_range "2026-06-17 12:00:00" >/dev/null; then
+  echo "FAIL: analysis date must reject datetime input" >&2
+  exit 1
+fi
+if analysis_date_to_time_range "2026-02-30" >/dev/null; then
+  echo "FAIL: analysis date must reject invalid date" >&2
   exit 1
 fi
 
@@ -124,7 +126,7 @@ cat > "${menu_log_dir}/access.log" <<'ACCESSLOG'
 2026/06/17 10:01:00 tcp:other.example:443 accepted email: 18
 ACCESSLOG
 xray_log_dir="${menu_log_dir}"
-menu_output="$(printf '12\n8\n%s\n2026-06-17 00:00:00\n2026-06-17 23:59:59\n1\n5\n' "${tmp_dir}/missing.db" | menu || true)"
+menu_output="$(printf '12\n8\n%s\n2026-06-17\n1\n5\n' "${tmp_dir}/missing.db" | menu || true)"
 grep -q -- "tcp:example.com:443 accepted email: 8" <<<"${menu_output}"
 if grep -q -- "tcp:other.example:443 accepted email: 18" <<<"${menu_output}"; then
   echo "FAIL: user traffic menu matched another user's access log" >&2

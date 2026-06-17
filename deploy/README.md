@@ -64,6 +64,7 @@ https://<domain>
 1. 安装 Xray
 2. 配置 Xray
 4. 安装 Stat 服务
+11. 配置 Xray 日志轮转（新安装或已有节点都建议执行一次）
 8. 配置 iptables 防火墙
 ```
 
@@ -84,7 +85,145 @@ https://<domain>
 | 9 | 安装 acme.sh 证书工具 |
 | 10 | 续期 SSL 证书 |
 | 11 | 配置 Xray 日志轮转 |
-| 0 | 退出 |
+| 12 | 分析用户流量明细 |
+| 99 | 退出 |
+
+### 4. 安装 Stat 服务
+
+菜单 `4` 会安装代理节点上的 `stat` 服务：
+
+- 从 GitHub Release 下载 `stat` 二进制到 `/usr/local/bin/stat`。
+- 创建 `/etc/systemd/system/stat.service`。
+- 提示输入管理端 IP，并写入 `REMOTE_IP`，用于限制只有管理端可以访问 stat 接口。
+- 提示输入 stat 监听端口，默认 `56611`。
+- 本地 SQLite 默认路径为 `/var/lib/xray-stat/stat.db`。
+- 默认本地采集间隔为 `10s`，写入 systemd 参数 `-collect-interval 10s`。
+- stat 会连接本机 Xray API 读取用户流量统计，因此代理节点需要先完成菜单 `2` 的 Xray 配置。
+
+安装完成后可以检查：
+
+```bash
+systemctl status stat
+journalctl -u stat -n 100 --no-pager
+ss -ltnp | grep ':56611'
+```
+
+如果后续只想手动调整采集间隔，可以修改 systemd：
+
+```bash
+sed -i 's|-collect-interval [^ ]*|-collect-interval 10s|' /etc/systemd/system/stat.service
+systemctl daemon-reload
+systemctl restart stat
+```
+
+### 8. 配置 iptables 防火墙
+
+菜单 `8` 按最小权限原则生成 iptables 规则：
+
+- 自动检测 SSH 端口，检测不到时要求手动输入。
+- 询问当前服务器是否存在 xray-admin 管理端；如果存在，会检测并放行管理端端口，默认 `8888`，如果配置为 `443` 则放行 `443`。
+- 询问当前服务器是否是代理节点；如果是，会检测并放行 Xray 代理端口，默认 `80`。
+- 检测 stat 端口，默认 `56611`，并要求填写允许访问 stat 的管理端 IP。
+- 如果 `80` 没有被管理端或代理端口使用，会询问是否额外放行 `80`，用于 HTTP/ACME standalone 等场景。
+- 不放行 MySQL、Redis 等数据库端口。
+- 禁用 IPv6，避免 IPv6 绕过 IPv4 防火墙规则。
+- 应用规则前会备份当前 iptables，并在 120 秒内等待确认；未确认会自动恢复旧规则。
+
+执行菜单 `8` 后，必须新开一个 SSH 窗口确认还能登录，再测试必要端口：
+
+```bash
+ssh -p <ssh-port> root@<node-ip>
+```
+
+在管理端服务器测试 stat：
+
+```bash
+curl --connect-timeout 5 http://<node-ip>:56611/stat/sysinfo
+```
+
+测试代理端口：
+
+```bash
+nc -vz <node-ip> 80
+```
+
+确认 SSH 和必要服务都可访问后，再在原窗口输入 `y` 保存为持久规则。
+
+### 11. 配置 Xray 日志轮转
+
+菜单 `11` 会安装/确认 `logrotate`，并写入：
+
+```text
+/etc/logrotate.d/xray
+```
+
+轮转对象为：
+
+```text
+/var/log/xray/access.log
+/var/log/xray/error.log
+```
+
+默认策略：
+
+- `daily`：按天轮转。
+- `rotate 365` 和 `maxage 365`：最多保留约一年。
+- `compress` 和 `delaycompress`：旧日志压缩，刚轮转出来的文件可能到下一次轮转才压缩。
+- `copytruncate`：不需要重启 Xray。
+- `dateext`：轮转文件在 `/var/log/xray` 同一目录下带日期后缀。
+
+常见轮转文件格式：
+
+```text
+access.log-20260617
+access.log-20260617.gz
+error.log-20260617
+error.log-20260617.gz
+```
+
+手动触发日志轮转：
+
+```bash
+logrotate -f /etc/logrotate.d/xray
+```
+
+dry-run 检查配置，不实际轮转：
+
+```bash
+logrotate -d /etc/logrotate.d/xray
+```
+
+触发后检查文件：
+
+```bash
+ls -lh /var/log/xray
+```
+
+注意：已有的 `access.log` 不会按内部日期拆分。手动触发时，当前整个 `access.log` 会作为一个轮转文件切出去；后续新日志再按天自然轮转。
+
+### 12. 分析用户流量明细
+
+菜单 `12` 用于在代理节点本机排查某个用户的流量明细：
+
+- 输入用户 `tag/id`，例如 `8`。
+- 输入分析日期，例如 `2026-06-17`；脚本会自动查询这一天的 `00:00:00` 到 `23:59:59`。
+- 查询 stat 本地 SQLite，默认 `/var/lib/xray-stat/stat.db`。
+- 查询 `traffic_event` 中该用户的采集周期流量，当前默认采集间隔为 `10s`。
+- 同时扫描 `/var/log/xray/access.log` 和同目录下的轮转文件。
+- access.log 使用后缀匹配，例如 `grep -E 'email: 8$'`，避免把 `18` 匹配成 `8`。
+
+菜单 `12` 会读取这些 access 日志文件：
+
+```text
+access.log
+access.log-20260617
+access.log-20260617.gz
+access.log-2026-06-17.gz
+access.log.1
+access.log.1.gz
+```
+
+不会读取 `access.log.backup` 这类手工备份文件。
 
 ## 默认路径
 
@@ -97,6 +236,8 @@ https://<domain>
 | stat systemd | `/etc/systemd/system/stat.service` |
 | stat 数据库 | `/var/lib/xray-stat/stat.db` |
 | Xray 配置目录 | `/usr/local/etc/xray` |
+| Xray 日志目录 | `/var/log/xray` |
+| Xray 日志轮转配置 | `/etc/logrotate.d/xray` |
 | iptables 规则文件 | `/usr/local/etc/xray/iptables` |
 
 ## 默认端口
@@ -141,18 +282,6 @@ tail -f /usr/local/etc/xray-admin/log/server.log
 ```bash
 ss -ltnp | grep -E ':(80|443|8888|56611|11111)\b'
 ```
-
-## 防火墙说明
-
-菜单 `8` 会生成最小放行规则：
-
-- SSH 端口会放行。
-- xray-admin 端口按配置放行，默认 `8888`。
-- 如果 xray-admin 配置为监听 `443`，则 `443` 会作为 xray-admin 管理端口放行。
-- Xray 代理端口按配置放行，默认 `80`。
-- stat 端口默认 `56611`，并限制只允许管理端 IP 访问。
-- MySQL、Redis 等数据库端口默认不放行。
-- 脚本会先备份当前 iptables，再应用新规则；确认 SSH 和服务可访问后再保存为持久规则。
 
 ## 证书说明
 

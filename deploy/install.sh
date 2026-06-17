@@ -317,60 +317,24 @@ function normalize_positive_int() {
   printf "%s" "${value}"
 }
 
-function analysis_time_to_epoch() {
-  local value=${1:-}
-  [[ -n "${value}" ]] || return 1
-  date -d "${value}" +%s 2>/dev/null
-}
-
-function analysis_epoch_to_time() {
-  local value=$1
-  date -d "@${value}" "+%Y-%m-%d %H:%M:%S" 2>/dev/null
-}
-
-function normalize_analysis_time_range() {
-  local start_time=${1:-}
-  local end_time=${2:-}
-  local max_seconds=86400
-  local start_epoch
-  local end_epoch
-
-  if [[ -z "${start_time}" && -z "${end_time}" ]]; then
-    end_epoch=$(date +%s)
-    start_epoch=$((end_epoch - max_seconds))
-  elif [[ -n "${start_time}" && -z "${end_time}" ]]; then
-    if ! start_epoch=$(analysis_time_to_epoch "${start_time}"); then
-      echo "开始时间格式无效: ${start_time}"
-      return 1
-    fi
-    end_epoch=$((start_epoch + max_seconds))
-  elif [[ -z "${start_time}" && -n "${end_time}" ]]; then
-    if ! end_epoch=$(analysis_time_to_epoch "${end_time}"); then
-      echo "结束时间格式无效: ${end_time}"
-      return 1
-    fi
-    start_epoch=$((end_epoch - max_seconds))
-  else
-    if ! start_epoch=$(analysis_time_to_epoch "${start_time}"); then
-      echo "开始时间格式无效: ${start_time}"
-      return 1
-    fi
-    if ! end_epoch=$(analysis_time_to_epoch "${end_time}"); then
-      echo "结束时间格式无效: ${end_time}"
-      return 1
-    fi
-  fi
-
-  if [[ "${end_epoch}" -lt "${start_epoch}" ]]; then
-    echo "结束时间不能早于开始时间"
-    return 1
-  fi
-  if [[ $((end_epoch - start_epoch)) -gt "${max_seconds}" ]]; then
-    echo "时间区间不能超过 1 天"
+function analysis_date_to_time_range() {
+  local analysis_date=${1:-}
+  if [[ ! "${analysis_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    echo "日期格式无效，请输入 YYYY-MM-DD，例如 2026-06-17"
     return 1
   fi
 
-  printf "%s|%s" "$(analysis_epoch_to_time "${start_epoch}")" "$(analysis_epoch_to_time "${end_epoch}")"
+  local normalized_date
+  if ! normalized_date=$(date -d "${analysis_date}" "+%Y-%m-%d" 2>/dev/null); then
+    echo "日期无效: ${analysis_date}"
+    return 1
+  fi
+  if [[ "${normalized_date}" != "${analysis_date}" ]]; then
+    echo "日期无效: ${analysis_date}"
+    return 1
+  fi
+
+  printf "%s 00:00:00|%s 23:59:59" "${analysis_date}" "${analysis_date}"
 }
 
 function build_traffic_event_where() {
@@ -574,14 +538,14 @@ function analyze_user_traffic_detail() {
   read -rp "SQLite 数据库路径(默认 ${stat_db_path}): " db_path
   [[ -z "${db_path}" ]] && db_path="${stat_db_path}"
 
-  read -rp "开始时间(可空，格式 2026-06-17 00:00:00，默认最近24小时): " start_time
-  read -rp "结束时间(可空，格式 2026-06-17 23:59:59，默认最近24小时): " end_time
+  read -rp "请输入分析日期(格式 2026-06-17): " analysis_date
   local normalized_range
-  if ! normalized_range=$(normalize_analysis_time_range "${start_time}" "${end_time}"); then
+  if ! normalized_range=$(analysis_date_to_time_range "${analysis_date}"); then
     print_error "${normalized_range}"
     return 1
   fi
   IFS="|" read -r start_time end_time <<<"${normalized_range}"
+  echo "实际查询日期: ${analysis_date}"
   echo "实际查询时间范围: ${start_time} ~ ${end_time}"
 
   read -rp "流量采集明细显示条数(默认 50，最多 1000): " traffic_limit
