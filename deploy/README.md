@@ -209,8 +209,11 @@ ls -lh /var/log/xray
 - 输入分析日期，例如 `2026-06-17`；脚本会自动查询这一天的 `00:00:00` 到 `23:59:59`。
 - 查询 stat 本地 SQLite，默认 `/var/lib/xray-stat/stat.db`。
 - 查询 `traffic_event` 中该用户的采集周期流量，当前默认采集间隔为 `10s`。
+- 输出高流量时间段 Top 10，按 1 分钟聚合并按总流量倒序排列。
 - 同时扫描 `/var/log/xray/access.log` 和同目录下的轮转文件。
 - access.log 使用后缀匹配，例如 `grep -E 'email: 8$'`，避免把 `18` 匹配成 `8`。
+- 输出访问目标 Top 20，按 access.log 连接次数统计；这个指标用于辅助判断访问内容，不代表精确流量占比。
+- 如果 SQLite 和 access.log 都可用，会把高流量时间段和该时间段内的主要访问目标做关联展示。
 
 菜单 `12` 会读取这些 access 日志文件：
 
@@ -219,8 +222,6 @@ access.log
 access.log-20260617
 access.log-20260617.gz
 access.log-2026-06-17.gz
-access.log.1
-access.log.1.gz
 ```
 
 不会读取 `access.log.backup` 这类手工备份文件。

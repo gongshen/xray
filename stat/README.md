@@ -44,7 +44,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat 
 
 `stat` 启动后会每天清理一次 `-log-clean-dir` 下的 xray-admin 一级日期目录。只会删除目录名严格为 `YYYY-MM-DD` 且早于保留期限的目录，普通文件和非日期目录不会删除。
 
-同时会每天清理一次 `-xray-log-dir` 下的 Xray 轮转日志文件，例如 `access.log-20250616`、`access.log-20250616.gz`、`error.log.1.gz`。活跃日志文件 `access.log` 和 `error.log` 不会被改写。
+同时会每天清理一次 `-xray-log-dir` 下的 Xray 日期轮转日志文件，例如 `access.log-20250616`、`access.log-20250616.gz`、`error.log-20250616.gz`。活跃日志文件 `access.log` 和 `error.log` 不会被改写。
 
 ## 本地 SQLite
 

@@ -139,7 +139,7 @@ func (job CalculateMonthlyTrafficLimitJob) Run() {
 
 		shouldLimit := v2ray_admin.ShouldLimitTraffic(0, binding.User.TrafficLimit)
 		if binding.User.TrafficLimit > 0 {
-			startCreatedAt := v2ray_admin.TrafficLimitStartCreatedAt(now, binding.Server.ResetDate)
+			startCreatedAt := v2ray_admin.MonthlyTrafficLimitStartCreatedAt(now)
 			traffic, err := serviceGroup.V2rayAdminServiceGroup.UserTrafficSince(startCreatedAt, strconv.Itoa(binding.UserID), binding.Server.Ip)
 			if err != nil {
 				global.GVA_LOG.Error("CollectorJob UserTrafficSince:", zap.Error(err))
@@ -175,15 +175,15 @@ func (job ResetMonthlyTrafficLimitJob) Run() {
 		return
 	}
 	now := time.Now().In(location)
+	if !v2ray_admin.IsMonthlyTrafficLimitResetDay(now) {
+		return
+	}
 	srvs, err := serviceGroup.V2rayAdminServiceGroup.GetAllServer()
 	if err != nil {
 		global.GVA_LOG.Error("ResetMonthlyTrafficLimitJob GetAllServer:", zap.Error(err))
 		return
 	}
 	for _, srv := range srvs {
-		if !v2ray_admin.IsTrafficResetDay(now, srv.ResetDate) {
-			continue
-		}
 		if err = serviceGroup.V2rayAdminServiceGroup.ResetTrafficLimitByServerID(srv.ID); err != nil {
 			global.GVA_LOG.Error("ResetMonthlyTrafficLimitJob ResetTrafficLimitByServerID:", zap.Error(err))
 			return

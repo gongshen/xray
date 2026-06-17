@@ -97,6 +97,14 @@ grep -q -- "tag = '8'" <<<"${traffic_where}"
 grep -q -- "collected_at >= strftime('%s', '2026-06-17 00:00:00')" <<<"${traffic_where}"
 grep -q -- "collected_at <= strftime('%s', '2026-06-18 00:00:00')" <<<"${traffic_where}"
 
+traffic_detail_sql="$(build_traffic_detail_sql "8" "2026-06-17 00:00:00" "2026-06-17 23:59:59" "10")"
+grep -q -- "printf('%.2fM', (down + up) / 1048576.0) AS total" <<<"${traffic_detail_sql}"
+
+traffic_top_windows_sql="$(build_traffic_top_windows_sql "8" "2026-06-17 00:00:00" "2026-06-17 23:59:59" "60" "10")"
+grep -q -- "AS window_start" <<<"${traffic_top_windows_sql}"
+grep -q -- "printf('%.2fM', SUM(down + up) / 1048576.0) AS total" <<<"${traffic_top_windows_sql}"
+grep -q -- "ORDER BY SUM(down + up) DESC" <<<"${traffic_top_windows_sql}"
+
 assert_eq "2026-06-17 00:00:00|2026-06-17 23:59:59" "$(analysis_date_to_time_range "2026-06-17")" "date expands to one day"
 if analysis_date_to_time_range "2026-06-17 12:00:00" >/dev/null; then
   echo "FAIL: analysis date must reject datetime input" >&2
@@ -110,6 +118,17 @@ fi
 assert_eq "email: 8$" "$(build_access_log_email_pattern "8")" "access log numeric tag regex"
 assert_eq "email: a\\.b\\+c$" "$(build_access_log_email_pattern "a.b+c")" "access log regex escapes tag"
 
+target_summary="$(cat <<'ACCESSLOG' | summarize_access_log_targets 5
+2026/06/17 10:00:00 1.1.1.1:10001 accepted tcp:googlevideo.com:443 email: 8
+2026/06/17 10:00:01 1.1.1.1:10002 accepted tcp:googlevideo.com:443 email: 8
+2026/06/17 10:00:02 1.1.1.1:10003 accepted udp:mtalk.google.com:5228 email: 8
+2026/06/17 10:00:03 tcp:github.com:443 accepted email: 8
+ACCESSLOG
+)"
+grep -Eq "2[[:space:]]+googlevideo\\.com" <<<"${target_summary}"
+grep -Eq "1[[:space:]]+mtalk\\.google\\.com" <<<"${target_summary}"
+grep -Eq "1[[:space:]]+github\\.com" <<<"${target_summary}"
+
 touch "${tmp_dir}/access.log"
 touch "${tmp_dir}/access.log-20260617.gz"
 touch "${tmp_dir}/access.log-2026-06-17.gz"
@@ -117,7 +136,7 @@ touch "${tmp_dir}/access.log.1"
 touch "${tmp_dir}/error.log"
 touch "${tmp_dir}/access.log.backup"
 access_files="$(find_xray_access_log_files "${tmp_dir}" | sed "s#${tmp_dir}/##" | sort | tr '\n' ',')"
-assert_eq "access.log,access.log-2026-06-17.gz,access.log-20260617.gz,access.log.1," "${access_files}" "find access logs only"
+assert_eq "access.log,access.log-2026-06-17.gz,access.log-20260617.gz," "${access_files}" "find date-based access logs only"
 
 menu_log_dir="${tmp_dir}/menu-logs"
 mkdir -p "${menu_log_dir}"

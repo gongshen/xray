@@ -96,14 +96,7 @@ func CleanupOldRotatedLogFiles(logDir string, activeNames []string, now time.Tim
 		if rotatedAt, ok := rotatedLogDate(name, baseName, now.Location()); ok {
 			remove = dateOnly(rotatedAt).Before(cutoff)
 		} else {
-			if !rotatedLogSequence(name, baseName) {
-				continue
-			}
-			info, err := entry.Info()
-			if err != nil {
-				return removed, err
-			}
-			remove = dateOnly(info.ModTime()).Before(cutoff)
+			continue
 		}
 		if !remove {
 			continue
@@ -138,19 +131,6 @@ func rotatedLogDate(name string, baseName string, location *time.Location) (time
 		return rotatedAt, true
 	}
 	return time.Time{}, false
-}
-
-func rotatedLogSequence(name string, baseName string) bool {
-	suffix := rotatedLogSuffix(name, baseName)
-	if suffix == "" {
-		return false
-	}
-	for _, char := range suffix {
-		if char < '0' || char > '9' {
-			return false
-		}
-	}
-	return true
 }
 
 func rotatedLogSuffix(name string, baseName string) string {

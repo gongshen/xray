@@ -2,26 +2,13 @@ package v2ray_admin
 
 import "time"
 
-func TrafficLimitStartCreatedAt(now time.Time, resetDay int) int {
+func MonthlyTrafficLimitStartCreatedAt(now time.Time) int {
 	location, err := time.LoadLocation("Asia/Shanghai")
 	if err == nil {
 		now = now.In(location)
 	}
-	if resetDay <= 0 {
-		resetDay = 1
-	}
-
 	year, month, _ := now.Date()
-	currentResetDay := clampDay(year, month, resetDay)
-	var start time.Time
-	if now.Day() >= currentResetDay {
-		start = time.Date(year, month, currentResetDay, 0, 0, 0, 0, now.Location())
-	} else {
-		prev := now.AddDate(0, -1, 0)
-		prevYear, prevMonth, _ := prev.Date()
-		prevResetDay := clampDay(prevYear, prevMonth, resetDay)
-		start = time.Date(prevYear, prevMonth, prevResetDay, 0, 0, 0, 0, now.Location())
-	}
+	start := time.Date(year, month, 1, 0, 0, 0, 0, now.Location())
 	return start.Year()*10000 + int(start.Month())*100 + start.Day()
 }
 
@@ -44,6 +31,14 @@ func IsTrafficResetDay(now time.Time, resetDay int) bool {
 		resetDay = 1
 	}
 	return now.Day() == clampDay(now.Year(), now.Month(), resetDay)
+}
+
+func IsMonthlyTrafficLimitResetDay(now time.Time) bool {
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err == nil {
+		now = now.In(location)
+	}
+	return now.Day() == 1
 }
 
 func clampDay(year int, month time.Month, day int) int {

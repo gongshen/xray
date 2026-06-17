@@ -5,33 +5,42 @@ import (
 	"time"
 )
 
-func TestTrafficLimitStartCreatedAtUsesServerResetDayAfterReset(t *testing.T) {
+func TestMonthlyTrafficLimitStartCreatedAtUsesCurrentMonthStart(t *testing.T) {
 	now := mustShanghaiDate(t, 2026, 6, 22)
 
-	got := TrafficLimitStartCreatedAt(now, 20)
+	got := MonthlyTrafficLimitStartCreatedAt(now)
 
-	if got != 20260620 {
-		t.Fatalf("start created_at = %d, want 20260620", got)
+	if got != 20260601 {
+		t.Fatalf("start created_at = %d, want 20260601", got)
 	}
 }
 
-func TestTrafficLimitStartCreatedAtUsesPreviousMonthBeforeReset(t *testing.T) {
+func TestMonthlyTrafficLimitStartCreatedAtDoesNotUseServerResetDay(t *testing.T) {
 	now := mustShanghaiDate(t, 2026, 6, 19)
 
-	got := TrafficLimitStartCreatedAt(now, 20)
+	got := MonthlyTrafficLimitStartCreatedAt(now)
 
-	if got != 20260520 {
-		t.Fatalf("start created_at = %d, want 20260520", got)
+	if got != 20260601 {
+		t.Fatalf("start created_at = %d, want 20260601", got)
 	}
 }
 
-func TestTrafficLimitStartCreatedAtClampsResetDayToMonthEnd(t *testing.T) {
+func TestMonthlyTrafficLimitStartCreatedAtUsesFirstDayWhenServerResetWouldClamp(t *testing.T) {
 	now := mustShanghaiDate(t, 2026, 2, 28)
 
-	got := TrafficLimitStartCreatedAt(now, 31)
+	got := MonthlyTrafficLimitStartCreatedAt(now)
 
-	if got != 20260228 {
-		t.Fatalf("start created_at = %d, want 20260228", got)
+	if got != 20260201 {
+		t.Fatalf("start created_at = %d, want 20260201", got)
+	}
+}
+
+func TestIsMonthlyTrafficLimitResetDayUsesNaturalMonthStart(t *testing.T) {
+	if !IsMonthlyTrafficLimitResetDay(mustShanghaiDate(t, 2026, 6, 1)) {
+		t.Fatal("June 1 should be monthly traffic limit reset day")
+	}
+	if IsMonthlyTrafficLimitResetDay(mustShanghaiDate(t, 2026, 6, 20)) {
+		t.Fatal("June 20 should not be monthly traffic limit reset day")
 	}
 }
 

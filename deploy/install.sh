@@ -377,10 +377,70 @@ SELECT
   datetime(collected_at, 'unixepoch', 'localtime') AS collected_at,
   down,
   up,
-  down + up AS total
+  printf('%.2fM', (down + up) / 1048576.0) AS total
 FROM traffic_event
 WHERE ${where}
 ORDER BY collected_at DESC, id DESC
+LIMIT ${limit};
+SQL
+}
+
+function build_traffic_top_windows_sql() {
+  local where
+  local window_seconds
+  local limit
+  where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
+  window_seconds=$(normalize_positive_int "${4:-60}" 60 3600)
+  limit=$(normalize_positive_int "${5:-10}" 10 100)
+  cat <<SQL
+WITH bucketed AS (
+  SELECT
+    (collected_at / ${window_seconds}) * ${window_seconds} AS bucket_start,
+    down,
+    up
+  FROM traffic_event
+  WHERE ${where}
+)
+SELECT
+  datetime(bucket_start, 'unixepoch', 'localtime') AS window_start,
+  datetime(bucket_start + ${window_seconds} - 1, 'unixepoch', 'localtime') AS window_end,
+  COUNT(*) AS events,
+  printf('%.2fM', SUM(down + up) / 1048576.0) AS total,
+  printf('%.2fM', SUM(down) / 1048576.0) AS down,
+  printf('%.2fM', SUM(up) / 1048576.0) AS up
+FROM bucketed
+GROUP BY bucket_start
+ORDER BY SUM(down + up) DESC
+LIMIT ${limit};
+SQL
+}
+
+function build_traffic_top_windows_raw_sql() {
+  local where
+  local window_seconds
+  local limit
+  where=$(build_traffic_event_where "$1" "${2:-}" "${3:-}")
+  window_seconds=$(normalize_positive_int "${4:-60}" 60 3600)
+  limit=$(normalize_positive_int "${5:-5}" 5 50)
+  cat <<SQL
+WITH bucketed AS (
+  SELECT
+    (collected_at / ${window_seconds}) * ${window_seconds} AS bucket_start,
+    down,
+    up
+  FROM traffic_event
+  WHERE ${where}
+)
+SELECT
+  datetime(bucket_start, 'unixepoch', 'localtime'),
+  datetime(bucket_start + ${window_seconds} - 1, 'unixepoch', 'localtime'),
+  COUNT(*),
+  COALESCE(SUM(down), 0),
+  COALESCE(SUM(up), 0),
+  COALESCE(SUM(down + up), 0)
+FROM bucketed
+GROUP BY bucket_start
+ORDER BY SUM(down + up) DESC
 LIMIT ${limit};
 SQL
 }
@@ -411,17 +471,42 @@ function build_access_log_email_pattern() {
   printf "email: %s$" "$(escape_grep_regex "$1")"
 }
 
+function summarize_access_log_targets() {
+  local limit
+  limit=$(normalize_positive_int "${1:-20}" 20 200)
+  awk '
+    {
+      for (i = 1; i <= NF; i++) {
+        if ($i ~ /^(tcp|udp):/) {
+          target = $i
+          sub(/^(tcp|udp):/, "", target)
+          sub(/:[0-9]+$/, "", target)
+          if (target != "") {
+            print target
+          }
+          break
+        }
+      }
+    }
+  ' | sort | uniq -c | sort -nr | head -n "${limit}" | awk '{
+    count = $1
+    $1 = ""
+    sub(/^ +/, "")
+    printf "%-8s %s\n", count, $0
+  }'
+}
+
 function is_xray_access_log_file() {
   local name
   name=$(basename "$1")
   [[ "${name}" == "access.log" ]] && return 0
-  [[ "${name}" =~ ^access\.log[-.]([0-9]{8}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]+)(\.gz)?$ ]]
+  [[ "${name}" =~ ^access\.log-([0-9]{8}|[0-9]{4}-[0-9]{2}-[0-9]{2})(\.gz)?$ ]]
 }
 
 function find_xray_access_log_files() {
   local log_dir=${1:-${xray_log_dir}}
   [[ -d "${log_dir}" ]] || return 0
-  find "${log_dir}" -maxdepth 1 -type f \( -name "access.log" -o -name "access.log-*" -o -name "access.log.*" \) | while IFS= read -r file; do
+  find "${log_dir}" -maxdepth 1 -type f \( -name "access.log" -o -name "access.log-*" \) | while IFS= read -r file; do
     if is_xray_access_log_file "${file}"; then
       printf "%s\n" "${file}"
     fi
@@ -465,6 +550,73 @@ function emit_access_log_matches() {
   done
 }
 
+function print_traffic_top_windows() {
+  local db_path=$1
+  local user_tag=$2
+  local start_time=${3:-}
+  local end_time=${4:-}
+  local window_seconds=${5:-60}
+  local limit=${6:-10}
+
+  echo
+  echo "高流量时间段 Top ${limit}（按 1 分钟聚合，总流量倒序）"
+  sqlite3 -header -column "${db_path}" "$(build_traffic_top_windows_sql "${user_tag}" "${start_time}" "${end_time}" "${window_seconds}" "${limit}")"
+}
+
+function print_access_target_summary() {
+  local matched_log_file=$1
+  local limit=${2:-20}
+  local targets
+
+  echo
+  echo "访问目标 Top ${limit}（按连接次数，不代表流量占比）"
+  targets=$(summarize_access_log_targets "${limit}" < "${matched_log_file}")
+  if [[ -z "${targets}" ]]; then
+    echo "无匹配访问目标"
+    return 0
+  fi
+  printf "count    target\n"
+  printf "%s\n" "${targets}"
+}
+
+function print_traffic_window_access_correlation() {
+  local db_path=$1
+  local matched_log_file=$2
+  local user_tag=$3
+  local start_time=${4:-}
+  local end_time=${5:-}
+  local window_seconds=${6:-60}
+  local limit=${7:-5}
+  local target_limit=${8:-5}
+
+  if [[ ! -f "${db_path}" ]] || [[ ! -s "${matched_log_file}" ]] || ! command -v sqlite3 >/dev/null 2>&1; then
+    return 0
+  fi
+  if ! sqlite3 "${db_path}" "SELECT 1 FROM traffic_event LIMIT 1;" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local rows
+  rows=$(sqlite3 -noheader -separator "|" "${db_path}" "$(build_traffic_top_windows_raw_sql "${user_tag}" "${start_time}" "${end_time}" "${window_seconds}" "${limit}")" 2>/dev/null || true)
+  if [[ -z "${rows}" ]]; then
+    return 0
+  fi
+
+  echo
+  echo "高流量时间段访问目标关联 Top ${limit}（目标按连接次数）"
+  while IFS="|" read -r window_start window_end event_count down up total; do
+    [[ -z "${window_start}" ]] && continue
+    echo "$(format_bytes "${total}")  ${window_start} ~ ${window_end}  events=${event_count}"
+    local targets
+    targets=$(filter_access_log_time_range "${window_start}" "${window_end}" < "${matched_log_file}" | summarize_access_log_targets "${target_limit}")
+    if [[ -z "${targets}" ]]; then
+      echo "  该时间段 access.log 无匹配目标"
+    else
+      printf "%s\n" "${targets}" | sed 's/^/  /'
+    fi
+  done <<< "${rows}"
+}
+
 function analyze_user_traffic_sqlite() {
   local db_path=$1
   local user_tag=$2
@@ -496,6 +648,7 @@ function analyze_user_traffic_sqlite() {
   echo "下载: $(format_bytes "${down}") (${down} bytes)"
   echo "上传: $(format_bytes "${up}") (${up} bytes)"
   echo "合计: $(format_bytes "${total}") (${total} bytes)"
+  print_traffic_top_windows "${db_path}" "${user_tag}" "${start_time}" "${end_time}" "60" "10"
   echo
   echo "最近 ${limit} 条采集事件:"
   sqlite3 -header -column "${db_path}" "$(build_traffic_detail_sql "${user_tag}" "${start_time}" "${end_time}" "${limit}")"
@@ -508,6 +661,7 @@ function analyze_user_access_logs() {
   local end_time=${4:-}
   local limit
   limit=$(normalize_positive_int "${5:-200}" 200 2000)
+  local db_path=${6:-}
 
   echo
   echo -e "${Blue}===== Xray access.log 访问明细 =====${Font}"
@@ -523,6 +677,8 @@ function analyze_user_access_logs() {
   count=$(wc -l < "${tmp_file}" | tr -d " ")
   echo "匹配规则: grep -E '$(build_access_log_email_pattern "${user_tag}")'"
   echo "匹配行数: ${count}"
+  print_access_target_summary "${tmp_file}" "20"
+  print_traffic_window_access_correlation "${db_path}" "${tmp_file}" "${user_tag}" "${start_time}" "${end_time}" "60" "5" "5"
   echo "最近 ${limit} 条访问日志:"
   tail -n "${limit}" "${tmp_file}"
   rm -f "${tmp_file}"
@@ -552,7 +708,7 @@ function analyze_user_traffic_detail() {
   read -rp "访问日志显示条数(默认 200，最多 2000): " access_limit
 
   analyze_user_traffic_sqlite "${db_path}" "${user_tag}" "${start_time}" "${end_time}" "${traffic_limit}"
-  analyze_user_access_logs "${xray_log_dir}" "${user_tag}" "${start_time}" "${end_time}" "${access_limit}"
+  analyze_user_access_logs "${xray_log_dir}" "${user_tag}" "${start_time}" "${end_time}" "${access_limit}" "${db_path}"
 }
 
 function create_xray_config() {
