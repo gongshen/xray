@@ -21,6 +21,7 @@ func (s *ServerRouter) InitServerRouter(Router *gin.RouterGroup) {
 		serverRouter.PUT("updateServer", serverApi.UpdateServer)              // 更新Server
 		serverRouter.PUT("restartXray", serverApi.RestartXray)                // 重启Xray
 		serverRouter.POST("restartVPS", serverApi.RestartVPS)                 // 重启VPS服务器
+		serverRouter.POST("analyzeUserTraffic", serverApi.AnalyzeUserTraffic) // 分析用户流量明细
 	}
 	{
 		serverRouterWithoutRecord.GET("findServer", serverApi.FindServer)       // 根据ID获取Server

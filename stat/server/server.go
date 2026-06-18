@@ -35,6 +35,8 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		business.CollectTrafficToLocalStoreHandler(ctx)
 	case "/stat/traffic/sync":
 		business.SyncLocalTraffic(ctx)
+	case "/stat/traffic/user-minute":
+		business.AnalyzeUserTrafficHandler(ctx)
 	case "/stat/sysinfo":
 		business.CollectSysInfo(ctx)
 	case "/conf/update":

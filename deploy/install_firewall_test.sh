@@ -136,13 +136,33 @@ assert_eq "email: 8$" "$(build_access_log_email_pattern "8")" "access log numeri
 assert_eq "email: a\\.b\\+c$" "$(build_access_log_email_pattern "a.b+c")" "access log regex escapes tag"
 
 minute_target_summary="$(cat <<'ACCESSLOG' | summarize_access_log_targets_by_minute
-2026/06/17 10:00:00 1.1.1.1:10001 accepted tcp:googlevideo.com:443 email: 8
-2026/06/17 10:00:10 1.1.1.1:10002 accepted tcp:googlevideo.com:443 email: 8
-2026/06/17 10:01:00 1.1.1.1:10003 accepted udp:mtalk.google.com:5228 email: 8
+2026/06/17 10:00:00 1.1.1.1:10001 accepted tcp:rr2---sn-3pm7dne6.googlevideo.com:443 email: 8
+2026/06/17 10:00:10 1.1.1.1:10002 accepted tcp:r3---sn-3pm7dn7r.googlevideo.com:443 email: 8
+2026/06/17 10:01:00 1.1.1.1:10003 accepted udp:android.clients.google.com:5228 email: 8
+2026/06/17 10:01:10 1.1.1.1:10004 accepted udp:mtalk.google.com:5228 email: 8
+2026/06/17 10:01:20 1.1.1.1:10005 accepted tcp:8.8.8.8:443 email: 8
+2026/06/17 10:01:30 1.1.1.1:10006 accepted tcp:8.8.8.8:443 email: 8
 ACCESSLOG
 )"
-grep -q -- "2026-06-17 10:00|googlevideo.com(2)" <<<"${minute_target_summary}"
-grep -q -- "2026-06-17 10:01|mtalk.google.com(1)" <<<"${minute_target_summary}"
+grep -q -- "2026-06-17 10:00|googlevideo.com" <<<"${minute_target_summary}"
+if grep -q -- "googlevideo.com(" <<<"${minute_target_summary}"; then
+  echo "FAIL: access target summary must not include counts" >&2
+  exit 1
+fi
+if grep -q -- "rr2---sn-3pm7dne6.googlevideo.com" <<<"${minute_target_summary}"; then
+  echo "FAIL: googlevideo subdomain must be normalized" >&2
+  exit 1
+fi
+grep -q -- "2026-06-17 10:01|google.com" <<<"${minute_target_summary}"
+grep -q -- "8.8.8.8" <<<"${minute_target_summary}"
+if grep -q -- "android.clients.google.com" <<<"${minute_target_summary}"; then
+  echo "FAIL: google subdomain must be normalized" >&2
+  exit 1
+fi
+if grep -q -- "mtalk.google.com" <<<"${minute_target_summary}"; then
+  echo "FAIL: mtalk google subdomain must be normalized" >&2
+  exit 1
+fi
 
 touch "${tmp_dir}/access.log"
 touch "${tmp_dir}/access.log-20260617.gz"
@@ -164,8 +184,12 @@ ACCESSLOG
 xray_log_dir="${menu_log_dir}"
 menu_output="$(printf '12\n20260617\n10:00\n10:01\n8\n%s\n' "${tmp_dir}/missing.db" | menu || true)"
 grep -q -- "2026-06-17 10:00" <<<"${menu_output}"
-grep -q -- "example.com(2)" <<<"${menu_output}"
-grep -q -- "github.com(1)" <<<"${menu_output}"
+grep -q -- "example.com" <<<"${menu_output}"
+grep -q -- "github.com" <<<"${menu_output}"
+if grep -q -- "example.com(" <<<"${menu_output}"; then
+  echo "FAIL: menu target aggregation must not include counts" >&2
+  exit 1
+fi
 if grep -q -- "tcp:example.com:443 accepted email: 8" <<<"${menu_output}"; then
   echo "FAIL: user traffic menu must not print raw access logs" >&2
   exit 1

@@ -223,7 +223,7 @@ ls -lh /var/log/xray
 - 同时扫描 `/var/log/xray/access.log` 和同目录下的轮转文件。
 - access.log 使用后缀匹配，例如 `grep -E 'email: 8$'`，避免把 `18` 匹配成 `8`。
 - 输出一张按分钟聚合的表格，每分钟展示该用户的流量采集汇总和这一分钟访问过的目标域名/IP。
-- 访问目标按 access.log 连接次数聚合，例如 `googlevideo.com(3), youtube.com(1)`；这个指标用于辅助判断访问内容，不代表精确流量占比。
+- 访问目标会按根域名归一并去重，例如 `rr2---sn-3pm7dne6.googlevideo.com` 显示为 `googlevideo.com`，`android.clients.google.com` 显示为 `google.com`；纯 IP 访问保留原 IP，例如 `8.8.8.8`。
 - 不再直接打印原始采集事件和原始 access.log 明细，避免长时间段输出过多流水日志。
 
 菜单 `12` 会读取这些 access 日志文件：

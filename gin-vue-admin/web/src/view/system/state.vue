@@ -11,6 +11,7 @@
         />
       </el-select>
       <el-button type="primary" :icon="Refresh" @click="refreshData" :loading="loading">刷新</el-button>
+      <el-button type="primary" :icon="Search" @click="openTrafficAnalysis" :disabled="!currentServer">流量分析</el-button>
       <el-button type="danger" :icon="RefreshRight" @click="restartVPS" :loading="restartLoading">重启服务器</el-button>
     </div>
 
@@ -134,13 +135,104 @@
 
     <!-- 无数据提示 -->
     <el-empty v-if="!currentServer && !loading" description="请选择一个代理服务器" />
+
+    <el-dialog v-model="trafficAnalysisVisible" :before-close="closeTrafficAnalysis" title="用户流量分析" :width="isMobile ? '95%' : '1120px'" class="traffic-analysis-dialog">
+      <div class="analysis-header">
+        <div>
+          <div class="analysis-title">{{ currentServer?.remark || currentServer?.ip || '-' }}</div>
+          <div class="analysis-subtitle">服务器：{{ currentServer?.ip || '-' }} · Stat 端口：{{ currentServer?.stat_port || 56611 }}</div>
+        </div>
+        <el-tag :type="isOnline ? 'success' : 'danger'" size="small">{{ isOnline ? '在线' : '离线' }}</el-tag>
+      </div>
+
+      <el-form :model="trafficAnalysisForm" class="analysis-form" label-position="top" @keyup.enter="queryTrafficAnalysis">
+        <el-form-item label="用户">
+          <el-select
+            v-model="trafficAnalysisForm.user_tag"
+            clearable
+            filterable
+            :loading="trafficUserLoading"
+            placeholder="请选择用户"
+          >
+            <el-option
+              v-for="item in users"
+              :key="item.ID"
+              :value="item.ID"
+              :label="formatUserOption(item)"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="日期">
+          <el-date-picker
+            v-model="trafficAnalysisForm.date"
+            type="date"
+            value-format="YYYYMMDD"
+            format="YYYY-MM-DD"
+            clearable
+            placeholder="选择日期"
+          />
+        </el-form-item>
+        <el-form-item label="开始">
+          <el-input v-model="trafficAnalysisForm.start" clearable placeholder="8:10" />
+        </el-form-item>
+        <el-form-item label="结束">
+          <el-input v-model="trafficAnalysisForm.end" clearable placeholder="9:00" />
+        </el-form-item>
+        <el-form-item class="analysis-action">
+          <el-button type="primary" :icon="Search" :loading="trafficAnalysisLoading" @click="queryTrafficAnalysis">查询</el-button>
+        </el-form-item>
+      </el-form>
+
+      <div v-if="trafficAnalysisResult" class="analysis-summary">
+        <div class="summary-item">
+          <span>时间范围</span>
+          <strong>{{ trafficAnalysisResult.start_time }} ~ {{ trafficAnalysisResult.end_time }}</strong>
+        </div>
+        <div class="summary-item">
+          <span>总流量</span>
+          <strong>{{ formatBytes(trafficAnalysisTotals.total) }}</strong>
+        </div>
+        <div class="summary-item">
+          <span>下行 / 上行</span>
+          <strong>{{ formatBytes(trafficAnalysisTotals.down) }} / {{ formatBytes(trafficAnalysisTotals.up) }}</strong>
+        </div>
+        <div class="summary-item">
+          <span>日志匹配 / 分钟数</span>
+          <strong>{{ trafficAnalysisResult.access_log_matched || 0 }} / {{ trafficAnalysisRows.length }}</strong>
+        </div>
+      </div>
+
+      <el-table :data="trafficAnalysisRows" border height="420" empty-text="暂无数据" class="analysis-table">
+        <el-table-column label="分钟" prop="minute" width="160" />
+        <el-table-column label="采集次数" prop="events" width="90" />
+        <el-table-column label="下行" width="110">
+          <template #default="scope">{{ formatBytes(scope.row.down) }}</template>
+        </el-table-column>
+        <el-table-column label="上行" width="110">
+          <template #default="scope">{{ formatBytes(scope.row.up) }}</template>
+        </el-table-column>
+        <el-table-column label="总流量" width="110">
+          <template #default="scope">{{ formatBytes(scope.row.total) }}</template>
+        </el-table-column>
+        <el-table-column label="访问目标" min-width="420">
+          <template #default="scope">
+            <div v-if="targetNames(scope.row.targets).length" class="target-list">
+              <el-tag v-for="target in targetNames(scope.row.targets)" :key="target" size="small" effect="plain">
+                {{ target }}
+              </el-tag>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { getAllServerApi, restartVPSApi } from '@/api/server'
-import { onUnmounted, onMounted, ref, computed } from 'vue'
-import { Refresh, RefreshRight } from '@element-plus/icons-vue'
+import { getAllServerApi, restartVPSApi, analyzeUserTrafficApi } from '@/api/server'
+import { getAllUserApi } from '@/api/user'
+import { onUnmounted, onMounted, ref, computed, reactive } from 'vue'
+import { Refresh, RefreshRight, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const timer = ref(null)
@@ -150,6 +242,18 @@ const serverList = ref([])
 const selectedServerId = ref(null)
 const isMobile = ref(false)
 const offlineThresholdSeconds = 10 * 60
+const trafficAnalysisVisible = ref(false)
+const trafficAnalysisLoading = ref(false)
+const trafficUserLoading = ref(false)
+const trafficAnalysisRows = ref([])
+const trafficAnalysisResult = ref(null)
+const users = ref([])
+const trafficAnalysisForm = reactive({
+  user_tag: '',
+  date: '',
+  start: '',
+  end: '',
+})
 
 const colors = ref([
   { color: '#5cb87a', percentage: 20 },
@@ -187,6 +291,15 @@ const cpuPercent = computed(() => {
   return Math.round(currentServer.value.cpu_percent || 0)
 })
 
+const trafficAnalysisTotals = computed(() => {
+  return trafficAnalysisRows.value.reduce((totals, row) => {
+    totals.down += row.down || 0
+    totals.up += row.up || 0
+    totals.total += row.total || 0
+    return totals
+  }, { down: 0, up: 0, total: 0 })
+})
+
 // 判断服务器是否在线 (10分钟内有更新)
 const isOnline = computed(() => {
   if (!currentServer.value || !currentServer.value.sysinfo_at) return false
@@ -213,6 +326,97 @@ const formatBytes = (bytes) => {
   return `${bytes.toFixed(2)} ${units[i]}`
 }
 
+const todayCompact = () => {
+  const now = new Date()
+  const month = `${now.getMonth() + 1}`.padStart(2, '0')
+  const day = `${now.getDate()}`.padStart(2, '0')
+  return `${now.getFullYear()}${month}${day}`
+}
+
+const openTrafficAnalysis = () => {
+  if (!currentServer.value) {
+    ElMessage.warning('请先选择服务器')
+    return
+  }
+  if (users.value.length === 0) {
+    getUsers()
+  }
+  trafficAnalysisForm.user_tag = ''
+  trafficAnalysisForm.date = todayCompact()
+  trafficAnalysisForm.start = ''
+  trafficAnalysisForm.end = ''
+  trafficAnalysisRows.value = []
+  trafficAnalysisResult.value = null
+  trafficAnalysisVisible.value = true
+}
+
+const closeTrafficAnalysis = () => {
+  trafficAnalysisVisible.value = false
+  trafficAnalysisLoading.value = false
+  trafficAnalysisRows.value = []
+  trafficAnalysisResult.value = null
+}
+
+const parseClockMinute = (value) => {
+  const match = `${value}`.trim().match(/^(\d{1,2}):(\d{2})$/)
+  if (!match) return null
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null
+  return hour * 60 + minute
+}
+
+const validateTrafficAnalysisForm = () => {
+  const userTag = String(trafficAnalysisForm.user_tag || '').trim()
+  const date = String(trafficAnalysisForm.date || '').trim()
+  const start = parseClockMinute(trafficAnalysisForm.start)
+  const end = parseClockMinute(trafficAnalysisForm.end)
+  if (!currentServer.value?.ID) return '服务器信息无效'
+  if (!userTag) return '请选择用户'
+  if (!/^\d{8}$/.test(date)) return '日期格式应为 20260617'
+  if (start === null || end === null) return '时间格式应为 8:10 或 09:00'
+  if (end < start) return '结束时间不能早于开始时间'
+  if (end - start > 120) return '时间范围不能超过2小时'
+  return ''
+}
+
+const queryTrafficAnalysis = async () => {
+  const message = validateTrafficAnalysisForm()
+  if (message) {
+    ElMessage.warning(message)
+    return
+  }
+  trafficAnalysisLoading.value = true
+  try {
+    const res = await analyzeUserTrafficApi({
+      server_id: currentServer.value.ID,
+      user_tag: String(trafficAnalysisForm.user_tag || '').trim(),
+      date: String(trafficAnalysisForm.date || '').trim(),
+      start: String(trafficAnalysisForm.start || '').trim(),
+      end: String(trafficAnalysisForm.end || '').trim(),
+    })
+    if (res?.code === 0) {
+      trafficAnalysisResult.value = res.data.analysis || {}
+      trafficAnalysisRows.value = Array.isArray(trafficAnalysisResult.value.rows) ? trafficAnalysisResult.value.rows : []
+      if (trafficAnalysisRows.value.length === 0) {
+        ElMessage.info('该时间段没有匹配到流量明细')
+      }
+    }
+  } finally {
+    trafficAnalysisLoading.value = false
+  }
+}
+
+const targetNames = (targets = []) => {
+  if (!Array.isArray(targets) || targets.length === 0) return []
+  return [...new Set(targets.map(item => item.target).filter(Boolean))]
+}
+
+const formatUserOption = (user) => {
+  const nickName = user.nickName || user.userName || '未命名用户'
+  return `${nickName} (ID:${user.ID})`
+}
+
 // 格式化MB为GB (简化显示)
 const formatSize = (mb) => {
   if (!mb) return '0 GB'
@@ -234,6 +438,18 @@ const loadServerList = async () => {
     }
   } finally {
     loading.value = false
+  }
+}
+
+const getUsers = async() => {
+  trafficUserLoading.value = true
+  try {
+    const res = await getAllUserApi()
+    if (res.code === 0) {
+      users.value = res.data.users || []
+    }
+  } finally {
+    trafficUserLoading.value = false
   }
 }
 
@@ -282,6 +498,7 @@ onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
   loadServerList()
+  getUsers()
 })
 
 // 定时刷新 (每30秒)
@@ -319,6 +536,86 @@ export default {
   flex: 1;
   min-width: 200px;
   max-width: 400px;
+}
+
+.analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: #f7f8fa;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+}
+
+.analysis-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.analysis-subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #606266;
+}
+
+.analysis-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(160px, 1fr) minmax(110px, 0.7fr) minmax(110px, 0.7fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.analysis-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.analysis-form :deep(.el-select),
+.analysis-form :deep(.el-date-editor.el-input),
+.analysis-form :deep(.el-input) {
+  width: 100%;
+}
+
+.analysis-action {
+  min-width: 86px;
+}
+
+.analysis-summary {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.summary-item {
+  padding: 10px 12px;
+  background: #f7f8fa;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+}
+
+.summary-item span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.summary-item strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.target-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
 }
 
 .system_state {
@@ -426,6 +723,24 @@ export default {
     align-items: stretch;
     gap: 0.625rem;
     margin-bottom: 1rem;
+  }
+
+  .analysis-header {
+    align-items: flex-start;
+    padding: 0.75rem;
+  }
+
+  .analysis-form,
+  .analysis-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-action {
+    min-width: 0;
+  }
+
+  .analysis-action .el-button {
+    width: 100%;
   }
 
   .server-select {

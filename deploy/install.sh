@@ -503,6 +503,20 @@ function summarize_access_log_targets_by_minute() {
       }
       return ""
     }
+    function normalize_target(target, labels, label_count) {
+      target = tolower(target)
+      gsub(/^\[/, "", target)
+      gsub(/\]$/, "", target)
+      sub(/\.$/, "", target)
+      if (target ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || target ~ /:/) {
+        return target
+      }
+      label_count = split(target, labels, ".")
+      if (label_count >= 2) {
+        return labels[label_count - 1] "." labels[label_count]
+      }
+      return target
+    }
     {
       log_minute = substr($0, 1, 16)
       if (log_minute !~ /^[0-9][0-9][0-9][0-9]\/[0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]$/) {
@@ -513,25 +527,20 @@ function summarize_access_log_targets_by_minute() {
       if (target == "") {
         next
       }
+      target = normalize_target(target)
       key = log_minute SUBSEP target
-      count[key]++
+      if (!seen_target[key]++) {
+        if (target_list[log_minute] == "") {
+          target_list[log_minute] = target
+        } else {
+          target_list[log_minute] = target_list[log_minute] ", " target
+        }
+      }
       minutes[log_minute] = 1
     }
     END {
       for (minute in minutes) {
-        targets = ""
-        for (key in count) {
-          split(key, parts, SUBSEP)
-          if (parts[1] == minute) {
-            item = parts[2] "(" count[key] ")"
-            if (targets == "") {
-              targets = item
-            } else {
-              targets = targets ", " item
-            }
-          }
-        }
-        print minute "|" targets
+        print minute "|" target_list[minute]
       }
     }
   ' | sort

@@ -70,3 +70,11 @@ export const restartVPSApi = (data) => {
     data
   })
 }
+
+export const analyzeUserTrafficApi = (data) => {
+  return service({
+    url: '/v2ray_admin/server/analyzeUserTraffic',
+    method: 'post',
+    data
+  })
+}

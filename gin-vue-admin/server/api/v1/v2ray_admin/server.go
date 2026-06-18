@@ -9,6 +9,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
 	v2rayReq "github.com/flipped-aurora/gin-vue-admin/server/model/v2ray/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/service"
+	v2rayAdminService "github.com/flipped-aurora/gin-vue-admin/server/service/v2ray_admin"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -264,4 +265,19 @@ func (serverApi *ServerApi) RestartVPS(c *gin.Context) {
 	} else {
 		response.OkWithMessage("重启成功", c)
 	}
+}
+
+func (serverApi *ServerApi) AnalyzeUserTraffic(c *gin.Context) {
+	var req v2rayAdminService.UserTrafficAnalysisProxyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	analysis, err := serverService.AnalyzeUserTraffic(req)
+	if err != nil {
+		global.GVA_LOG.Error("用户流量分析失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithData(gin.H{"analysis": analysis}, c)
 }

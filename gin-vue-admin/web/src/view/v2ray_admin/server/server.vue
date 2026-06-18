@@ -338,14 +338,13 @@ const deleteServerFunc = async (row) => {
 
 const restartXrayFunc = async (row) => {
     const res = await restartXrayApi({ ID: row.ID, port: row.port, ip: row.ip })
-    if (res.code === 0) {
+    if (res?.code === 0) {
         ElMessage({
             type: 'success',
             message: '重启成功'
         })
     }
 }
-
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
@@ -416,14 +415,15 @@ const enterDialog = async () => {
 }
 
 const formatFlow = (value) => {
-  if (value >= 1024 * 1024 * 1024) { // 大于等于 1G 显示 G 后缀
-    return (value / (1024 * 1024 * 1024)).toFixed(1) + ' G'
-  } else if (value >= 1024 * 1024) { // 大于等于 1M 显示 M 后缀
-    return (value / (1024 * 1024)).toFixed(1) + ' M'
-  } else if (value >= 1024) { // 大于等于 1k 显示 k 后缀
-    return (value / 1024).toFixed(1) + ' K'
+  const bytes = Number(value) || 0
+  if (bytes >= 1024 * 1024 * 1024) { // 大于等于 1G 显示 G 后缀
+    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' G'
+  } else if (bytes >= 1024 * 1024) { // 大于等于 1M 显示 M 后缀
+    return (bytes / (1024 * 1024)).toFixed(1) + ' M'
+  } else if (bytes >= 1024) { // 大于等于 1k 显示 k 后缀
+    return (bytes / 1024).toFixed(1) + ' K'
   } else { // 小于 1k 直接返回原数值
-    return value.toFixed(1)
+    return bytes.toFixed(1)
   }
 }
 

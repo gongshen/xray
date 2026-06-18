@@ -174,6 +174,7 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/server/findServer", V2: "GET"},
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/server/getAllServer", V2: "POST"},
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/server/restartXray", V2: "PUT"},
+		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/server/analyzeUserTraffic", V2: "POST"},
 
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/binding/createBinding", V2: "POST"},
 		{Ptype: "p", V0: "9527", V1: "/v2ray_admin/binding/deleteBinding", V2: "DELETE"},
