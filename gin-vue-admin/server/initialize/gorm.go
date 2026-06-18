@@ -62,28 +62,26 @@ func RegisterTables() {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))
 		os.Exit(0)
 	}
-	ensureUserTrafficAnalysisApi(db)
+	ensureManagedApi(db, "/v2ray_admin/server/analyzeUserTraffic", "POST", "分析用户流量明细")
+	ensureManagedApi(db, "/v2ray_admin/server/classifyTrafficTargets", "POST", "访问目标分类")
 	global.GVA_LOG.Info("register table success")
 }
 
-func ensureUserTrafficAnalysisApi(db *gorm.DB) {
-	const path = "/v2ray_admin/server/analyzeUserTraffic"
-	const method = "POST"
-
+func ensureManagedApi(db *gorm.DB, path string, method string, description string) {
 	apiAttrs := system.SysApi{
 		ApiGroup:    "v2ray_admin",
 		Method:      method,
 		Path:        path,
-		Description: "分析用户流量明细",
+		Description: description,
 	}
 	var api system.SysApi
 	if err := db.Where("path = ? AND method = ?", path, method).Attrs(apiAttrs).FirstOrCreate(&api).Error; err != nil {
-		global.GVA_LOG.Warn("ensure user traffic analysis api failed", zap.Error(err))
+		global.GVA_LOG.Warn("ensure managed api failed", zap.Error(err), zap.String("path", path), zap.String("method", method))
 	}
 
 	ruleAttrs := adapter.CasbinRule{Ptype: "p", V0: "9527", V1: path, V2: method}
 	var rule adapter.CasbinRule
 	if err := db.Where(&ruleAttrs).Attrs(ruleAttrs).FirstOrCreate(&rule).Error; err != nil {
-		global.GVA_LOG.Warn("ensure user traffic analysis casbin rule failed", zap.Error(err))
+		global.GVA_LOG.Warn("ensure managed api casbin rule failed", zap.Error(err), zap.String("path", path), zap.String("method", method))
 	}
 }

@@ -16,7 +16,7 @@
                   <el-icon v-if="userStore.mode === 'light'" class="check">
                     <check />
                   </el-icon>
-                  <img src="https://gw.alipayobjects.com/zos/antfincdn/NQ%24zoisaD2/jpRkZQMyYRryryPNtyIC.svg">
+                  <img :src="themeLight" alt="light theme">
                 </div>
                 <p>
                   简约白
@@ -27,7 +27,7 @@
                   <el-icon v-if="userStore.mode === 'dark'" class="check">
                     <check />
                   </el-icon>
-                  <img src="https://gw.alipayobjects.com/zos/antfincdn/XwFOFbLkSM/LCkqqYNmvBEbokSDscrm.svg">
+                  <img :src="themeDark" alt="dark theme">
                 </div>
                 <p>
                   商务黑
@@ -51,6 +51,8 @@ export default {
 <script setup>
 import { ref } from 'vue'
 import { useUserStore } from '@/pinia/modules/user'
+import themeLight from '@/assets/theme-light.svg'
+import themeDark from '@/assets/theme-dark.svg'
 const drawer = ref(false)
 const direction = ref('rtl')
 

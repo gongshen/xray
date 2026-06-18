@@ -35,20 +35,10 @@
           </div>
           <div>
             <div class="gva-top-card-left-item">
-              使用教学：
-              <a
-                style="color:#409EFF"
-                target="view_window"
-                href="https://www.bilibili.com/video/BV1Rg411u7xH/"
-              >https://www.bilibili.com/video/BV1Rg411u7xH</a>
+              使用教学：请参考项目内置文档和 README。
             </div>
             <div class="gva-top-card-left-item">
-              插件仓库：
-              <a
-                style="color:#409EFF"
-                target="view_window"
-                href="https://plugin.gin-vue-admin.com/#/layout/home"
-              >https://plugin.gin-vue-admin.com</a>
+              插件仓库：已关闭外部跳转。
             </div>
           </div>
         </div>

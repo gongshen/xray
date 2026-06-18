@@ -7,11 +7,16 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/middleware"
 	"github.com/flipped-aurora/gin-vue-admin/server/resource"
 	"github.com/flipped-aurora/gin-vue-admin/server/router"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/trafficmeter"
 	"github.com/gin-gonic/gin"
 )
 
 func Routers() *gin.Engine {
 	Router := gin.Default()
+	if meter := trafficmeter.NewFromConfig(global.GVA_CONFIG.TrafficMeter, global.HTTP_CLI, global.GVA_LOG); meter != nil {
+		Router.Use(trafficmeter.Middleware(meter))
+		meter.Start()
+	}
 	InstallPlugin(Router)
 	systemRouter := router.RouterGroupApp.System
 	exampleRouter := router.RouterGroupApp.Example

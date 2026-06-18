@@ -2,6 +2,8 @@ package server
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
 	"github.com/gongshen/xray/stat/business"
 	"github.com/gongshen/xray/stat/utils"
@@ -9,7 +11,7 @@ import (
 )
 
 func StartServer(port int) error {
-	h := requestHandler
+	h := accountedRequestHandler
 	s := &fasthttp.Server{
 		Handler:            h,
 		DisableKeepalive:   false,
@@ -22,9 +24,16 @@ func StartServer(port int) error {
 	return s.ListenAndServe(addr)
 }
 
+func accountedRequestHandler(ctx *fasthttp.RequestCtx) {
+	up := estimateHTTPRequestBytes(&ctx.Request)
+	requestHandler(ctx)
+	down := estimateHTTPResponseBytes(&ctx.Response)
+	business.RecordStatAPIUsage(up, down)
+}
+
 func requestHandler(ctx *fasthttp.RequestCtx) {
 	remoteIP := ctx.RemoteIP().String()
-	if remoteIP != utils.RemoteIp {
+	if !isAllowedRemoteIP(remoteIP) {
 		ctx.Error("Forbidden", fasthttp.StatusForbidden)
 		return
 	}
@@ -35,6 +44,8 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		business.CollectTrafficToLocalStoreHandler(ctx)
 	case "/stat/traffic/sync":
 		business.SyncLocalTraffic(ctx)
+	case "/stat/traffic/event":
+		business.IngestTrafficEvents(ctx)
 	case "/stat/traffic/user-minute":
 		business.AnalyzeUserTrafficHandler(ctx)
 	case "/stat/sysinfo":
@@ -44,4 +55,45 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	default:
 		ctx.Error("Forbidden", fasthttp.StatusForbidden)
 	}
+}
+
+func isAllowedRemoteIP(remoteIP string) bool {
+	if remoteIP == utils.RemoteIp {
+		return true
+	}
+	ip := net.ParseIP(remoteIP)
+	return ip != nil && ip.IsLoopback()
+}
+
+func estimateHTTPRequestBytes(req *fasthttp.Request) uint64 {
+	total := len(req.Header.Method()) + len(req.RequestURI()) + len(" HTTP/1.1\r\n")
+	total += estimateRequestHeaderBytes(&req.Header)
+	total += len("\r\n")
+	total += len(req.Body())
+	return uint64(total)
+}
+
+func estimateHTTPResponseBytes(resp *fasthttp.Response) uint64 {
+	statusCode := resp.StatusCode()
+	total := len("HTTP/1.1 ") + len(strconv.Itoa(statusCode)) + len(" ") + len(fasthttp.StatusMessage(statusCode)) + len("\r\n")
+	total += estimateResponseHeaderBytes(&resp.Header)
+	total += len("\r\n")
+	total += len(resp.Body())
+	return uint64(total)
+}
+
+func estimateRequestHeaderBytes(header *fasthttp.RequestHeader) int {
+	total := 0
+	header.VisitAll(func(key, value []byte) {
+		total += len(key) + len(": ") + len(value) + len("\r\n")
+	})
+	return total
+}
+
+func estimateResponseHeaderBytes(header *fasthttp.ResponseHeader) int {
+	total := 0
+	header.VisitAll(func(key, value []byte) {
+		total += len(key) + len(": ") + len(value) + len("\r\n")
+	})
+	return total
 }

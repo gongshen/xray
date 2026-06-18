@@ -220,19 +220,40 @@
               <el-tag v-for="target in targetNames(scope.row.targets)" :key="target" size="small" effect="plain">
                 {{ target }}
               </el-tag>
+              <el-button
+                type="primary"
+                size="small"
+                link
+                class="target-classify-button"
+                :icon="MagicStick"
+                :loading="targetClassificationLoading && targetClassificationMinute === scope.row.minute"
+                :disabled="targetClassificationLoading && targetClassificationMinute !== scope.row.minute"
+                @click.stop="classifyTrafficTargets(scope.row)"
+              >
+                分类
+              </el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
+
+      <div v-if="targetClassificationResult" class="classification-result">
+        <div class="classification-title">
+          访问目标分类
+          <span v-if="targetClassificationMinute">· {{ targetClassificationMinute }}</span>
+          <span v-if="targetClassificationTargetCount">· {{ targetClassificationTargetCount }} 个目标</span>
+        </div>
+        <pre>{{ targetClassificationResult }}</pre>
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { getAllServerApi, restartVPSApi, analyzeUserTrafficApi } from '@/api/server'
+import { getAllServerApi, restartVPSApi, analyzeUserTrafficApi, classifyTrafficTargetsApi } from '@/api/server'
 import { getAllUserApi } from '@/api/user'
 import { onUnmounted, onMounted, ref, computed, reactive } from 'vue'
-import { Refresh, RefreshRight, Search } from '@element-plus/icons-vue'
+import { MagicStick, Refresh, RefreshRight, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const timer = ref(null)
@@ -245,6 +266,10 @@ const offlineThresholdSeconds = 10 * 60
 const trafficAnalysisVisible = ref(false)
 const trafficAnalysisLoading = ref(false)
 const trafficUserLoading = ref(false)
+const targetClassificationLoading = ref(false)
+const targetClassificationResult = ref('')
+const targetClassificationMinute = ref('')
+const targetClassificationTargetCount = ref(0)
 const trafficAnalysisRows = ref([])
 const trafficAnalysisResult = ref(null)
 const users = ref([])
@@ -347,14 +372,21 @@ const openTrafficAnalysis = () => {
   trafficAnalysisForm.end = ''
   trafficAnalysisRows.value = []
   trafficAnalysisResult.value = null
+  targetClassificationResult.value = ''
+  targetClassificationMinute.value = ''
+  targetClassificationTargetCount.value = 0
   trafficAnalysisVisible.value = true
 }
 
 const closeTrafficAnalysis = () => {
   trafficAnalysisVisible.value = false
   trafficAnalysisLoading.value = false
+  targetClassificationLoading.value = false
   trafficAnalysisRows.value = []
   trafficAnalysisResult.value = null
+  targetClassificationResult.value = ''
+  targetClassificationMinute.value = ''
+  targetClassificationTargetCount.value = 0
 }
 
 const parseClockMinute = (value) => {
@@ -387,6 +419,9 @@ const queryTrafficAnalysis = async () => {
     return
   }
   trafficAnalysisLoading.value = true
+  targetClassificationResult.value = ''
+  targetClassificationMinute.value = ''
+  targetClassificationTargetCount.value = 0
   try {
     const res = await analyzeUserTrafficApi({
       server_id: currentServer.value.ID,
@@ -410,6 +445,38 @@ const queryTrafficAnalysis = async () => {
 const targetNames = (targets = []) => {
   if (!Array.isArray(targets) || targets.length === 0) return []
   return [...new Set(targets.map(item => item.target).filter(Boolean))]
+}
+
+const rowTrafficAnalysisTargets = (row) => {
+  const targets = new Set()
+  targetNames(row?.targets).forEach(target => {
+    const value = String(target || '').trim().toLowerCase()
+    if (value) targets.add(value)
+  })
+  return [...targets]
+}
+
+const classifyTrafficTargets = async (row) => {
+  const targets = rowTrafficAnalysisTargets(row)
+  if (targets.length === 0) {
+    ElMessage.warning('当前行没有可分类的域名/IP')
+    return
+  }
+  targetClassificationLoading.value = true
+  targetClassificationResult.value = ''
+  targetClassificationMinute.value = row?.minute || ''
+  targetClassificationTargetCount.value = targets.length
+  try {
+    const res = await classifyTrafficTargetsApi({ targets })
+    if (res?.code === 0) {
+      targetClassificationResult.value = res.data.classification?.result || ''
+      if (!targetClassificationResult.value) {
+        ElMessage.warning('分类结果为空')
+      }
+    }
+  } finally {
+    targetClassificationLoading.value = false
+  }
 }
 
 const formatUserOption = (user) => {
@@ -614,8 +681,51 @@ export default {
 .target-list {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   padding: 4px 0;
+}
+
+.target-classify-button {
+  position: relative;
+  margin-left: 8px;
+  padding-left: 12px;
+}
+
+.target-classify-button::before {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 14px;
+  content: '';
+  background: #dcdfe6;
+  transform: translateY(-50%);
+}
+
+.classification-result {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f7f8fa;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+}
+
+.classification-title {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.classification-result pre {
+  margin: 0;
+  color: #303133;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .system_state {

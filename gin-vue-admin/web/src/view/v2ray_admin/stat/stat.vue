@@ -23,24 +23,6 @@
       </el-form>
     </div>
 
-    <!-- 统计卡片区域 -->
-    <div class="stats-overview">
-      <el-row :gutter="20">
-        <el-col :xs="24" :sm="12" :md="8" :lg="8">
-          <div class="stat-card total-traffic">
-            <div class="stat-icon">
-              <el-icon><TrendCharts /></el-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-title">总流量</div>
-              <div class="stat-value">{{ formatFlow(chartData.total) }}</div>
-              <div class="stat-desc">累计使用流量</div>
-            </div>
-          </div>
-        </el-col>
-      </el-row>
-    </div>
-
     <!-- 图表区域 -->
     <div class="charts-section">
       <el-row :gutter="20">
@@ -79,7 +61,10 @@
     <div class="gva-table-box">
       <div class="table-header">
         <h3>详细流量记录</h3>
-        <el-tag>共 {{ total }} 条记录</el-tag>
+        <div class="table-summary">
+          <el-tag type="primary" effect="light">总流量 {{ formatFlow(chartData.total) }}</el-tag>
+          <el-tag type="info" effect="plain">共 {{ total }} 条记录</el-tag>
+        </div>
       </div>
       
       <el-table
@@ -562,74 +547,6 @@ onMounted(async () => {
   min-height: 100vh;
 }
 
-/* 统计卡片区域 */
-.stats-overview {
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 24px;
-  color: white;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  pointer-events: none;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.stat-card.total-traffic {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon {
-  font-size: 48px;
-  margin-right: 20px;
-  opacity: 0.8;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-title {
-  font-size: 14px;
-  opacity: 0.9;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 4px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.stat-desc {
-  font-size: 12px;
-  opacity: 0.7;
-}
-
 /* 图表区域 */
 .charts-section {
   margin-bottom: 24px;
@@ -705,6 +622,14 @@ onMounted(async () => {
   font-weight: 600;
 }
 
+.table-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* 表格单元格样式 */
 .traffic-down {
   color: #67c23a;
@@ -725,24 +650,6 @@ onMounted(async () => {
 @media screen and (max-width: 768px) {
   .page {
     padding: 10px;
-  }
-
-  .stats-overview {
-    margin-bottom: 16px;
-  }
-
-  .stat-card {
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-
-  .stat-icon {
-    font-size: 36px;
-    margin-right: 12px;
-  }
-
-  .stat-value {
-    font-size: 24px;
   }
 
   .charts-section {
@@ -766,6 +673,10 @@ onMounted(async () => {
 
   .table-header h3 {
     font-size: 16px;
+  }
+
+  .table-summary {
+    justify-content: flex-start;
   }
 
   /* 表格横向滚动优化 */
@@ -792,16 +703,6 @@ onMounted(async () => {
     }
   }
 
-  /* 统计卡片在移动端堆叠显示 */
-  .stat-card {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .stat-icon {
-    margin-right: 0;
-    margin-bottom: 12px;
-  }
 }
 
 /* 响应式图表 */
@@ -837,7 +738,6 @@ onMounted(async () => {
 }
 
 /* 动画效果 */
-.stat-card,
 .chart-card,
 .gva-table-box {
   animation: fadeInUp 0.6s ease-out;

@@ -17,6 +17,7 @@ var (
 	trafficDBPath          string
 	collectInterval        time.Duration
 	trafficRetentionMonths int
+	statAPITrafficTag      string
 	logCleanupDir          string
 	logRetentionMonths     int
 	xrayLogDir             string
@@ -29,6 +30,7 @@ func init() {
 	flag.StringVar(&trafficDBPath, "traffic-db", "/var/lib/xray-stat/stat.db", "traffic sqlite db path")
 	flag.DurationVar(&collectInterval, "collect-interval", 10*time.Second, "traffic collect interval")
 	flag.IntVar(&trafficRetentionMonths, "traffic-retention-months", 12, "traffic sqlite event retention months")
+	flag.StringVar(&statAPITrafficTag, "stat-api-traffic-tag", business.DefaultStatAPITrafficTag, "traffic tag used for stat api request/response bytes")
 	flag.StringVar(&logCleanupDir, "log-clean-dir", "/root/log", "xray-admin date directory cleanup root")
 	flag.IntVar(&logRetentionMonths, "log-retention-months", 12, "xray-admin date directory retention months")
 	flag.StringVar(&xrayLogDir, "xray-log-dir", "/var/log/xray", "xray log directory")
@@ -37,6 +39,7 @@ func init() {
 
 func main() {
 	flag.Parse()
+	business.SetStatAPITrafficTag(statAPITrafficTag)
 	utils.SetRemoteIp()
 	utils.SetIp()
 	lv, _ := logrus.ParseLevel(level)

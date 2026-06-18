@@ -35,6 +35,9 @@ func TestAnalyzeUserTrafficAggregatesTrafficAndTargetsByMinute(t *testing.T) {
 			"2026/06/17 08:10:10 1.1.1.1:10002 accepted tcp:rr2---sn-3pm7dne6.googlevideo.com:443 email: 8\n" +
 			"2026/06/17 08:10:15 1.1.1.1:10003 accepted tcp:rr3---sn-3pm7dne6.googlevideo.com:443 email: 8\n" +
 			"2026/06/17 08:10:20 1.1.1.1:10004 accepted udp:android.clients.google.com:5228 email: 8\n" +
+			"2026/06/17 08:10:25 1.1.1.1:10005 accepted tcp:127.0.0.1:443 email: 8\n" +
+			"2026/06/17 08:10:26 1.1.1.1:10006 accepted tcp:0.0.0.1:443 email: 8\n" +
+			"2026/06/17 08:10:27 1.1.1.1:10007 accepted tcp:192.168.1.1:443 email: 8\n" +
 			"2026/06/17 08:11:00 1.1.1.1:10005 accepted udp:mtalk.google.com:5228 email: 8\n" +
 			"2026/06/17 08:11:10 1.1.1.1:10006 accepted tcp:8.8.8.8:443 email: 8\n" +
 			"2026/06/17 08:10:00 1.1.1.1:10007 accepted tcp:other.example:443 email: 18\n")
@@ -90,6 +93,21 @@ func TestNormalizeAccessTargetUsesRegistrableDomain(t *testing.T) {
 		"c.pki.goog":                        "pki.goog",
 		"8.8.8.8":                           "8.8.8.8",
 		"2001:4860:4860::8888":              "2001:4860:4860::8888",
+		"127.0.0.1":                         "",
+		"0.0.0.0":                           "",
+		"0.0.0.1":                           "",
+		"10.0.0.1":                          "",
+		"172.16.0.1":                        "",
+		"192.168.1.1":                       "",
+		"100.64.0.1":                        "",
+		"169.254.1.1":                       "",
+		"224.0.0.1":                         "",
+		"255.255.255.255":                   "",
+		"::1":                               "",
+		"::":                                "",
+		"fc00::1":                           "",
+		"fe80::1":                           "",
+		"ff02::1":                           "",
 	}
 	for target, want := range cases {
 		if got := normalizeAccessTarget(target); got != want {

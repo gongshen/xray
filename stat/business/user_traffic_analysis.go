@@ -361,13 +361,36 @@ func normalizeAccessTarget(target string) string {
 	if target == "" {
 		return ""
 	}
-	if net.ParseIP(target) != nil {
+	if ip := net.ParseIP(target); ip != nil {
+		if isInternalAccessTargetIP(ip) {
+			return ""
+		}
 		return target
 	}
 	if domain, err := publicsuffix.EffectiveTLDPlusOne(target); err == nil {
 		return domain
 	}
 	return fallbackRegistrableDomain(target)
+}
+
+func isInternalAccessTargetIP(ip net.IP) bool {
+	if ip == nil {
+		return false
+	}
+	if ip.IsLoopback() || ip.IsUnspecified() || ip.IsPrivate() ||
+		ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() {
+		return true
+	}
+	if v4 := ip.To4(); v4 != nil {
+		if v4[0] == 0 || v4[0] == 127 || v4[0] >= 224 {
+			return true
+		}
+		if v4[0] == 100 && v4[1] >= 64 && v4[1] <= 127 {
+			return true
+		}
+		return v4[0] == 255 && v4[1] == 255 && v4[2] == 255 && v4[3] == 255
+	}
+	return false
 }
 
 func fallbackRegistrableDomain(target string) string {

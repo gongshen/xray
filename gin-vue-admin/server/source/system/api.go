@@ -175,6 +175,7 @@ func (i *initApi) InitializeData(ctx context.Context) (context.Context, error) {
 		{ApiGroup: "v2ray_admin", Method: "POST", Path: "/v2ray_admin/server/getAllServer", Description: "获取所有Server"},
 		{ApiGroup: "v2ray_admin", Method: "PUT", Path: "/v2ray_admin/server/restartXray", Description: "重启xray"},
 		{ApiGroup: "v2ray_admin", Method: "POST", Path: "/v2ray_admin/server/analyzeUserTraffic", Description: "分析用户流量明细"},
+		{ApiGroup: "v2ray_admin", Method: "POST", Path: "/v2ray_admin/server/classifyTrafficTargets", Description: "访问目标分类"},
 
 		{ApiGroup: "v2ray_admin", Method: "POST", Path: "/v2ray_admin/binding/createBinding", Description: "新增绑定"},
 		{ApiGroup: "v2ray_admin", Method: "DELETE", Path: "/v2ray_admin/binding/deleteBinding", Description: "删除绑定"},

@@ -21,30 +21,13 @@ export default {
 }
 </script>
 <script setup>
-import { Commits } from '@/api/github'
-import { formatTimeToStr } from '@/utils/date.js'
-import { ref } from 'vue'
-
-const loading = ref(true)
-const dataTimeline = ref([])
-
-const loadCommits = () => {
-  Commits(0).then(({ data }) => {
-    loading.value = false
-    data.forEach((element, index) => {
-      if (element.commit.message && index < 10) {
-        dataTimeline.value.push({
-          from: formatTimeToStr(element.commit.author.date, 'yyyy-MM-dd'),
-          title: element.commit.author.name,
-          showDayAndMonth: true,
-          message: element.commit.message,
-        })
-      }
-    })
-  })
-}
-
-loadCommits()
+const dataTimeline = [
+  { from: '本地', message: '系统已切换为本地资源模式' },
+  { from: '本地', message: '登录页 logo 使用本地打包资源' },
+  { from: '本地', message: '首页天气接口已关闭' },
+  { from: '本地', message: '关于页不再请求 GitHub 数据' },
+  { from: '本地', message: '系统设置主题预览图使用本地资源' },
+]
 </script>
 
 <style lang="scss" scoped>

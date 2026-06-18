@@ -32,11 +32,18 @@ xray_admin_service_dir="/etc/systemd/system/xray_admin.service"
 stat_service_dir="/etc/systemd/system/stat.service"
 stat_data_dir="/var/lib/xray-stat"
 stat_db_path="${stat_data_dir}/stat.db"
+stat_log_level="info"
 stat_collect_interval="10s"
+stat_traffic_retention_months="12"
+stat_api_traffic_tag="1"
+stat_log_clean_dir="/root/log"
+stat_log_retention_months="12"
 xray_conf_dir="/usr/local/etc/xray"
 iptables_conf_dir="/usr/local/etc/xray/iptables"
 xray_logrotate_conf_dir="/etc/logrotate.d/xray"
 xray_log_dir="/var/log/xray"
+stat_xray_log_dir="/var/log/xray"
+stat_xray_log_retention_months="12"
 service_time_zone="Asia/Shanghai"
 xray_timezone_conf_dir="/etc/systemd/system/xray.service.d"
 xray_timezone_conf_file="${xray_timezone_conf_dir}/timezone.conf"
@@ -503,11 +510,35 @@ function summarize_access_log_targets_by_minute() {
       }
       return ""
     }
+    function is_filtered_ipv4(target, octets, a, b, c, d) {
+      if (target !~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) {
+        return 0
+      }
+      split(target, octets, ".")
+      a = octets[1] + 0
+      b = octets[2] + 0
+      c = octets[3] + 0
+      d = octets[4] + 0
+      return a == 0 || a == 10 || a == 127 || a >= 224 || \
+        (a == 172 && b >= 16 && b <= 31) || \
+        (a == 192 && b == 168) || \
+        (a == 169 && b == 254) || \
+        (a == 100 && b >= 64 && b <= 127) || \
+        (a == 255 && b == 255 && c == 255 && d == 255)
+    }
+    function is_filtered_ipv6(target) {
+      return target == "::" || target == "::1" || \
+        target ~ /^fc/ || target ~ /^fd/ || target ~ /^ff/ || \
+        target ~ /^fe[89ab][0-9a-f]*:/
+    }
     function normalize_target(target, labels, label_count) {
       target = tolower(target)
       gsub(/^\[/, "", target)
       gsub(/\]$/, "", target)
       sub(/\.$/, "", target)
+      if (is_filtered_ipv4(target) || is_filtered_ipv6(target)) {
+        return ""
+      }
       if (target ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || target ~ /:/) {
         return target
       }
@@ -528,6 +559,9 @@ function summarize_access_log_targets_by_minute() {
         next
       }
       target = normalize_target(target)
+      if (target == "") {
+        next
+      }
       key = log_minute SUBSEP target
       if (!seen_target[key]++) {
         if (target_list[log_minute] == "") {
@@ -840,7 +874,7 @@ After=network.target nss-lookup.target
 User=root
 Environment="REMOTE_IP=__REMOTE_IP__"
 Environment="TZ=Asia/Shanghai"
-ExecStart=/usr/local/bin/stat -port __STAT_PORT__ -traffic-db __STAT_DB_PATH__ -collect-interval __COLLECT_INTERVAL__
+ExecStart=/usr/local/bin/stat -port __STAT_PORT__ -level __STAT_LOG_LEVEL__ -traffic-db __STAT_DB_PATH__ -collect-interval __COLLECT_INTERVAL__ -traffic-retention-months __TRAFFIC_RETENTION_MONTHS__ -stat-api-traffic-tag __STAT_API_TRAFFIC_TAG__ -log-clean-dir __LOG_CLEAN_DIR__ -log-retention-months __LOG_RETENTION_MONTHS__ -xray-log-dir __XRAY_LOG_DIR__ -xray-log-retention-months __XRAY_LOG_RETENTION_MONTHS__
 Restart=on-failure
 RestartPreventExitStatus=23
 
@@ -932,6 +966,16 @@ local:
 stat_port: 56611
 traffic_collect_interval: 1h
 sysinfo_collect_interval: 5m
+traffic-meter:
+  enable: true
+  stat-url: http://127.0.0.1:56611
+  tag: "1"
+  flush-interval: 10s
+silicon-flow:
+  api-key: ""
+  base-url: https://api.siliconflow.cn
+  model: deepseek-ai/DeepSeek-V3.2
+  timeout: 30s
 ADMINCONFIGEOF
   print_ok "xray_admin config.yaml 文件已创建"
 }
@@ -1361,8 +1405,19 @@ function install_stat() {
   read -rp "请输入Stat监听端口(默认56611)：" statPort
   [ -z "$statPort" ] && statPort="56611"
   sed -i "s|__STAT_PORT__|${statPort}|" ${stat_service_dir}
+
+  read -rp "请输入Stat接口自身流量归属Tag(默认1)：" statApiTrafficTag
+  [ -z "$statApiTrafficTag" ] && statApiTrafficTag="${stat_api_traffic_tag}"
+  sed -i "s|__STAT_API_TRAFFIC_TAG__|${statApiTrafficTag}|" ${stat_service_dir}
+
+  sed -i "s|__STAT_LOG_LEVEL__|${stat_log_level}|" ${stat_service_dir}
   sed -i "s|__STAT_DB_PATH__|${stat_db_path}|" ${stat_service_dir}
   sed -i "s|__COLLECT_INTERVAL__|${stat_collect_interval}|" ${stat_service_dir}
+  sed -i "s|__TRAFFIC_RETENTION_MONTHS__|${stat_traffic_retention_months}|" ${stat_service_dir}
+  sed -i "s|__LOG_CLEAN_DIR__|${stat_log_clean_dir}|" ${stat_service_dir}
+  sed -i "s|__LOG_RETENTION_MONTHS__|${stat_log_retention_months}|" ${stat_service_dir}
+  sed -i "s|__XRAY_LOG_DIR__|${stat_xray_log_dir}|" ${stat_service_dir}
+  sed -i "s|__XRAY_LOG_RETENTION_MONTHS__|${stat_xray_log_retention_months}|" ${stat_service_dir}
   
   systemctl daemon-reload
   systemctl enable stat

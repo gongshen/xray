@@ -10,7 +10,7 @@
         <el-button type="primary" @click="save">保存</el-button>
       </div>
       <div class="secret">
-        <el-empty description="请到gpt网站获取您的sk：https://platform.openai.com/account/api-keys" />
+        <el-empty description="请输入可用的 ChatGPT SK" />
       </div>
     </div>
     

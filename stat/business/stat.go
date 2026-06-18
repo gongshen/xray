@@ -3,19 +3,26 @@ package business
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gongshen/xray/stat/conn"
+	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 	statsservice "github.com/xtls/xray-core/app/stats/command"
 )
 
+const DefaultStatAPITrafficTag = "1"
+const maxTrafficEventIngestBatchSize = 1000
+
 var (
-	LocalStore *TrafficStore
-	collectMu  sync.Mutex
+	LocalStore        *TrafficStore
+	StatAPITrafficTag = DefaultStatAPITrafficTag
+	collectMu         sync.Mutex
 )
 
 func CollectTraffic(reqCtx *fasthttp.RequestCtx) {
@@ -72,9 +79,103 @@ func CollectTrafficToLocalStoreHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SuccessString("application/json", `{"ok":true}`)
 }
 
+func SetStatAPITrafficTag(tag string) {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		tag = DefaultStatAPITrafficTag
+	}
+	StatAPITrafficTag = tag
+}
+
+func RecordStatAPIUsage(up uint64, down uint64) {
+	if LocalStore == nil || (up == 0 && down == 0) {
+		return
+	}
+
+	collectMu.Lock()
+	defer collectMu.Unlock()
+
+	err := LocalStore.SavePlan(LocalTrafficPlan{
+		Events: []LocalTrafficEvent{
+			{
+				Tag:         StatAPITrafficTag,
+				Down:        down,
+				Up:          up,
+				CollectedAt: time.Now().Unix(),
+			},
+		},
+	})
+	if err != nil {
+		logrus.WithError(err).Warn("record stat api traffic failed")
+	}
+}
+
 type TrafficSyncResponse struct {
 	Events []LocalTrafficEvent `json:"events"`
 	LastID uint64              `json:"last_id"`
+}
+
+type TrafficEventIngestRequest struct {
+	Events []LocalTrafficEvent `json:"events"`
+}
+
+func IngestTrafficEvents(ctx *fasthttp.RequestCtx) {
+	if LocalStore == nil {
+		ctx.Error("traffic store is not initialized", http.StatusServiceUnavailable)
+		return
+	}
+	if !ctx.IsPost() {
+		ctx.Error("method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req TrafficEventIngestRequest
+	if err := json.Unmarshal(ctx.Request.Body(), &req); err != nil {
+		ctx.Error(err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(req.Events) == 0 {
+		ctx.Error("events is empty", http.StatusBadRequest)
+		return
+	}
+	if len(req.Events) > maxTrafficEventIngestBatchSize {
+		ctx.Error("events is too large", http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now().Unix()
+	plan := LocalTrafficPlan{
+		Events: make([]LocalTrafficEvent, 0, len(req.Events)),
+	}
+	for i, event := range req.Events {
+		event.Tag = strings.TrimSpace(event.Tag)
+		if event.Tag == "" {
+			ctx.Error(fmt.Sprintf("events[%d].tag is empty", i), http.StatusBadRequest)
+			return
+		}
+		if event.Down == 0 && event.Up == 0 {
+			ctx.Error(fmt.Sprintf("events[%d] traffic is empty", i), http.StatusBadRequest)
+			return
+		}
+		if event.CollectedAt <= 0 {
+			event.CollectedAt = now
+		}
+		plan.Events = append(plan.Events, LocalTrafficEvent{
+			Tag:         event.Tag,
+			Down:        event.Down,
+			Up:          event.Up,
+			CollectedAt: event.CollectedAt,
+		})
+	}
+
+	collectMu.Lock()
+	defer collectMu.Unlock()
+
+	if err := LocalStore.SavePlan(plan); err != nil {
+		ctx.Error(err.Error(), http.StatusBadRequest)
+		return
+	}
+	ctx.SuccessString("application/json", `{"ok":true}`)
 }
 
 func SyncLocalTraffic(ctx *fasthttp.RequestCtx) {

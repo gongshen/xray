@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="local logo sample">
+  <rect width="160" height="160" rx="16" fill="#f4f7fb"/>
+  <path d="M42 103V57l28 14v46z" fill="#1f6ecf"/>
+  <path d="M70 117V71l48-28v46z" fill="#55c49f"/>
+  <path d="M70 71l48-28 16 19-48 28z" fill="#314253"/>
+  <path d="M86 90l48-28v46l-48 28z" fill="#3aa09a"/>
+</svg>

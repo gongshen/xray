@@ -28,7 +28,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat 
 ## 启动参数
 
 ```bash
-./stat -port 56611 -level info -traffic-db /var/lib/xray-stat/stat.db -collect-interval 5s -log-clean-dir /root/log -log-retention-months 12 -xray-log-dir /var/log/xray -xray-log-retention-months 12
+./stat -port 56611 -level info -traffic-db /var/lib/xray-stat/stat.db -collect-interval 10s -stat-api-traffic-tag 1 -log-clean-dir /root/log -log-retention-months 12 -xray-log-dir /var/log/xray -xray-log-retention-months 12
 ```
 
 参数说明：
@@ -36,7 +36,8 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../dist/stat 
 - `-port`：stat HTTP 服务端口，默认 `56611`
 - `-level`：日志级别，默认 `info`
 - `-traffic-db`：本地 SQLite 文件路径，默认 `/var/lib/xray-stat/stat.db`
-- `-collect-interval`：本地采集间隔，默认 `5s`
+- `-collect-interval`：本地采集间隔，默认 `10s`
+- `-stat-api-traffic-tag`：stat 接口自身请求/响应流量写入 `traffic_event` 时使用的用户 tag，默认 `1`
 - `-log-clean-dir`：xray-admin 按日期目录清理的根目录，默认 `/root/log`
 - `-log-retention-months`：xray-admin 日期目录保留月数，默认 `12`
 - `-xray-log-dir`：Xray 日志目录，默认 `/var/log/xray`
@@ -66,5 +67,6 @@ SELECT datetime(collected_at, 'unixepoch', '+8 hours') FROM traffic_event;
 - `GET /stat/traffic`：兼容旧采集方式，返回 Xray 当前 stats
 - `POST /stat/traffic/collect`：立即采集一次并写入本地 SQLite
 - `GET /stat/traffic/sync?after_id=0&limit=1000`：给 `xray-admin` 拉取本地增量事件
+- `POST /stat/traffic/event`：接收批量流量事件并写入本地 SQLite，例如 `{"events":[{"tag":"1","down":100,"up":20,"collected_at":1718424000}]}`；单次最多 1000 条
 - `GET /stat/sysinfo`：返回节点系统信息
 - `POST /conf/update`：更新 Xray 配置

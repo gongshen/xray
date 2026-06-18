@@ -37,7 +37,10 @@
     <div class="gva-table-box">
       <div class="table-header">
         <h3>详细流量记录</h3>
-        <el-tag>共 {{ total }} 条记录</el-tag>
+        <div class="table-summary">
+          <el-tag type="primary" effect="light">总流量 {{ formatFlow(chartData.total) }}</el-tag>
+          <el-tag type="info" effect="plain">共 {{ total }} 条记录</el-tag>
+        </div>
       </div>
 
       
@@ -568,6 +571,14 @@ const users = ref([])
   font-weight: 600;
 }
 
+.table-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 /* 表格单元格样式 */
 .traffic-down {
   color: #67c23a;
@@ -611,6 +622,10 @@ const users = ref([])
 
   .table-header h3 {
     font-size: 16px;
+  }
+
+  .table-summary {
+    justify-content: flex-start;
   }
 
   /* 表格横向滚动优化 */

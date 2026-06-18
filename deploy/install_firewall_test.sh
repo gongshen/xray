@@ -20,6 +20,13 @@ assert_eq() {
 }
 
 assert_eq "10s" "${stat_collect_interval}" "default stat collect interval"
+assert_eq "1" "${stat_api_traffic_tag}" "default stat api traffic tag"
+assert_eq "info" "${stat_log_level}" "default stat log level"
+assert_eq "12" "${stat_traffic_retention_months}" "default stat traffic retention months"
+assert_eq "/root/log" "${stat_log_clean_dir}" "default stat log clean dir"
+assert_eq "12" "${stat_log_retention_months}" "default stat log retention months"
+assert_eq "/var/log/xray" "${stat_xray_log_dir}" "default stat xray log dir"
+assert_eq "12" "${stat_xray_log_retention_months}" "default stat xray log retention months"
 
 cat > "${tmp_dir}/xray.json" <<'JSON'
 {
@@ -108,6 +115,13 @@ stat_service_output="${tmp_dir}/stat-service-generated.service"
 stat_service_dir="${stat_service_output}"
 printf 'y\n' | create_stat_service >/dev/null
 grep -q -- 'Environment="TZ=Asia/Shanghai"' "${stat_service_output}"
+grep -q -- '-level __STAT_LOG_LEVEL__' "${stat_service_output}"
+grep -q -- '-traffic-retention-months __TRAFFIC_RETENTION_MONTHS__' "${stat_service_output}"
+grep -q -- '-stat-api-traffic-tag __STAT_API_TRAFFIC_TAG__' "${stat_service_output}"
+grep -q -- '-log-clean-dir __LOG_CLEAN_DIR__' "${stat_service_output}"
+grep -q -- '-log-retention-months __LOG_RETENTION_MONTHS__' "${stat_service_output}"
+grep -q -- '-xray-log-dir __XRAY_LOG_DIR__' "${stat_service_output}"
+grep -q -- '-xray-log-retention-months __XRAY_LOG_RETENTION_MONTHS__' "${stat_service_output}"
 
 xray_timezone_output="${tmp_dir}/xray-timezone.conf"
 create_xray_timezone_config "${xray_timezone_output}" >/dev/null
@@ -142,6 +156,9 @@ minute_target_summary="$(cat <<'ACCESSLOG' | summarize_access_log_targets_by_min
 2026/06/17 10:01:10 1.1.1.1:10004 accepted udp:mtalk.google.com:5228 email: 8
 2026/06/17 10:01:20 1.1.1.1:10005 accepted tcp:8.8.8.8:443 email: 8
 2026/06/17 10:01:30 1.1.1.1:10006 accepted tcp:8.8.8.8:443 email: 8
+2026/06/17 10:01:40 1.1.1.1:10007 accepted tcp:127.0.0.1:443 email: 8
+2026/06/17 10:01:41 1.1.1.1:10008 accepted tcp:0.0.0.1:443 email: 8
+2026/06/17 10:01:42 1.1.1.1:10009 accepted tcp:192.168.1.1:443 email: 8
 ACCESSLOG
 )"
 grep -q -- "2026-06-17 10:00|googlevideo.com" <<<"${minute_target_summary}"
@@ -155,6 +172,10 @@ if grep -q -- "rr2---sn-3pm7dne6.googlevideo.com" <<<"${minute_target_summary}";
 fi
 grep -q -- "2026-06-17 10:01|google.com" <<<"${minute_target_summary}"
 grep -q -- "8.8.8.8" <<<"${minute_target_summary}"
+if grep -q -- "127.0.0.1\\|0.0.0.1\\|192.168.1.1" <<<"${minute_target_summary}"; then
+  echo "FAIL: internal access target IPs must be filtered" >&2
+  exit 1
+fi
 if grep -q -- "android.clients.google.com" <<<"${minute_target_summary}"; then
   echo "FAIL: google subdomain must be normalized" >&2
   exit 1

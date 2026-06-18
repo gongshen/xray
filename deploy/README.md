@@ -98,10 +98,25 @@ https://<domain>
 - 提示输入 stat 监听端口，默认 `56611`。
 - 本地 SQLite 默认路径为 `/var/lib/xray-stat/stat.db`。
 - 默认本地采集间隔为 `10s`，写入 systemd 参数 `-collect-interval 10s`。
+- 提示输入 stat 接口自身请求/响应流量归属的用户 tag，默认 `1`，写入 systemd 参数 `-stat-api-traffic-tag 1`。
 - `stat.service` 会写入 `TZ=Asia/Shanghai`；`traffic_event.collected_at` 存储 Unix 秒，菜单分析时会按北京时间转换显示和过滤。
 - stat 会连接本机 Xray API 读取用户流量统计，因此代理节点需要先完成菜单 `2` 的 Xray 配置。
 
 安装完成后可以检查：
+
+菜单 `4` 生成的 `/etc/systemd/system/stat.service` 会显式写出 stat 当前支持的主要参数，默认值如下：
+
+```text
+-level info
+-traffic-db /var/lib/xray-stat/stat.db
+-collect-interval 10s
+-traffic-retention-months 12
+-stat-api-traffic-tag 1
+-log-clean-dir /root/log
+-log-retention-months 12
+-xray-log-dir /var/log/xray
+-xray-log-retention-months 12
+```
 
 ```bash
 systemctl status stat
@@ -113,6 +128,14 @@ ss -ltnp | grep ':56611'
 
 ```bash
 sed -i 's|-collect-interval [^ ]*|-collect-interval 10s|' /etc/systemd/system/stat.service
+systemctl daemon-reload
+systemctl restart stat
+```
+
+如果后续只想手动调整 stat 接口自身流量归属 tag，可以修改 systemd：
+
+```bash
+sed -i 's|-stat-api-traffic-tag [^ ]*|-stat-api-traffic-tag 1|' /etc/systemd/system/stat.service
 systemctl daemon-reload
 systemctl restart stat
 ```
@@ -223,7 +246,7 @@ ls -lh /var/log/xray
 - 同时扫描 `/var/log/xray/access.log` 和同目录下的轮转文件。
 - access.log 使用后缀匹配，例如 `grep -E 'email: 8$'`，避免把 `18` 匹配成 `8`。
 - 输出一张按分钟聚合的表格，每分钟展示该用户的流量采集汇总和这一分钟访问过的目标域名/IP。
-- 访问目标会按根域名归一并去重，例如 `rr2---sn-3pm7dne6.googlevideo.com` 显示为 `googlevideo.com`，`android.clients.google.com` 显示为 `google.com`；纯 IP 访问保留原 IP，例如 `8.8.8.8`。
+- 访问目标会按根域名归一并去重，例如 `rr2---sn-3pm7dne6.googlevideo.com` 显示为 `googlevideo.com`，`android.clients.google.com` 显示为 `google.com`；公网 IP 访问保留原 IP，例如 `8.8.8.8`；本机、内网、链路本地、组播、CGNAT 等内部/保留 IP 会过滤掉。
 - 不再直接打印原始采集事件和原始 access.log 明细，避免长时间段输出过多流水日志。
 
 菜单 `12` 会读取这些 access 日志文件：
@@ -262,6 +285,20 @@ access.log-2026-06-17.gz
 | Xray | `80` | 代理服务公网入口端口 |
 | Xray API | `11111` | Xray 本机内部 API 端口 |
 | MySQL | `3306` | 数据库端口，防火墙脚本默认不放行 |
+
+## 访问目标分类
+
+服务器管理页的“用户流量分析”可以把当前结果中的访问目标域名和公网 IP 提交给硅基流动模型做用途聚合分组。需要在 `/usr/local/etc/xray-admin/config.yaml` 配置：
+
+```yaml
+silicon-flow:
+  api-key: "你的 SiliconFlow API Key"
+  base-url: https://api.siliconflow.cn
+  model: deepseek-ai/DeepSeek-V3.2
+  timeout: 30s
+```
+
+API Key 只保存在 xray-admin 后端配置文件中，前端不会直接访问硅基流动。后端会在调用模型前过滤内网、保留、链路本地、组播、CGNAT 等内部 IP。
 
 ## 常用命令
 

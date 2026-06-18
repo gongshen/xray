@@ -281,3 +281,18 @@ func (serverApi *ServerApi) AnalyzeUserTraffic(c *gin.Context) {
 	}
 	response.OkWithData(gin.H{"analysis": analysis}, c)
 }
+
+func (serverApi *ServerApi) ClassifyTrafficTargets(c *gin.Context) {
+	var req v2rayAdminService.TrafficTargetClassificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	classification, err := serverService.ClassifyTrafficTargets(req)
+	if err != nil {
+		global.GVA_LOG.Error("访问目标分类失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	response.OkWithData(gin.H{"classification": classification}, c)
+}

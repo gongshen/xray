@@ -78,3 +78,11 @@ export const analyzeUserTrafficApi = (data) => {
     data
   })
 }
+
+export const classifyTrafficTargetsApi = (data) => {
+  return service({
+    url: '/v2ray_admin/server/classifyTrafficTargets',
+    method: 'post',
+    data
+  })
+}

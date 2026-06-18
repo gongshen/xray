@@ -67,6 +67,16 @@ go build -ldflags="-s -w" -o ../../dist/xray-admin .
 stat_port: 56611
 traffic_collect_interval: 1h
 sysinfo_collect_interval: 5m
+traffic-meter:
+  enable: true
+  stat-url: http://127.0.0.1:56611
+  tag: "1"
+  flush-interval: 10s
+silicon-flow:
+  api-key: ""
+  base-url: https://api.siliconflow.cn
+  model: deepseek-ai/DeepSeek-V3.2
+  timeout: 30s
 ```
 
 - `stat_port`：节点 `stat` 服务默认端口，单个服务器记录未单独配置端口时使用。
@@ -96,6 +106,22 @@ tar -czvf ../../dist/xray-admin.tar.gz -C ../../dist xray-admin
 ```
 
 如果使用外部 `config.yaml`，建议单独上传并放到 `/usr/local/etc/xray-admin/config.yaml`。
+
+## traffic-meter
+
+`traffic-meter` counts xray-admin HTTP request/response bytes and batches them to stat:
+
+```yaml
+traffic-meter:
+  enable: true
+  stat-url: http://127.0.0.1:56611
+  tag: "1"
+  flush-interval: 10s
+```
+
+The target stat service writes these batches into local SQLite `traffic_event`; default tag is `1`.
+
+`silicon-flow` is used by the server traffic analysis page to group access target domains and public IPs by actual usage. Put the SiliconFlow API key in `api-key`; the browser never receives this key. Internal, private, link-local, multicast, reserved, and CGNAT IPs are filtered before calling the model.
 
 ## SSL 证书
 

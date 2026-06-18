@@ -81,7 +81,7 @@ const showNext = () => {
 }
 
 const goDoc = () => {
-  window.open('https://www.gin-vue-admin.com/guide/start-quickly/env.html')
+  ElMessage.info('请参考项目内置 README 或部署文档。')
 }
 
 const out = ref(false)

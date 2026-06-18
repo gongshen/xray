@@ -24,8 +24,9 @@ func (s *ServerRouter) InitServerRouter(Router *gin.RouterGroup) {
 		serverRouter.POST("analyzeUserTraffic", serverApi.AnalyzeUserTraffic) // 分析用户流量明细
 	}
 	{
-		serverRouterWithoutRecord.GET("findServer", serverApi.FindServer)       // 根据ID获取Server
-		serverRouterWithoutRecord.GET("getServerList", serverApi.GetServerList) // 获取Server列表
-		serverRouterWithoutRecord.POST("getAllServer", serverApi.GetAllServer)  // 获取所有Server
+		serverRouterWithoutRecord.GET("findServer", serverApi.FindServer)                          // 根据ID获取Server
+		serverRouterWithoutRecord.GET("getServerList", serverApi.GetServerList)                    // 获取Server列表
+		serverRouterWithoutRecord.POST("getAllServer", serverApi.GetAllServer)                     // 获取所有Server
+		serverRouterWithoutRecord.POST("classifyTrafficTargets", serverApi.ClassifyTrafficTargets) // 访问目标分类
 	}
 }

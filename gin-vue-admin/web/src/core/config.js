@@ -4,7 +4,7 @@
 
 const config = {
   appName: 'Gin-Vue-Admin',
-  appLogo: 'https://www.gin-vue-admin.com/img/logo.png',
+  appLogo: new URL('../assets/logo_login.png', import.meta.url).href,
   showViteLogo: true
 }
 
@@ -13,7 +13,7 @@ export const viteLogo = (env) => {
     const chalk = require('chalk')
     console.log(
       chalk.green(
-        `> 欢迎使用Gin-Vue-Admin，开源地址：https://github.com/flipped-aurora/gin-vue-admin`
+        `> 欢迎使用Gin-Vue-Admin`
       )
     )
     console.log(
@@ -28,12 +28,12 @@ export const viteLogo = (env) => {
     )
     console.log(
       chalk.green(
-        `> GVA讨论社区：https://support.qq.com/products/371961`
+        `> 当前运行模式:本地资源`
       )
     )
     console.log(
       chalk.green(
-        `> 插件市场:https://plugin.gin-vue-admin.com`
+        `> 外部资源加载:已关闭`
       )
     )
     console.log(
@@ -48,7 +48,7 @@ export const viteLogo = (env) => {
     )
     console.log(
       chalk.green(
-        `> 如果项目让您获得了收益，希望您能请团队喝杯可乐:https://www.gin-vue-admin.com/coffee/index.html`
+        `> 静态资源来源:本地打包文件`
       )
     )
     console.log('\n')
