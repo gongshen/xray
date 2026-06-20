@@ -54,6 +54,7 @@ func RegisterTables() {
 		v2ray.StatSnapshot{},
 		v2ray.StatSyncCursor{},
 		v2ray.TrafficAnomaly{},
+		v2ray.TrafficTargetClassificationCache{},
 		v2ray.Server{},
 		v2ray.Binding{},
 		v2ray.ServerQuotaLog{},

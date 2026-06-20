@@ -67,7 +67,7 @@ silicon-flow:
   api-key: ""
   base-url: https://api.siliconflow.cn
   model: deepseek-ai/DeepSeek-V3.2
-  timeout: 30s
+  timeout: 90s
 
 # 定时任务
 timer:

@@ -295,10 +295,12 @@ silicon-flow:
   api-key: "你的 SiliconFlow API Key"
   base-url: https://api.siliconflow.cn
   model: deepseek-ai/DeepSeek-V3.2
-  timeout: 30s
+  timeout: 90s
 ```
 
-API Key 只保存在 xray-admin 后端配置文件中，前端不会直接访问硅基流动。后端会在调用模型前过滤内网、保留、链路本地、组播、CGNAT 等内部 IP。
+API Key 只保存在 xray-admin 后端配置文件中，前端不会直接访问硅基流动。后端会在调用模型前过滤内网、保留、链路本地、组播、CGNAT 等内部 IP。`timeout` 控制后端访问硅基流动的最长等待时间，小于 `30s` 会按 `30s` 处理，DeepSeek 分类建议先用 `90s`。
+
+分类结果会按单个访问对象缓存在管理端 MySQL 表 `v2ray_traffic_target_classification_cache` 中。再次分类时会先查缓存，只有缓存中不存在的域名/IP 才会发送给硅基流动。
 
 ## 常用命令
 

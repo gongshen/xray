@@ -6,8 +6,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/config"
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/v2ray"
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 )
 
 func TestNormalizeClassificationTargetsDedupesAndKeepsPublicIPs(t *testing.T) {
@@ -90,5 +95,98 @@ func TestRequestSiliconFlowTargetClassificationRequiresAPIKey(t *testing.T) {
 	_, err := requestSiliconFlowTargetClassification(config.SiliconFlow{}, []string{"google.com"})
 	if err == nil || !strings.Contains(err.Error(), "api-key") {
 		t.Fatalf("error = %v, want api-key error", err)
+	}
+}
+
+func TestParseSiliconFlowTimeoutUsesMinimum(t *testing.T) {
+	got, err := parseSiliconFlowTimeout("3s")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != minSiliconFlowTimeout {
+		t.Fatalf("timeout = %s, want %s", got, minSiliconFlowTimeout)
+	}
+}
+
+func TestParseSiliconFlowTimeoutUsesDefault(t *testing.T) {
+	got, err := parseSiliconFlowTimeout("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != defaultSiliconFlowTimeout {
+		t.Fatalf("timeout = %s, want %s", got, defaultSiliconFlowTimeout)
+	}
+}
+
+func TestParseTrafficTargetClassificationResult(t *testing.T) {
+	got := parseTrafficTargetClassificationResult(
+		"1. Google（google.com、pki.goog）：搜索和证书服务\n- Telegram (149.154.167.99, 2001:4860:4860::8888): 即时通讯服务\nOther（unknown.com）：未知服务",
+		[]string{"google.com", "pki.goog", "149.154.167.99", "2001:4860:4860::8888"},
+	)
+	if len(got) != 4 {
+		t.Fatalf("entries length = %d, want 4: %#v", len(got), got)
+	}
+	want := map[string]trafficTargetClassificationEntry{
+		"google.com":           {Target: "google.com", ServiceName: "Google", Purpose: "搜索和证书服务"},
+		"pki.goog":             {Target: "pki.goog", ServiceName: "Google", Purpose: "搜索和证书服务"},
+		"149.154.167.99":       {Target: "149.154.167.99", ServiceName: "Telegram", Purpose: "即时通讯服务"},
+		"2001:4860:4860::8888": {Target: "2001:4860:4860::8888", ServiceName: "Telegram", Purpose: "即时通讯服务"},
+	}
+	for _, entry := range got {
+		if entry != want[entry.Target] {
+			t.Fatalf("entry = %#v, want %#v", entry, want[entry.Target])
+		}
+	}
+}
+
+func TestRenderTrafficTargetClassificationResultKeepsTargetOrder(t *testing.T) {
+	got := renderTrafficTargetClassificationResult([]trafficTargetClassificationEntry{
+		{Target: "pki.goog", ServiceName: "Google", Purpose: "搜索和证书服务"},
+		{Target: "google.com", ServiceName: "Google", Purpose: "搜索和证书服务"},
+		{Target: "149.154.167.99", ServiceName: "Telegram", Purpose: "即时通讯服务"},
+	}, []string{"google.com", "149.154.167.99", "pki.goog"})
+	want := "Google（google.com、pki.goog）：搜索和证书服务\nTelegram（149.154.167.99）：即时通讯服务"
+	if got != want {
+		t.Fatalf("rendered = %q, want %q", got, want)
+	}
+}
+
+func TestClassifyTrafficTargetsUsesCacheWithoutLLM(t *testing.T) {
+	oldDB := global.GVA_DB
+	oldConfig := global.GVA_CONFIG
+	defer func() {
+		global.GVA_DB = oldDB
+		global.GVA_CONFIG = oldConfig
+	}()
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&v2ray.TrafficTargetClassificationCache{}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().Unix()
+	if err := db.Create([]v2ray.TrafficTargetClassificationCache{
+		{Target: "google.com", ServiceName: "Google", Purpose: "搜索服务", CreatedAt: now, UpdatedAt: now},
+		{Target: "149.154.167.99", ServiceName: "Telegram", Purpose: "即时通讯服务", CreatedAt: now, UpdatedAt: now},
+	}).Error; err != nil {
+		t.Fatal(err)
+	}
+	global.GVA_DB = db
+	global.GVA_CONFIG.SiliconFlow = config.SiliconFlow{}
+
+	resp, err := (&ServerService{}).ClassifyTrafficTargets(TrafficTargetClassificationRequest{
+		Targets: []string{"google.com", "149.154.167.99"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.CachedTargets != 2 || resp.LLMTargets != 0 {
+		t.Fatalf("cache stats = cached %d llm %d", resp.CachedTargets, resp.LLMTargets)
+	}
+	want := "Google（google.com）：搜索服务\nTelegram（149.154.167.99）：即时通讯服务"
+	if resp.Result != want {
+		t.Fatalf("result = %q, want %q", resp.Result, want)
 	}
 }

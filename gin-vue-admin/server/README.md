@@ -76,7 +76,7 @@ silicon-flow:
   api-key: ""
   base-url: https://api.siliconflow.cn
   model: deepseek-ai/DeepSeek-V3.2
-  timeout: 30s
+  timeout: 90s
 ```
 
 - `stat_port`：节点 `stat` 服务默认端口，单个服务器记录未单独配置端口时使用。
@@ -121,7 +121,9 @@ traffic-meter:
 
 The target stat service writes these batches into local SQLite `traffic_event`; default tag is `1`.
 
-`silicon-flow` is used by the server traffic analysis page to group access target domains and public IPs by actual usage. Put the SiliconFlow API key in `api-key`; the browser never receives this key. Internal, private, link-local, multicast, reserved, and CGNAT IPs are filtered before calling the model.
+`silicon-flow` is used by the server traffic analysis page to group access target domains and public IPs by actual usage. Put the SiliconFlow API key in `api-key`; the browser never receives this key. Internal, private, link-local, multicast, reserved, and CGNAT IPs are filtered before calling the model. `timeout` controls the backend model request timeout; values below `30s` are raised to `30s`, and `90s` is recommended for DeepSeek responses.
+
+Classification results are cached per target in MySQL table `v2ray_traffic_target_classification_cache`. Before calling SiliconFlow, xray-admin checks this table first and only sends uncached targets to the model.
 
 ## SSL 证书
 
