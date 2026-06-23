@@ -60,6 +60,10 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/modules/user'
 import { fmtTitle } from '@/utils/fmtRouterTitle'
+import {
+  bindBodyClickHandler,
+  bindEmitterHandlers,
+} from './historyEvents.mjs'
 
 const route = useRoute()
 const router = useRouter()
@@ -85,6 +89,8 @@ const top = ref(0)
 const isCollapse = ref(false)
 const isMobile = ref(false)
 const rightActive = ref('')
+let disposeBodyClick = null
+let disposeEmitterHandlers = null
 const defaultRouter = computed(() => userStore.userInfo.authority.defaultRouter)
 const openContextMenu = (e) => {
   if (
@@ -245,15 +251,18 @@ const removeTab = (tab) => {
   historys.value.splice(index, 1)
 }
 
+const closeContextMenu = () => {
+  contextMenuVisible.value = false
+}
+
 watch(() => contextMenuVisible.value, () => {
   if (contextMenuVisible.value) {
-    document.body.addEventListener('click', () => {
-      contextMenuVisible.value = false
-    })
-  } else {
-    document.body.removeEventListener('click', () => {
-      contextMenuVisible.value = false
-    })
+    if (!disposeBodyClick) {
+      disposeBodyClick = bindBodyClickHandler(closeContextMenu)
+    }
+  } else if (disposeBodyClick) {
+    disposeBodyClick()
+    disposeBodyClick = null
   }
 })
 
@@ -280,18 +289,11 @@ watch(() => historys.value, () => {
 
 const initPage = () => {
   // 全局监听 关闭当前页面函数
-  emitter.on('closeThisPage', () => {
-    removeTab(name(route))
-  })
-  // 全局监听 关闭所有页面函数
-  emitter.on('closeAllPage', () => {
-    closeAll()
-  })
-  emitter.on('mobile', (data) => {
-    isMobile.value = data
-  })
-  emitter.on('collapse', (data) => {
-    isCollapse.value = data
+  disposeEmitterHandlers = bindEmitterHandlers(emitter, {
+    closeThisPage: handleCloseThisPage,
+    closeAllPage: handleCloseAllPage,
+    mobile: handleMobile,
+    collapse: handleCollapse,
   })
   const initHistorys = [
     {
@@ -316,11 +318,34 @@ const initPage = () => {
     window.sessionStorage.removeItem('needCloseAll')
   }
 }
+
+const handleCloseThisPage = () => {
+  removeTab(name(route))
+}
+
+const handleCloseAllPage = () => {
+  closeAll()
+}
+
+const handleMobile = (data) => {
+  isMobile.value = data
+}
+
+const handleCollapse = (data) => {
+  isCollapse.value = data
+}
+
 initPage()
 
 onUnmounted(() => {
-  emitter.off('collapse')
-  emitter.off('mobile')
+  if (disposeBodyClick) {
+    disposeBodyClick()
+    disposeBodyClick = null
+  }
+  if (disposeEmitterHandlers) {
+    disposeEmitterHandlers()
+    disposeEmitterHandlers = null
+  }
 })
 </script>
 
