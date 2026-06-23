@@ -245,7 +245,7 @@
         </el-table-column>
       </el-table>
 
-      <div v-if="targetClassificationResult" class="classification-result">
+      <div v-if="targetClassificationResult" class="classification-result" role="status" aria-live="polite">
         <div class="classification-title">
           访问目标分类
           <span v-if="targetClassificationMinute">· {{ targetClassificationMinute }}</span>
