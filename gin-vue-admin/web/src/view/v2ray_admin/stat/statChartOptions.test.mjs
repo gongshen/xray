@@ -21,6 +21,16 @@ assert.match(
   /1.0 KB/
 )
 
+const numericDateTrendOptions = buildTrendChartOptions({
+  data_axis: [20260621],
+  data: [1024],
+})
+
+assert.deepEqual(numericDateTrendOptions.xAxis.data, ['2026-06-21'])
+assert.equal(numericDateTrendOptions.xAxis.axisLabel.rotate, 45)
+assert.equal(numericDateTrendOptions.xAxis.axisLabel.formatter('2026-06-21'), '06-21')
+assert.equal(numericDateTrendOptions.xAxis.axisLabel.formatter('plain-label'), 'plain-label')
+
 const rankOptions = buildRankChartOptions({
   rank_axis: ['alice', 'bob'],
   rank: [100 * 1024 * 1024, 1024 * 1024 * 1024],

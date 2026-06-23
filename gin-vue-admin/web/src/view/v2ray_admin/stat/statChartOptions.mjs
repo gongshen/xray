@@ -24,6 +24,22 @@ function formatTooltip(params = []) {
   return result
 }
 
+function normalizeAxisValue(value) {
+  const text = String(value)
+  if (/^\d{8}$/.test(text)) {
+    return `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`
+  }
+  return value
+}
+
+function formatAxisLabel(value) {
+  const text = String(value)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return text.slice(5)
+  }
+  return value
+}
+
 export function buildTrendChartOptions(data = {}) {
   return {
     tooltip: {
@@ -49,8 +65,12 @@ export function buildTrendChartOptions(data = {}) {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: data.data_axis || [],
+      data: (data.data_axis || []).map(normalizeAxisValue),
       axisLine,
+      axisLabel: {
+        rotate: 45,
+        formatter: formatAxisLabel,
+      },
     },
     yAxis: {
       type: 'value',

@@ -24,7 +24,7 @@
                   <el-icon><TrendCharts /></el-icon>
                   流量趋势
                 </span>
-                <el-tag type="info" size="small">{{ getDateRangeText() }}</el-tag>
+                <el-tag type="info" size="small">{{ dateRangeText }}</el-tag>
               </div>
             </template>
             <div ref="echart" class="chart-container trend-chart"></div>
@@ -108,20 +108,21 @@ export default {
 import {
   getStatList,
 } from '@/api/v2ray_stat'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive, shallowRef, onMounted, nextTick, onUnmounted, computed, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { computed, ref, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
 import { TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
+import {
+  formatFlow,
+  getDateRangeText as formatDateRangeText,
+  getTrafficTagType,
+  normalizeDateOnlyToUtcIso,
+} from '../../v2ray_admin/stat/statTraffic.mjs'
+import {
+  buildTrendChartOptions,
+} from '../../v2ray_admin/stat/statChartOptions.mjs'
 
-const formData = ref({
-  tag: '',
-  down: '',
-  up: '',
-  total: '',
-})
-
-const elFormRef = ref()
 const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
@@ -138,71 +139,10 @@ const searchInfo = ref({
 const chart = shallowRef(null)
 const echart = ref(null)
 const chartData = useChartData()
-
-// 格式化流量
-const formatFlow = (value) => {
-  if (!value || value === 0) return '0 B'
-  if (value >= 1024 * 1024 * 1024) {
-    return (value / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
-  } else if (value >= 1024 * 1024) {
-    return (value / (1024 * 1024)).toFixed(1) + ' MB'
-  } else if (value >= 1024) {
-    return (value / 1024).toFixed(1) + ' KB'
-  } else {
-    return value.toFixed(1) + ' B'
-  }
-}
-
-// 格式化日期
-const formatDate = (timestamp) => {
-  if (!timestamp) return '-'
-  // 如果是秒级时间戳，转换为毫秒
-  const date = new Date(timestamp * 1000)
-  return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false })
-}
-
-// 获取流量标签类型
-const getTrafficTagType = (trafficStr) => {
-  if (!trafficStr || typeof trafficStr !== 'string') return 'info'
-  
-  // 解析流量字符串，如 "726.27MB" -> 726.27 * 1024 * 1024
-  const match = trafficStr.match(/^([\d.]+)\s*(B|KB|MB|GB)$/i)
-  if (!match) return 'info'
-  
-  const value = parseFloat(match[1])
-  const unit = match[2].toUpperCase()
-  
-  let bytes = value
-  switch (unit) {
-    case 'KB':
-      bytes = value * 1024
-      break
-    case 'MB':
-      bytes = value * 1024 * 1024
-      break
-    case 'GB':
-      bytes = value * 1024 * 1024 * 1024
-      break
-  }
-  
-  if (bytes >= 1024 * 1024 * 1024) return 'danger'  // GB级别
-  if (bytes >= 100 * 1024 * 1024) return 'warning'  // 100MB以上
-  if (bytes >= 10 * 1024 * 1024) return 'success'   // 10MB以上
-  return 'info'  // 其他
-}
-
-// 获取日期范围文本
-const getDateRangeText = () => {
-  if (!searchInfo.value.startCreatedAt || !searchInfo.value.endCreatedAt) {
-    return '近7天'
-  }
-  const start = new Date(searchInfo.value.startCreatedAt).toLocaleDateString('zh-CN')
-  const end = new Date(searchInfo.value.endCreatedAt).toLocaleDateString('zh-CN')
-  return start === end ? start : `${start} - ${end}`
-}
+const dateRangeText = computed(() => formatDateRangeText(searchInfo.value))
 
 const onReset = () => {
-  // 重置为近7天
+  // 重置为近1个月
   const today = new Date()
   const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
   searchInfo.value = {
@@ -210,12 +150,7 @@ const onReset = () => {
     endCreatedAt: today.toISOString()
   }
   getTableData()
-  setChartData({...searchInfo.value}).then(() => {
-    // 数据加载完成后刷新图表
-    setTimeout(() => {
-      refreshChart()
-    }, 100)
-  })
+  setChartData({...searchInfo.value})
 }
 
 // 搜索
@@ -224,22 +159,13 @@ const onSubmit = () => {
   pageSize.value = 10
   // 将搜索时间转换为 UTC 时间
   if (searchInfo.value.startCreatedAt) {
-    const startDate = new Date(searchInfo.value.startCreatedAt)
-    const utcStartDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()))
-    searchInfo.value.startCreatedAt = utcStartDate.toISOString()
+    searchInfo.value.startCreatedAt = normalizeDateOnlyToUtcIso(searchInfo.value.startCreatedAt)
   }
   if (searchInfo.value.endCreatedAt) {
-    const endDate = new Date(searchInfo.value.endCreatedAt)
-    const utcEndDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()))
-    searchInfo.value.endCreatedAt = utcEndDate.toISOString()
+    searchInfo.value.endCreatedAt = normalizeDateOnlyToUtcIso(searchInfo.value.endCreatedAt)
   }
   getTableData()
-  setChartData({...searchInfo.value}).then(() => {
-    // 数据加载完成后刷新图表
-    setTimeout(() => {
-      refreshChart()
-    }, 100)
-  })
+  setChartData({...searchInfo.value})
 }
 
 // 分页
@@ -261,16 +187,13 @@ const getTableData = async() => {
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
 
     if (table.code === 0) {
-      // 确保数据结构正确
       const list = table.data?.list || []
       tableData.value = list
       total.value = table.data?.total || 0
       page.value = table.data?.page || 1
       pageSize.value = table.data?.pageSize || 10
 
-      // 如果有数据但表格不显示，可能是响应式问题
       if (list.length > 0) {
-        // 强制触发响应式更新
         tableData.value = [...list]
       }
     } else {
@@ -292,206 +215,55 @@ const getTableData = async() => {
 // 初始化图表
 const initChart = () => {
   if (!echart.value) {
-    console.error('图表容器不存在，无法初始化图表')
     return
   }
-  
-  // 如果图表已存在，先销毁
+
   if (chart.value) {
     chart.value.dispose()
   }
-  
-  chart.value = echarts.init(echart.value)
-  
-  // 如果已有数据，立即渲染
-  if (chartData.data && chartData.data.length > 0) {
-    setOptions(chartData)
-  }
-}
 
-// 强制刷新图表
-const refreshChart = () => {
-  if (chart.value && chartData.data && chartData.data.length > 0) {
-    setOptions(chartData)
-  } else {
-    nextTick(() => {
-      initChart()
-    })
-  }
+  chart.value = echarts.init(echart.value)
+  setOptions(chartData)
 }
 
 // 设置图表选项
 const setOptions = (data) => {
-  // 检查数据是否存在
-  if (!data.data_axis || !data.data || data.data_axis.length === 0 || data.data.length === 0) {
-    console.warn('图表数据为空或格式不正确')
-    return
-  }
-
-  // 格式化日期轴数据
-  const formattedAxisData = data.data_axis.map(dateNum => {
-    const dateStr = dateNum.toString()
-    if (dateStr.length === 8) {
-      // 格式：YYYYMMDD -> YYYY-MM-DD
-      const year = dateStr.substring(0, 4)
-      const month = dateStr.substring(4, 6)
-      const day = dateStr.substring(6, 8)
-      return `${year}-${month}-${day}`
-    }
-    return dateStr
-  })
-
-  // 流量趋势图
-  chart.value?.setOption({
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross',
-        label: {
-          backgroundColor: '#6a7985'
-        }
-      },
-      formatter: (params) => {
-        let result = params[0].name + '<br>'
-        params.forEach(item => {
-          result += item.marker + ' ' + item.seriesName + ' : ' + formatFlow(item.value) + '<br>'
-        })
-        return result
-      }
-    },
-    legend: {
-      data: ['流量使用量'],
-      top: 10
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: formattedAxisData,
-      axisLine: {
-        lineStyle: {
-          color: '#e6e6e6'
-        }
-      },
-      axisLabel: {
-        rotate: 45, // 旋转标签避免重叠
-        formatter: (value) => {
-          // 简化日期显示，只显示月-日
-          if (value.includes('-')) {
-            const parts = value.split('-')
-            return `${parts[1]}-${parts[2]}`
-          }
-          return value
-        }
-      }
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: (value) => formatFlow(value)
-      },
-      axisLine: {
-        lineStyle: {
-          color: '#e6e6e6'
-        }
-      },
-      splitLine: {
-        lineStyle: {
-          color: '#f5f5f5'
-        }
-      }
-    },
-    series: [
-      {
-        name: '流量使用量',
-        type: 'line',
-        stack: 'Total',
-        smooth: true,
-        lineStyle: {
-          width: 3,
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 1, y2: 0,
-            colorStops: [
-              { offset: 0, color: '#409EFF' },
-              { offset: 1, color: '#67C23A' }
-            ]
-          }
-        },
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-              { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
-            ]
-          }
-        },
-        data: data.data
-      }
-    ]
-  })
+  chart.value?.setOption(buildTrendChartOptions(data))
 }
 
 // 监听图表数据变化
 watch(() => chartData, (newData) => {
-  if (chart.value && newData) {
+  if (chart.value) {
     setOptions(newData)
-  } else if (!chart.value) {
-    console.warn('图表实例不存在，尝试重新初始化')
-    nextTick(() => {
-      if (echart.value) {
-        initChart()
-      }
-    })
   }
 }, {
   deep: true
 })
 
+const handleResize = () => {
+  chart.value?.resize()
+}
+
+const disposeChart = () => {
+  if (chart.value) {
+    chart.value.dispose()
+    chart.value = null
+  }
+}
+
 onMounted(async () => {
-  // 先加载表格数据
   await getTableData()
-  
-  // 再加载图表数据
   await setChartData({...searchInfo.value})
-  
   await nextTick()
-  
-  // 确保图表容器存在
-  if (echart.value) {
-    initChart()
-    
-    // 延迟刷新图表，确保数据已加载
-    setTimeout(() => {
-      refreshChart()
-    }, 500)
-  } else {
-    console.error('图表容器不存在')
-  }
-  
-  // 监听窗口大小变化
-  const handleResize = () => {
-    chart.value?.resize()
-  }
+
+  initChart()
   window.addEventListener('resize', handleResize)
-  
-  onUnmounted(() => {
-    window.removeEventListener('resize', handleResize)
-    if (chart.value) {
-      chart.value.dispose()
-      chart.value = null
-    }
-  })
 })
 
-const users = ref([])
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  disposeChart()
+})
 </script>
 <style scoped>
 .page {
