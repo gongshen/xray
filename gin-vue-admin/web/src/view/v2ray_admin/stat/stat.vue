@@ -71,6 +71,7 @@
           ref="multipleTable"
           class="stat-table"
           v-loading="tableLoading"
+          :aria-busy="tableLoading"
           tooltip-effect="dark"
           :data="tableData"
           row-key="ID"
