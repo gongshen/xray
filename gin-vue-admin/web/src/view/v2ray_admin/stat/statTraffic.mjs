@@ -5,6 +5,7 @@ const UNIT_BYTES = {
   GB: 1024 * 1024 * 1024,
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
 const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN')
 
 export function formatFlow(value) {
@@ -82,6 +83,27 @@ export function normalizeDateOnlyToUtcIso(value) {
   }
 
   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).toISOString()
+}
+
+export function createDefaultTrafficSearchRange({ now = new Date(), days = 30 } = {}) {
+  const endDate = now instanceof Date ? new Date(now.getTime()) : new Date(now)
+  const rangeDays = Number.isFinite(Number(days)) ? Number(days) : 30
+  const startDate = new Date(endDate.getTime() - rangeDays * DAY_MS)
+
+  return {
+    startCreatedAt: startDate.toISOString(),
+    endCreatedAt: endDate.toISOString(),
+  }
+}
+
+export function normalizeTrafficSearchRange(searchInfo = {}) {
+  const source = searchInfo && typeof searchInfo === 'object' ? searchInfo : {}
+
+  return {
+    ...source,
+    startCreatedAt: normalizeDateOnlyToUtcIso(source.startCreatedAt),
+    endCreatedAt: normalizeDateOnlyToUtcIso(source.endCreatedAt),
+  }
 }
 
 export function getDateRangeText(searchInfo = {}) {

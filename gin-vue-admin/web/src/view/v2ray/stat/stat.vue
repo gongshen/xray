@@ -115,10 +115,11 @@ import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
 import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
 import {
+  createDefaultTrafficSearchRange,
   formatFlow,
   getDateRangeText as formatDateRangeText,
   getTrafficTagType,
-  normalizeDateOnlyToUtcIso,
+  normalizeTrafficSearchRange,
 } from '../../v2ray_admin/stat/statTraffic.mjs'
 import {
   buildTrendChartOptions,
@@ -129,12 +130,10 @@ const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
 const loading = ref(false)
-const today = new Date()
-const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000) // 1个月前
-const searchInfo = ref({
-  startCreatedAt: monthAgo.toISOString(),
-  endCreatedAt: today.toISOString()
-})
+const initialSearchRange = createDefaultTrafficSearchRange()
+const today = new Date(initialSearchRange.endCreatedAt)
+const monthAgo = new Date(initialSearchRange.startCreatedAt)
+const searchInfo = ref({ ...initialSearchRange })
 
 // 图表相关
 const chart = shallowRef(null)
@@ -145,12 +144,7 @@ const dateRangeText = computed(() => formatDateRangeText(searchInfo.value))
 
 const onReset = () => {
   // 重置为近1个月
-  const today = new Date()
-  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-  searchInfo.value = {
-    startCreatedAt: monthAgo.toISOString(),
-    endCreatedAt: today.toISOString()
-  }
+  searchInfo.value = createDefaultTrafficSearchRange()
   getTableData()
   setChartData({...searchInfo.value})
 }
@@ -160,12 +154,7 @@ const onSubmit = () => {
   page.value = 1
   pageSize.value = 10
   // 将搜索时间转换为 UTC 时间
-  if (searchInfo.value.startCreatedAt) {
-    searchInfo.value.startCreatedAt = normalizeDateOnlyToUtcIso(searchInfo.value.startCreatedAt)
-  }
-  if (searchInfo.value.endCreatedAt) {
-    searchInfo.value.endCreatedAt = normalizeDateOnlyToUtcIso(searchInfo.value.endCreatedAt)
-  }
+  searchInfo.value = normalizeTrafficSearchRange(searchInfo.value)
   getTableData()
   setChartData({...searchInfo.value})
 }

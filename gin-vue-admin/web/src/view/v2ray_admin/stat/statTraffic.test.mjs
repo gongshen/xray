@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import {
+  createDefaultTrafficSearchRange,
   formatFlow,
   getDateRangeText,
   getTrafficTagType,
   normalizeDateOnlyToUtcIso,
+  normalizeTrafficSearchRange,
   parseTrafficBytes,
 } from './statTraffic.mjs'
 
@@ -31,6 +33,34 @@ assert.equal(
 )
 assert.equal(normalizeDateOnlyToUtcIso(''), '')
 assert.equal(normalizeDateOnlyToUtcIso(null), null)
+
+assert.deepEqual(
+  createDefaultTrafficSearchRange({ now: new Date('2026-06-23T12:00:00.000Z') }),
+  {
+    startCreatedAt: '2026-05-24T12:00:00.000Z',
+    endCreatedAt: '2026-06-23T12:00:00.000Z',
+  }
+)
+assert.deepEqual(
+  createDefaultTrafficSearchRange({ now: new Date('2026-06-23T12:00:00.000Z'), days: 7 }),
+  {
+    startCreatedAt: '2026-06-16T12:00:00.000Z',
+    endCreatedAt: '2026-06-23T12:00:00.000Z',
+  }
+)
+
+const searchRange = {
+  startCreatedAt: new Date(2026, 5, 23, 15, 42),
+  endCreatedAt: new Date(2026, 5, 24, 8, 10),
+  tag: 'user-1',
+}
+const normalizedRange = normalizeTrafficSearchRange(searchRange)
+assert.notEqual(normalizedRange, searchRange)
+assert.deepEqual(normalizedRange, {
+  startCreatedAt: '2026-06-23T00:00:00.000Z',
+  endCreatedAt: '2026-06-24T00:00:00.000Z',
+  tag: 'user-1',
+})
 
 assert.equal(getDateRangeText({}), '最近 30 天')
 assert.equal(
