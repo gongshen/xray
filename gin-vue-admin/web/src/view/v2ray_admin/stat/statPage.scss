@@ -1,0 +1,221 @@
+.page {
+  padding: 20px;
+  background: var(--gva-color-page-bg);
+  min-height: 100vh;
+}
+
+.charts-section {
+  margin-bottom: 24px;
+}
+
+.chart-card {
+  border: none;
+  border-radius: var(--gva-radius-panel);
+  overflow: hidden;
+  box-shadow: var(--gva-shadow-panel);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  box-shadow: var(--gva-shadow-panel-hover);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gva-color-text-strong);
+}
+
+.card-title .el-icon {
+  margin-right: 8px;
+  font-size: 18px;
+  color: var(--gva-color-brand-secondary);
+}
+
+.chart-container {
+  width: 100%;
+  height: 360px;
+}
+
+.trend-chart {
+  background: linear-gradient(180deg, var(--gva-color-chart-trend-bg) 0%, var(--gva-color-panel-bg) 100%);
+}
+
+.rank-chart {
+  background: linear-gradient(180deg, var(--gva-color-chart-rank-bg) 0%, var(--gva-color-panel-bg) 100%);
+}
+
+.gva-table-box {
+  padding: 24px;
+  background: var(--gva-color-panel-bg);
+  border-radius: var(--gva-radius-panel);
+  box-shadow: var(--gva-shadow-panel);
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gva-color-border-muted);
+}
+
+.table-header h3 {
+  margin: 0;
+  color: var(--gva-color-text-strong);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.table-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.traffic-down {
+  color: var(--gva-color-traffic-down);
+  font-weight: 500;
+}
+
+.traffic-up {
+  color: var(--gva-color-traffic-up);
+  font-weight: 500;
+}
+
+.date-cell {
+  color: var(--gva-color-text-muted);
+  font-size: 13px;
+}
+
+@media screen and (max-width: 768px) {
+  .page {
+    padding: 10px;
+  }
+
+  .charts-section {
+    margin-bottom: 16px;
+  }
+
+  .chart-container {
+    height: 280px;
+  }
+
+  .gva-table-box {
+    position: relative;
+    padding: 16px;
+    border-radius: var(--gva-radius-panel);
+
+    .el-table {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    &::before {
+      position: absolute;
+      right: 0;
+      top: 80px;
+      bottom: 60px;
+      z-index: 1;
+      width: 2rem;
+      content: '';
+      background: linear-gradient(to left, rgba(255, 255, 255, 0.9), transparent);
+      pointer-events: none;
+    }
+  }
+
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .table-header h3 {
+    font-size: 16px;
+  }
+
+  .table-summary {
+    justify-content: flex-start;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .charts-section .el-col {
+    margin-bottom: 16px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    background: var(--gva-color-dark-page-bg);
+  }
+
+  .chart-card,
+  .gva-table-box {
+    color: var(--gva-color-dark-text);
+    background: var(--gva-color-dark-panel-bg);
+  }
+
+  .card-title {
+    color: var(--gva-color-dark-text);
+  }
+
+  .table-header h3 {
+    color: var(--gva-color-dark-text);
+  }
+
+  .table-header {
+    border-bottom-color: var(--gva-color-dark-border);
+  }
+}
+
+.chart-card,
+.gva-table-box {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-card,
+  .gva-table-box {
+    animation: none;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
+  background: var(--gva-color-panel-muted-bg);
+}
+
+.gva-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+:deep(.el-pagination) {
+  --el-pagination-button-color: var(--gva-color-text-regular);
+  --el-pagination-hover-color: var(--gva-color-brand-secondary);
+}

@@ -67,18 +67,32 @@ const vueTargets = [
 for (const file of vueTargets) {
   const source = fs.readFileSync(file, 'utf8')
   assert.deepEqual(findRawHexColors(source), [], `${file} still has raw hex colors`)
+}
+
+const tokenizedStyleTargets = [
+  'src/view/system/state.vue',
+  'src/view/v2ray_admin/stat/statPage.scss',
+]
+
+for (const file of tokenizedStyleTargets) {
+  const source = fs.readFileSync(file, 'utf8')
   assert.match(source, /var\(--gva-color-/, `${file} should use shared CSS color tokens`)
 }
 
-for (const file of [
-  'src/view/v2ray_admin/stat/stat.vue',
-  'src/view/v2ray/stat/stat.vue',
-]) {
+const statPageStyle = fs.readFileSync('src/view/v2ray_admin/stat/statPage.scss', 'utf8')
+assert.deepEqual(findRawHexColors(statPageStyle), [], 'statPage.scss should not contain raw hex colors')
+assert.match(
+  statPageStyle,
+  /@media\s*\(prefers-reduced-motion:\s*reduce\)/,
+  'shared stat styles should disable chart entrance animation for reduced motion'
+)
+
+for (const file of ['src/view/v2ray_admin/stat/stat.vue', 'src/view/v2ray/stat/stat.vue']) {
   const source = fs.readFileSync(file, 'utf8')
   assert.match(
     source,
-    /@media\s*\(prefers-reduced-motion:\s*reduce\)/,
-    `${file} should disable chart entrance animation for reduced motion`
+    /statPage\.scss/,
+    `${file} should use shared stat page styles`
   )
 }
 
