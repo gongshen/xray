@@ -156,7 +156,6 @@ const downloadFile = (row) => {
   if (row.url.indexOf('http://') > -1 || row.url.indexOf('https://') > -1) {
     downloadImage(row.url, row.name)
   } else {
-    debugger
     downloadImage(path.value + '/' + row.url, row.name)
   }
 }
@@ -175,7 +174,6 @@ const editFileNameFunc = async(row) => {
     inputValue: row.name
   }).then(async({ value }) => {
     row.name = value
-    // console.log(row)
     const res = await editFileName(row)
     if (res.code === 0) {
       ElMessage({

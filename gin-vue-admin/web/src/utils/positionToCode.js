@@ -30,7 +30,5 @@ const sendRequestToOpenFileInEditor = (filePath) => {
     : 'localhost'
   const port = window.location.port ? window.location.port : '80'
   fetch(`${protocol}//${hostname}:${port}/gvaPositionCode?filePath=${filePath}`)
-    .catch((error) => {
-      console.log(error)
-    })
+    .catch(() => {})
 }

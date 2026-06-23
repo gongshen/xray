@@ -31,10 +31,6 @@ export default class ImageCompress {
           // 压缩宽高后的图像大小
           const newImgSize = this.fileSizeKB(newImgData)
 
-          if (newImgSize > this.fileSize) {
-            console.log('图片尺寸太大!' + fileSize + ' >> ' + newImgSize)
-          }
-
           const blob = this.dataURLtoBlob(newImgData, fileType)
           const nfile = new File([blob], this.file.name)
           resolve(nfile)
