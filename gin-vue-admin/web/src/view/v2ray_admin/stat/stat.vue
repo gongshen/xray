@@ -17,8 +17,8 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" :icon="Search" @click="onSubmit">查询</el-button>
+          <el-button :icon="Refresh" @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -142,7 +142,7 @@ import {
 import { getAllServerApi } from '@/api/server'
 import { ElMessage } from 'element-plus'
 import { computed, ref, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
-import { TrendCharts, Trophy } from '@element-plus/icons-vue'
+import { Refresh, Search, TrendCharts, Trophy } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
 import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'

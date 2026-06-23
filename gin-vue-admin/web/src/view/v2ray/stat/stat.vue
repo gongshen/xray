@@ -7,8 +7,8 @@
           <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" :default-value="today"></el-date-picker>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" :icon="Search" @click="onSubmit">查询</el-button>
+          <el-button :icon="Refresh" @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -110,7 +110,7 @@ import {
 } from '@/api/v2ray_stat'
 import { ElMessage } from 'element-plus'
 import { computed, ref, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
-import { TrendCharts } from '@element-plus/icons-vue'
+import { Refresh, Search, TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
 import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
