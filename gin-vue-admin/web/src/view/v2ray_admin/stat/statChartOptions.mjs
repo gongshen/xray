@@ -1,14 +1,15 @@
 import { formatFlow } from './statTraffic.mjs'
+import { chartPalette } from '../../../style/designTokens.mjs'
 
 const axisLine = {
   lineStyle: {
-    color: '#e6e6e6',
+    color: chartPalette.axisLine,
   },
 }
 
 const splitLine = {
   lineStyle: {
-    color: '#f5f5f5',
+    color: chartPalette.splitLine,
   },
 }
 
@@ -47,7 +48,7 @@ export function buildTrendChartOptions(data = {}) {
       axisPointer: {
         type: 'cross',
         label: {
-          backgroundColor: '#6a7985',
+          backgroundColor: chartPalette.axisPointerLabel,
         },
       },
       formatter: formatTooltip,
@@ -95,8 +96,8 @@ export function buildTrendChartOptions(data = {}) {
             x2: 1,
             y2: 0,
             colorStops: [
-              { offset: 0, color: '#409EFF' },
-              { offset: 1, color: '#67C23A' },
+              { offset: 0, color: chartPalette.trendLineStart },
+              { offset: 1, color: chartPalette.trendLineEnd },
             ],
           },
         },
@@ -108,8 +109,8 @@ export function buildTrendChartOptions(data = {}) {
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-              { offset: 1, color: 'rgba(64, 158, 255, 0.1)' },
+              { offset: 0, color: chartPalette.trendAreaStart },
+              { offset: 1, color: chartPalette.trendAreaEnd },
             ],
           },
         },
@@ -160,9 +161,9 @@ export function buildRankChartOptions(data = {}) {
             x2: 1,
             y2: 0,
             colorStops: [
-              { offset: 0, color: '#FF6B6B' },
-              { offset: 0.5, color: '#4ECDC4' },
-              { offset: 1, color: '#45B7D1' },
+              { offset: 0, color: chartPalette.rankStart },
+              { offset: 0.5, color: chartPalette.rankMid },
+              { offset: 1, color: chartPalette.rankEnd },
             ],
           },
         },
@@ -170,7 +171,7 @@ export function buildRankChartOptions(data = {}) {
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
+            shadowColor: chartPalette.emphasisShadow,
           },
         },
         data: data.rank || [],

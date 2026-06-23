@@ -271,7 +271,7 @@ onUnmounted(() => {
 <style scoped>
 .page {
   padding: 20px;
-  background: #f5f7fa;
+  background: var(--gva-color-page-bg);
   min-height: 100vh;
 }
 
@@ -281,15 +281,15 @@ onUnmounted(() => {
 }
 
 .chart-card {
-  border-radius: 16px;
+  border-radius: var(--gva-radius-panel);
   overflow: hidden;
   border: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--gva-shadow-panel);
   transition: all 0.3s ease;
 }
 
 .chart-card:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--gva-shadow-panel-hover);
 }
 
 .card-header {
@@ -304,13 +304,13 @@ onUnmounted(() => {
   align-items: center;
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--gva-color-text-strong);
 }
 
 .card-title .el-icon {
   margin-right: 8px;
   font-size: 18px;
-  color: #409eff;
+  color: var(--gva-color-brand-secondary);
 }
 
 .chart-container {
@@ -319,15 +319,15 @@ onUnmounted(() => {
 }
 
 .trend-chart {
-  background: linear-gradient(180deg, #f8f9ff 0%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--gva-color-chart-trend-bg) 0%, var(--gva-color-panel-bg) 100%);
 }
 
 /* 表格区域 */
 .gva-table-box {
-  background: white;
-  border-radius: 16px;
+  background: var(--gva-color-panel-bg);
+  border-radius: var(--gva-radius-panel);
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--gva-shadow-panel);
 }
 
 .table-header {
@@ -336,12 +336,12 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--gva-color-border-muted);
 }
 
 .table-header h3 {
   margin: 0;
-  color: #303133;
+  color: var(--gva-color-text-strong);
   font-size: 18px;
   font-weight: 600;
 }
@@ -356,17 +356,17 @@ onUnmounted(() => {
 
 /* 表格单元格样式 */
 .traffic-down {
-  color: #67c23a;
+  color: var(--gva-color-traffic-down);
   font-weight: 500;
 }
 
 .traffic-up {
-  color: #e6a23c;
+  color: var(--gva-color-traffic-up);
   font-weight: 500;
 }
 
 .date-cell {
-  color: #909399;
+  color: var(--gva-color-text-muted);
   font-size: 13px;
 }
 
@@ -386,7 +386,7 @@ onUnmounted(() => {
 
   .gva-table-box {
     padding: 16px;
-    border-radius: 12px;
+    border-radius: var(--gva-radius-panel);
   }
 
   .table-header {
@@ -421,7 +421,7 @@ onUnmounted(() => {
       top: 80px;
       bottom: 60px;
       width: 2rem;
-      background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+      background: linear-gradient(to left, rgba(255, 255, 255, 0.9), transparent);
       pointer-events: none;
       z-index: 1;
     }
@@ -438,25 +438,25 @@ onUnmounted(() => {
 /* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
   .page {
-    background: #1a1a1a;
+    background: var(--gva-color-dark-page-bg);
   }
 
   .chart-card,
   .gva-table-box {
-    background: #2d2d2d;
-    color: #e4e7ed;
+    background: var(--gva-color-dark-panel-bg);
+    color: var(--gva-color-dark-text);
   }
 
   .card-title {
-    color: #e4e7ed;
+    color: var(--gva-color-dark-text);
   }
 
   .table-header h3 {
-    color: #e4e7ed;
+    color: var(--gva-color-dark-text);
   }
 
   .table-header {
-    border-bottom-color: #4c4d4f;
+    border-bottom-color: var(--gva-color-dark-border);
   }
 }
 
@@ -464,6 +464,13 @@ onUnmounted(() => {
 .chart-card,
 .gva-table-box {
   animation: fadeInUp 0.6s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-card,
+  .gva-table-box {
+    animation: none;
+  }
 }
 
 @keyframes fadeInUp {
@@ -479,7 +486,7 @@ onUnmounted(() => {
 
 /* 表格斑马纹优化 */
 :deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
-  background: #fafbfc;
+  background: var(--gva-color-panel-muted-bg);
 }
 
 /* 分页样式优化 */
@@ -490,7 +497,7 @@ onUnmounted(() => {
 }
 
 :deep(.el-pagination) {
-  --el-pagination-button-color: #606266;
-  --el-pagination-hover-color: #409eff;
+  --el-pagination-button-color: var(--gva-color-text-regular);
+  --el-pagination-hover-color: var(--gva-color-brand-secondary);
 }
 </style>

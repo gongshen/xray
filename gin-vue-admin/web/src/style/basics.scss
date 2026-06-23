@@ -34,3 +34,31 @@ $height-car:68px;
 // mobile
 $padding-xs: 5px;
 $margin-xs: 5px;
+
+// Shared admin design tokens.
+:root {
+  --gva-color-brand-primary: #1e40af;
+  --gva-color-brand-secondary: #3b82f6;
+  --gva-color-accent: #f59e0b;
+  --gva-color-page-bg: #f8fafc;
+  --gva-color-panel-bg: #ffffff;
+  --gva-color-panel-muted-bg: #f7f8fa;
+  --gva-color-chart-trend-bg: #f8f9ff;
+  --gva-color-chart-rank-bg: #fff8f0;
+  --gva-color-text-strong: #303133;
+  --gva-color-text-regular: #606266;
+  --gva-color-text-muted: #475569;
+  --gva-color-border-subtle: #ebeef5;
+  --gva-color-border-muted: #f0f0f0;
+  --gva-color-divider: #dcdfe6;
+  --gva-color-traffic-down: #67c23a;
+  --gva-color-traffic-up: #f59e0b;
+  --gva-color-danger: #f56c6c;
+  --gva-color-dark-page-bg: #1a1a1a;
+  --gva-color-dark-panel-bg: #2d2d2d;
+  --gva-color-dark-text: #e4e7ed;
+  --gva-color-dark-border: #4c4d4f;
+  --gva-shadow-panel: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --gva-shadow-panel-hover: 0 8px 30px rgba(15, 23, 42, 0.12);
+  --gva-radius-panel: 8px;
+}

@@ -255,6 +255,7 @@ import { getAllUserApi } from '@/api/user'
 import { onUnmounted, onMounted, ref, computed, reactive } from 'vue'
 import { MagicStick, Refresh, RefreshRight, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { progressThresholdColors } from '@/style/designTokens.mjs'
 import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
 import {
   calculatePercent,
@@ -295,11 +296,7 @@ const trafficAnalysisForm = reactive({
   end: '',
 })
 
-const colors = ref([
-  { color: '#5cb87a', percentage: 20 },
-  { color: '#e6a23c', percentage: 40 },
-  { color: '#f56c6c', percentage: 80 }
-])
+const colors = progressThresholdColors
 
 // 响应式进度条宽度
 const progressWidth = computed(() => isMobile.value ? 100 : 120)
@@ -545,21 +542,21 @@ export default {
   gap: 16px;
   padding: 14px 16px;
   margin-bottom: 16px;
-  background: #f7f8fa;
-  border: 1px solid #ebeef5;
+  background: var(--gva-color-panel-muted-bg);
+  border: 1px solid var(--gva-color-border-subtle);
   border-radius: 6px;
 }
 
 .analysis-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--gva-color-text-strong);
 }
 
 .analysis-subtitle {
   margin-top: 4px;
   font-size: 13px;
-  color: #606266;
+  color: var(--gva-color-text-regular);
 }
 
 .analysis-form {
@@ -593,8 +590,8 @@ export default {
 
 .summary-item {
   padding: 10px 12px;
-  background: #f7f8fa;
-  border: 1px solid #ebeef5;
+  background: var(--gva-color-panel-muted-bg);
+  border: 1px solid var(--gva-color-border-subtle);
   border-radius: 6px;
 }
 
@@ -602,13 +599,13 @@ export default {
   display: block;
   margin-bottom: 4px;
   font-size: 12px;
-  color: #909399;
+  color: var(--gva-color-text-muted);
 }
 
 .summary-item strong {
   font-size: 13px;
   font-weight: 600;
-  color: #303133;
+  color: var(--gva-color-text-strong);
 }
 
 .target-list {
@@ -632,15 +629,15 @@ export default {
   width: 1px;
   height: 14px;
   content: '';
-  background: #dcdfe6;
+  background: var(--gva-color-divider);
   transform: translateY(-50%);
 }
 
 .classification-result {
   margin-top: 12px;
   padding: 12px;
-  background: #f7f8fa;
-  border: 1px solid #ebeef5;
+  background: var(--gva-color-panel-muted-bg);
+  border: 1px solid var(--gva-color-border-subtle);
   border-radius: 6px;
 }
 
@@ -648,12 +645,12 @@ export default {
   margin-bottom: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #303133;
+  color: var(--gva-color-text-strong);
 }
 
 .classification-result pre {
   margin: 0;
-  color: #303133;
+  color: var(--gva-color-text-strong);
   font-family: inherit;
   font-size: 13px;
   line-height: 1.7;
@@ -703,7 +700,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--gva-color-border-muted);
 }
 
 .info-row:last-child {
@@ -711,12 +708,12 @@ export default {
 }
 
 .info-label {
-  color: #666;
+  color: var(--gva-color-text-regular);
   flex-shrink: 0;
 }
 
 .info-value {
-  color: #333;
+  color: var(--gva-color-text-strong);
   font-weight: 500;
   text-align: right;
   word-break: break-all;
@@ -752,7 +749,7 @@ export default {
 .cpu-text {
   margin-top: 10px;
   font-size: 14px;
-  color: #666;
+  color: var(--gva-color-text-regular);
 }
 
 /* 移动端适配 - 使用rem实现动态缩放 */
