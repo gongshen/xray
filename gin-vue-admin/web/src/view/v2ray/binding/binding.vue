@@ -17,7 +17,7 @@
         tooltip-effect="dark"
         :data="tableData"
         row-key="ID"
-        @selection-change="handleSelectionChange"
+        v-loading="tableLoading"
         >
         <el-table-column type="selection" width="55" />
         <el-table-column align="left" label="用户名" width="120">
@@ -56,7 +56,7 @@
       class="share-dialog"
       center
     >
-      <div class="share-container">
+      <div v-loading="shareLoading" class="share-container">
         <!-- 第一个配置 -->
         <div class="config-section">
           <div class="config-header">
@@ -173,13 +173,11 @@ import {
   getBindingList,
   shareBinding
 } from '@/api/v2ray_binding'
-import  QRCode  from 'qrcode'
-import ClipboardJS from 'clipboard';
+import QRCode from 'qrcode'
 
-// 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive } from 'vue'
+import { formatDate } from '@/utils/format'
+import { ElMessage } from 'element-plus'
+import { ref } from 'vue'
 import { 
   Monitor, 
   Cellphone, 
@@ -189,22 +187,27 @@ import {
   Connection, 
   Close 
 } from '@element-plus/icons-vue'
-
-const clipboard = new ClipboardJS('.btn');
-
-// 验证规则
-const rule = reactive({})
-
-const elFormRef = ref()
-
+import {
+  buildQrDownloadName,
+  createShareDialogInfo,
+  getCopySuccessMessage,
+  getShareLink,
+} from '../../v2ray_admin/binding/bindingShare.mjs'
 
 // =========== 表格控制部分 ===========
 const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
+const tableLoading = ref(false)
 const searchInfo = ref({})
 const shareInfo = ref({
+  share1: '',
+  share1_link: '',
+  share2: '',
+  share2_link: '',
+})
+const emptyShareInfo = () => ({
   share1: '',
   share1_link: '',
   share2: '',
@@ -238,12 +241,25 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const table = await getBindingList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-  if (table.code === 0) {
-    tableData.value = table.data.list
-    total.value = table.data.total
-    page.value = table.data.page
-    pageSize.value = table.data.pageSize
+  tableLoading.value = true
+  try {
+    const table = await getBindingList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    if (table.code === 0) {
+      tableData.value = table.data?.list || []
+      total.value = table.data?.total || 0
+      page.value = table.data?.page || 1
+      pageSize.value = table.data?.pageSize || 10
+    } else {
+      ElMessage.error(table.msg || '获取数据失败')
+      tableData.value = []
+      total.value = 0
+    }
+  } catch (error) {
+    ElMessage.error('网络请求失败')
+    tableData.value = []
+    total.value = 0
+  } finally {
+    tableLoading.value = false
   }
 }
 
@@ -251,21 +267,25 @@ getTableData()
 
 // 分享标记
 const shareFormVisible = ref(false)
+const shareLoading = ref(false)
 
 const shareBindingFunc = async(row) => {
-  const res = await shareBinding({ ID: row.ID })
-  if (res.code === 0) {
-    shareInfo.value.share1_link = res.data.share1
-    shareInfo.value.share2_link = res.data.share2
-    QRCode.toDataURL(res.data.share1)
-        .then((url) => {
-          shareInfo.value.share1 = url
-        })
-    QRCode.toDataURL(res.data.share2)
-        .then((url) => {
-          shareInfo.value.share2 = url
-        })
-    shareFormVisible.value = true
+  shareLoading.value = true
+  shareInfo.value = emptyShareInfo()
+  shareFormVisible.value = true
+  try {
+    const res = await shareBinding({ ID: row.ID })
+    if (res.code === 0) {
+      shareInfo.value = await createShareDialogInfo(res.data, QRCode.toDataURL)
+    } else {
+      shareFormVisible.value = false
+      ElMessage.error(res.msg || '获取分享配置失败')
+    }
+  } catch (error) {
+    shareFormVisible.value = false
+    ElMessage.error('获取分享配置失败')
+  } finally {
+    shareLoading.value = false
   }
 }
 
@@ -275,25 +295,36 @@ const closeShareDialog = () => {
 
 // 处理复制操作
 const handleCopy = async (configType) => {
+  const textToCopy = getShareLink(shareInfo.value, configType)
+  const successMessage = getCopySuccessMessage(configType)
+
+  if (!textToCopy) {
+    ElMessage({
+      type: 'warning',
+      message: '暂无可复制的配置',
+      duration: 2000
+    })
+    return
+  }
+
   try {
-    const textToCopy = configType === 'config1' ? shareInfo.value.share1_link : shareInfo.value.share2_link
     await navigator.clipboard.writeText(textToCopy)
     ElMessage({
       type: 'success',
-      message: `${configType === 'config1' ? 'Shadowrocket' : 'V2rayN'} 配置已复制到剪贴板`,
+      message: successMessage,
       duration: 2000
     })
   } catch (err) {
     // 如果现代API失败，使用传统方法
     const textArea = document.createElement('textarea')
-    textArea.value = configType === 'config1' ? shareInfo.value.share1_link : shareInfo.value.share2_link
+    textArea.value = textToCopy
     document.body.appendChild(textArea)
     textArea.select()
     try {
       document.execCommand('copy')
       ElMessage({
         type: 'success',
-        message: `${configType === 'config1' ? 'Shadowrocket' : 'V2rayN'} 配置已复制到剪贴板`,
+        message: successMessage,
         duration: 2000
       })
     } catch (fallbackErr) {
@@ -309,8 +340,17 @@ const handleCopy = async (configType) => {
 
 // 下载二维码
 const downloadQR = (dataUrl, filename) => {
+  if (!dataUrl) {
+    ElMessage({
+      type: 'warning',
+      message: '暂无可下载的二维码',
+      duration: 2000
+    })
+    return
+  }
+
   const link = document.createElement('a')
-  link.download = `${filename}.png`
+  link.download = buildQrDownloadName(filename)
   link.href = dataUrl
   document.body.appendChild(link)
   link.click()
