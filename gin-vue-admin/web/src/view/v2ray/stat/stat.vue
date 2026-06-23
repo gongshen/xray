@@ -113,6 +113,7 @@ import { computed, ref, shallowRef, onMounted, nextTick, onUnmounted, watch } fr
 import { TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
+import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
 import {
   formatFlow,
   getDateRangeText as formatDateRangeText,
@@ -137,6 +138,7 @@ const searchInfo = ref({
 
 // 图表相关
 const chart = shallowRef(null)
+let disposeResize = null
 const echart = ref(null)
 const chartData = useChartData()
 const dateRangeText = computed(() => formatDateRangeText(searchInfo.value))
@@ -257,11 +259,12 @@ onMounted(async () => {
   await nextTick()
 
   initChart()
-  window.addEventListener('resize', handleResize)
+  disposeResize = bindWindowEvent(window, 'resize', handleResize)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
+  disposeResize?.()
+  disposeResize = null
   disposeChart()
 })
 </script>

@@ -255,6 +255,7 @@ import { getAllUserApi } from '@/api/user'
 import { onUnmounted, onMounted, ref, computed, reactive } from 'vue'
 import { MagicStick, Refresh, RefreshRight, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
 import {
   calculatePercent,
   formatBytes,
@@ -270,6 +271,7 @@ import {
 } from './stateHelpers.mjs'
 
 const timer = ref(null)
+let disposeResize = null
 const loading = ref(false)
 const restartLoading = ref(false)
 const serverList = ref([])
@@ -493,7 +495,7 @@ const restartVPS = () => {
 // 初始化
 onMounted(() => {
   checkMobile()
-  window.addEventListener('resize', checkMobile)
+  disposeResize = bindWindowEvent(window, 'resize', checkMobile)
   loadServerList()
   getUsers()
 })
@@ -506,7 +508,8 @@ timer.value = setInterval(() => {
 onUnmounted(() => {
   clearInterval(timer.value)
   timer.value = null
-  window.removeEventListener('resize', checkMobile)
+  disposeResize?.()
+  disposeResize = null
 })
 </script>
 
