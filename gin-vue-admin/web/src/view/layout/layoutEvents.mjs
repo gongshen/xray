@@ -1,3 +1,8 @@
+import {
+  bindEmitterHandlers,
+  bindWindowEvent,
+} from '../../utils/eventLifecycle.mjs'
+
 export function getLayoutState(screenWidth) {
   if (screenWidth < 1000) {
     return {
@@ -30,21 +35,15 @@ export function bindLayoutEventHandlers({
   onCloseLoading,
   onResize,
 }) {
-  const emitterHandlers = [
-    ['reload', onReload],
-    ['showLoading', onShowLoading],
-    ['closeLoading', onCloseLoading],
-  ]
-
-  emitterHandlers.forEach(([event, handler]) => {
-    emitter.on(event, handler)
+  const disposeEmitterHandlers = bindEmitterHandlers(emitter, {
+    reload: onReload,
+    showLoading: onShowLoading,
+    closeLoading: onCloseLoading,
   })
-  target.addEventListener('resize', onResize)
+  const disposeResize = bindWindowEvent(target, 'resize', onResize)
 
   return () => {
-    emitterHandlers.forEach(([event, handler]) => {
-      emitter.off(event, handler)
-    })
-    target.removeEventListener('resize', onResize)
+    disposeEmitterHandlers()
+    disposeResize()
   }
 }
