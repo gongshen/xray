@@ -202,7 +202,15 @@
         </div>
       </div>
 
-      <el-table :data="trafficAnalysisRows" border height="420" empty-text="暂无数据" class="analysis-table">
+      <el-table
+        v-loading="trafficAnalysisLoading"
+        :aria-busy="trafficAnalysisLoading"
+        :data="trafficAnalysisRows"
+        border
+        height="420"
+        empty-text="暂无数据"
+        class="analysis-table"
+      >
         <el-table-column label="分钟" prop="minute" width="160" />
         <el-table-column label="采集次数" prop="events" width="90" />
         <el-table-column label="下行" width="110">
