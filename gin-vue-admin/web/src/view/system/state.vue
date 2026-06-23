@@ -255,6 +255,19 @@ import { getAllUserApi } from '@/api/user'
 import { onUnmounted, onMounted, ref, computed, reactive } from 'vue'
 import { MagicStick, Refresh, RefreshRight, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  calculatePercent,
+  formatBytes,
+  formatSize,
+  formatTime,
+  formatUserOption,
+  getTrafficAnalysisTotals,
+  isServerOnline,
+  rowTrafficAnalysisTargets,
+  targetNames,
+  todayCompact,
+  validateTrafficAnalysisQuery,
+} from './stateHelpers.mjs'
 
 const timer = ref(null)
 const loading = ref(false)
@@ -302,13 +315,11 @@ const currentServer = computed(() => {
 
 // 计算各项百分比
 const diskPercent = computed(() => {
-  if (!currentServer.value || !currentServer.value.disk_total) return 0
-  return Math.round((currentServer.value.disk_used / currentServer.value.disk_total) * 100)
+  return calculatePercent(currentServer.value?.disk_used, currentServer.value?.disk_total)
 })
 
 const memPercent = computed(() => {
-  if (!currentServer.value || !currentServer.value.mem_total) return 0
-  return Math.round((currentServer.value.mem_used / currentServer.value.mem_total) * 100)
+  return calculatePercent(currentServer.value?.mem_used, currentServer.value?.mem_total)
 })
 
 const cpuPercent = computed(() => {
@@ -317,46 +328,13 @@ const cpuPercent = computed(() => {
 })
 
 const trafficAnalysisTotals = computed(() => {
-  return trafficAnalysisRows.value.reduce((totals, row) => {
-    totals.down += row.down || 0
-    totals.up += row.up || 0
-    totals.total += row.total || 0
-    return totals
-  }, { down: 0, up: 0, total: 0 })
+  return getTrafficAnalysisTotals(trafficAnalysisRows.value)
 })
 
 // 判断服务器是否在线 (10分钟内有更新)
 const isOnline = computed(() => {
-  if (!currentServer.value || !currentServer.value.sysinfo_at) return false
-  const now = Math.floor(Date.now() / 1000)
-  return (now - currentServer.value.sysinfo_at) < offlineThresholdSeconds
+  return isServerOnline(currentServer.value?.sysinfo_at, offlineThresholdSeconds)
 })
-
-// 格式化时间
-const formatTime = (timestamp) => {
-  if (!timestamp) return '-'
-  const date = new Date(timestamp * 1000)
-  return date.toLocaleString('zh-CN')
-}
-
-// 格式化字节
-const formatBytes = (bytes) => {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let i = 0
-  while (bytes >= 1024 && i < units.length - 1) {
-    bytes /= 1024
-    i++
-  }
-  return `${bytes.toFixed(2)} ${units[i]}`
-}
-
-const todayCompact = () => {
-  const now = new Date()
-  const month = `${now.getMonth() + 1}`.padStart(2, '0')
-  const day = `${now.getDate()}`.padStart(2, '0')
-  return `${now.getFullYear()}${month}${day}`
-}
 
 const openTrafficAnalysis = () => {
   if (!currentServer.value) {
@@ -389,31 +367,11 @@ const closeTrafficAnalysis = () => {
   targetClassificationTargetCount.value = 0
 }
 
-const parseClockMinute = (value) => {
-  const match = `${value}`.trim().match(/^(\d{1,2}):(\d{2})$/)
-  if (!match) return null
-  const hour = Number(match[1])
-  const minute = Number(match[2])
-  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null
-  return hour * 60 + minute
-}
-
-const validateTrafficAnalysisForm = () => {
-  const userTag = String(trafficAnalysisForm.user_tag || '').trim()
-  const date = String(trafficAnalysisForm.date || '').trim()
-  const start = parseClockMinute(trafficAnalysisForm.start)
-  const end = parseClockMinute(trafficAnalysisForm.end)
-  if (!currentServer.value?.ID) return '服务器信息无效'
-  if (!userTag) return '请选择用户'
-  if (!/^\d{8}$/.test(date)) return '日期格式应为 20260617'
-  if (start === null || end === null) return '时间格式应为 8:10 或 09:00'
-  if (end < start) return '结束时间不能早于开始时间'
-  if (end - start > 120) return '时间范围不能超过2小时'
-  return ''
-}
-
 const queryTrafficAnalysis = async () => {
-  const message = validateTrafficAnalysisForm()
+  const message = validateTrafficAnalysisQuery({
+    currentServer: currentServer.value,
+    form: trafficAnalysisForm,
+  })
   if (message) {
     ElMessage.warning(message)
     return
@@ -442,20 +400,6 @@ const queryTrafficAnalysis = async () => {
   }
 }
 
-const targetNames = (targets = []) => {
-  if (!Array.isArray(targets) || targets.length === 0) return []
-  return [...new Set(targets.map(item => item.target).filter(Boolean))]
-}
-
-const rowTrafficAnalysisTargets = (row) => {
-  const targets = new Set()
-  targetNames(row?.targets).forEach(target => {
-    const value = String(target || '').trim().toLowerCase()
-    if (value) targets.add(value)
-  })
-  return [...targets]
-}
-
 const classifyTrafficTargets = async (row) => {
   const targets = rowTrafficAnalysisTargets(row)
   if (targets.length === 0) {
@@ -477,20 +421,6 @@ const classifyTrafficTargets = async (row) => {
   } finally {
     targetClassificationLoading.value = false
   }
-}
-
-const formatUserOption = (user) => {
-  const nickName = user.nickName || user.userName || '未命名用户'
-  return `${nickName} (ID:${user.ID})`
-}
-
-// 格式化MB为GB (简化显示)
-const formatSize = (mb) => {
-  if (!mb) return '0 GB'
-  if (mb >= 1024) {
-    return `${(mb / 1024).toFixed(1)} GB`
-  }
-  return `${mb} MB`
 }
 
 // 加载服务器列表
