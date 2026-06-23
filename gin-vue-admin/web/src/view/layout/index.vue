@@ -115,11 +115,15 @@ import CustomPic from '@/components/customPic/index.vue'
 import Setting from './setting/index.vue'
 import { setUserAuthority } from '@/api/user'
 import { emitter } from '@/utils/bus.js'
-import { computed, ref, onMounted, nextTick } from 'vue'
+import { computed, ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useRouterStore } from '@/pinia/modules/router'
 import { fmtTitle } from '@/utils/fmtRouterTitle'
 import { useUserStore } from '@/pinia/modules/user'
+import {
+  bindLayoutEventHandlers,
+  getLayoutState,
+} from './layoutEvents.mjs'
 
 const router = useRouter()
 const route = useRoute()
@@ -128,22 +132,13 @@ const routerStore = useRouterStore()
 const isCollapse = ref(false)
 const isSider = ref(true)
 const isMobile = ref(false)
+let disposeLayoutEventHandlers = null
 
 const initPage = () => {
-  const screenWidth = document.body.clientWidth
-  if (screenWidth < 1000) {
-    isMobile.value = true
-    isSider.value = false
-    isCollapse.value = true
-  } else if (screenWidth >= 1000 && screenWidth < 1200) {
-    isMobile.value = false
-    isSider.value = false
-    isCollapse.value = true
-  } else {
-    isMobile.value = false
-    isSider.value = true
-    isCollapse.value = false
-  }
+  const layoutState = getLayoutState(document.body.clientWidth)
+  isMobile.value = layoutState.isMobile
+  isSider.value = layoutState.isSider
+  isCollapse.value = layoutState.isCollapse
 }
 
 initPage()
@@ -153,20 +148,13 @@ onMounted(() => {
   // 挂载一些通用的事件
   emitter.emit('collapse', isCollapse.value)
   emitter.emit('mobile', isMobile.value)
-  emitter.on('reload', reload)
-  emitter.on('showLoading', () => {
-    loadingFlag.value = true
+  disposeLayoutEventHandlers = bindLayoutEventHandlers({
+    emitter,
+    onReload: reload,
+    onShowLoading: showLoading,
+    onCloseLoading: closeLoading,
+    onResize: handleResize,
   })
-  emitter.on('closeLoading', () => {
-    loadingFlag.value = false
-  })
-  window.onresize = () => {
-    return (() => {
-      initPage()
-      emitter.emit('collapse', isCollapse.value)
-      emitter.emit('mobile', isMobile.value)
-    })()
-  }
   if (userStore.loadingInstance) {
     userStore.loadingInstance.close()
   }
@@ -208,6 +196,20 @@ const changeUserAuth = async(id) => {
 
 const reloadFlag = ref(true)
 let reloadTimer = null
+const showLoading = () => {
+  loadingFlag.value = true
+}
+
+const closeLoading = () => {
+  loadingFlag.value = false
+}
+
+const handleResize = () => {
+  initPage()
+  emitter.emit('collapse', isCollapse.value)
+  emitter.emit('mobile', isMobile.value)
+}
+
 const reload = async() => {
   if (reloadTimer) {
     window.clearTimeout(reloadTimer)
@@ -240,6 +242,17 @@ const changeShadow = () => {
   isSider.value = !!isCollapse.value
   totalCollapse()
 }
+
+onUnmounted(() => {
+  if (disposeLayoutEventHandlers) {
+    disposeLayoutEventHandlers()
+    disposeLayoutEventHandlers = null
+  }
+  if (reloadTimer) {
+    window.clearTimeout(reloadTimer)
+    reloadTimer = null
+  }
+})
 </script>
 
 <style lang="scss">
