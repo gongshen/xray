@@ -27,7 +27,7 @@
                 <el-tag type="info" size="small">{{ dateRangeText }}</el-tag>
               </div>
             </template>
-            <div ref="echart" class="chart-container trend-chart"></div>
+            <div ref="echart" class="chart-container trend-chart" role="img" aria-label="流量趋势图表"></div>
           </el-card>
         </el-col>
       </el-row>
