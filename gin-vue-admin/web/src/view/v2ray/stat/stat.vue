@@ -124,6 +124,7 @@ import {
 import {
   buildTrendChartOptions,
 } from '../../v2ray_admin/stat/statChartOptions.mjs'
+import { normalizeStatTableResponse } from '../../v2ray_admin/stat/statTableData.mjs'
 
 const page = ref(1)
 const total = ref(0)
@@ -176,22 +177,18 @@ const getTableData = async() => {
   loading.value = true
   try {
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    const tableState = normalizeStatTableResponse(table, { page: page.value, pageSize: pageSize.value })
 
-    if (table.code === 0) {
-      const list = table.data?.list || []
-      tableData.value = list
-      total.value = table.data?.total || 0
-      page.value = table.data?.page || 1
-      pageSize.value = table.data?.pageSize || 10
-
-      if (list.length > 0) {
-        tableData.value = [...list]
-      }
+    if (tableState.ok) {
+      tableData.value = tableState.list
+      total.value = tableState.total
+      page.value = tableState.page
+      pageSize.value = tableState.pageSize
     } else {
       console.error('getStatList error:', table.msg)
-      ElMessage.error(table.msg || '获取数据失败')
-      tableData.value = []
-      total.value = 0
+      ElMessage.error(tableState.message || '获取数据失败')
+      tableData.value = tableState.list
+      total.value = tableState.total
     }
   } catch (error) {
     console.error('getTableData error:', error)
