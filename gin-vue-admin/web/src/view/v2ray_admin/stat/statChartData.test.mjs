@@ -3,6 +3,8 @@ import {
   applyRankChartResponse,
   applyTrendChartResponse,
   createChartDataState,
+  loadRankChartData,
+  loadTrendChartData,
 } from './statChartData.mjs'
 
 assert.deepEqual(createChartDataState(), {
@@ -76,6 +78,46 @@ assert.deepEqual(createChartDataState({ includeRank: true }), {
 
   assert.equal(applied, false)
   assert.deepEqual(target, { rank: [], rank_axis: [] })
+}
+
+{
+  const target = createChartDataState()
+  const calls = []
+  const applied = await loadTrendChartData(target, async (searchInfo) => {
+    calls.push(searchInfo)
+    return {
+      code: 0,
+      data: {
+        data: [1, 2],
+        data_axis: ['a', 'b'],
+      },
+    }
+  }, { server_ip: '127.0.0.1' })
+
+  assert.equal(applied, true)
+  assert.deepEqual(calls, [{ server_ip: '127.0.0.1' }])
+  assert.deepEqual(target, { data: [1, 2], data_axis: ['a', 'b'], total: 3 })
+}
+
+{
+  const target = { data: [1], data_axis: ['x'], total: 1 }
+  const applied = await loadTrendChartData(target, async () => {
+    throw new Error('network')
+  }, {})
+
+  assert.equal(applied, false)
+  assert.deepEqual(target, { data: [], data_axis: [], total: 0 })
+}
+
+{
+  const target = createChartDataState({ includeRank: true })
+  const applied = await loadRankChartData(target, async () => {
+    throw new Error('network')
+  }, {})
+
+  assert.equal(applied, false)
+  assert.deepEqual(target.rank, [])
+  assert.deepEqual(target.rank_axis, [])
 }
 
 console.log('statChartData tests passed')

@@ -4,9 +4,9 @@ import {
 } from '@/api/stat';
 import { reactive } from "vue";
 import {
-    applyRankChartResponse,
-    applyTrendChartResponse,
     createChartDataState,
+    loadRankChartData,
+    loadTrendChartData,
 } from './statChartData.mjs'
 
 const chartData = reactive(createChartDataState({includeRank: true}))
@@ -16,9 +16,6 @@ export const useChartData = () => {
 }
 
 export const setChartData = async (searchInfo) => {
-    const ans2 = await getStatRank(searchInfo)
-    applyRankChartResponse(chartData, ans2)
-
-    const ans = await getStatCharts(searchInfo)
-    applyTrendChartResponse(chartData, ans)
+    await loadRankChartData(chartData, getStatRank, searchInfo)
+    await loadTrendChartData(chartData, getStatCharts, searchInfo)
 }

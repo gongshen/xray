@@ -50,3 +50,21 @@ export function applyRankChartResponse(target, response, { maxRankItems = 10 } =
   target.rank_axis = rankAxis.length > maxRankItems ? rankAxis.slice(-maxRankItems) : rankAxis
   return true
 }
+
+export async function loadTrendChartData(target, fetchTrend, searchInfo) {
+  try {
+    const response = await fetchTrend(searchInfo)
+    return applyTrendChartResponse(target, response)
+  } catch {
+    return applyTrendChartResponse(target, null)
+  }
+}
+
+export async function loadRankChartData(target, fetchRank, searchInfo, options) {
+  try {
+    const response = await fetchRank(searchInfo)
+    return applyRankChartResponse(target, response, options)
+  } catch {
+    return applyRankChartResponse(target, null, options)
+  }
+}
