@@ -1,5 +1,13 @@
 // responsive.js - Custom directives for responsive design
 
+import {
+  bindElementResizeHandler,
+  unbindElementResizeHandler,
+} from './responsiveDirectiveHandlers.mjs'
+
+const RESPONSIVE_TABLE_KEY = 'responsive-table'
+const RESPONSIVE_FORM_KEY = 'responsive-form'
+
 /**
  * Directive to make tables responsive on mobile devices
  * Usage: v-responsive-table
@@ -7,10 +15,10 @@
 const responsiveTable = {
   mounted(el) {
     makeTableResponsive(el)
-    window.addEventListener('resize', () => makeTableResponsive(el))
+    bindElementResizeHandler(el, RESPONSIVE_TABLE_KEY, () => makeTableResponsive(el))
   },
   unmounted(el) {
-    window.removeEventListener('resize', () => makeTableResponsive(el))
+    unbindElementResizeHandler(el, RESPONSIVE_TABLE_KEY)
   }
 }
 
@@ -58,13 +66,10 @@ const responsiveForm = {
     if (!form) return
     
     adaptFormForMobile(form, binding.value)
-    window.addEventListener('resize', () => adaptFormForMobile(form, binding.value))
+    bindElementResizeHandler(el, RESPONSIVE_FORM_KEY, () => adaptFormForMobile(form, binding.value))
   },
   unmounted(el) {
-    const form = el.querySelector('.el-form')
-    if (!form) return
-    
-    window.removeEventListener('resize', () => adaptFormForMobile(form, binding.value))
+    unbindElementResizeHandler(el, RESPONSIVE_FORM_KEY)
   }
 }
 
