@@ -7,21 +7,25 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { emitter } from '@/utils/bus.js'
+import { bindEmitterHandler } from '@/utils/eventLifecycle.mjs'
 
 const visible = ref(false)
+let disposeToggleMobileMenu = null
 
 const closeOverlay = () => {
   emitter.emit('toggleMobileMenu', false)
 }
+const handleToggleMobileMenu = (isVisible) => {
+  visible.value = isVisible
+}
 
 onMounted(() => {
-  emitter.on('toggleMobileMenu', (isVisible) => {
-    visible.value = isVisible
-  })
+  disposeToggleMobileMenu = bindEmitterHandler(emitter, 'toggleMobileMenu', handleToggleMobileMenu)
 })
 
 onUnmounted(() => {
-  emitter.off('toggleMobileMenu')
+  disposeToggleMobileMenu?.()
+  disposeToggleMobileMenu = null
 })
 </script>
 

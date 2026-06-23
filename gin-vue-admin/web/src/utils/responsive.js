@@ -2,6 +2,10 @@
 
 import { ref, onMounted, onUnmounted } from 'vue'
 import { emitter } from '@/utils/bus.js'
+import {
+  bindEmitterHandler,
+  bindWindowEvent,
+} from '@/utils/eventLifecycle.mjs'
 
 /**
  * Hook to detect mobile devices and handle responsive behavior
@@ -10,6 +14,8 @@ import { emitter } from '@/utils/bus.js'
 export function useResponsive() {
   const isMobile = ref(false)
   const isMenuVisible = ref(false)
+  let disposeResize = null
+  let disposeRouteChange = null
 
   // Check if current viewport is mobile
   const checkMobile = () => {
@@ -67,15 +73,17 @@ export function useResponsive() {
 
   onMounted(() => {
     checkMobile()
-    window.addEventListener('resize', checkMobile)
+    disposeResize = bindWindowEvent(window, 'resize', checkMobile)
     
     // Close menu on route change
-    emitter.on('routeChange', closeMobileMenu)
+    disposeRouteChange = bindEmitterHandler(emitter, 'routeChange', closeMobileMenu)
   })
 
   onUnmounted(() => {
-    window.removeEventListener('resize', checkMobile)
-    emitter.off('routeChange')
+    disposeResize?.()
+    disposeResize = null
+    disposeRouteChange?.()
+    disposeRouteChange = null
   })
 
   return {

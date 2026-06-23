@@ -9,9 +9,15 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { emitter } from '@/utils/bus.js'
+import {
+  bindEmitterHandler,
+  bindWindowEvent,
+} from '@/utils/eventLifecycle.mjs'
 
 const isMobile = ref(false)
 const isMenuVisible = ref(false)
+let disposeResize = null
+let disposeRouteChange = null
 
 const toggleMobileMenu = () => {
   isMenuVisible.value = !isMenuVisible.value
@@ -32,22 +38,25 @@ const checkMobile = () => {
   const screenWidth = document.body.clientWidth
   isMobile.value = screenWidth < 768
 }
+const closeMenuOnRouteChange = () => {
+  if (isMenuVisible.value) {
+    toggleMobileMenu()
+  }
+}
 
 onMounted(() => {
   checkMobile()
-  window.addEventListener('resize', checkMobile)
+  disposeResize = bindWindowEvent(window, 'resize', checkMobile)
   
   // Listen for route changes to close menu
-  emitter.on('routeChange', () => {
-    if (isMenuVisible.value) {
-      toggleMobileMenu()
-    }
-  })
+  disposeRouteChange = bindEmitterHandler(emitter, 'routeChange', closeMenuOnRouteChange)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
-  emitter.off('routeChange')
+  disposeResize?.()
+  disposeResize = null
+  disposeRouteChange?.()
+  disposeRouteChange = null
 })
 </script>
 

@@ -44,6 +44,7 @@ import { ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/modules/user'
 import { useRouterStore } from '@/pinia/modules/router'
+import { bindEmitterHandler } from '@/utils/eventLifecycle.mjs'
 
 const route = useRoute()
 const router = useRouter()
@@ -90,6 +91,10 @@ watch(() => userStore.sideMode, () => {
 })
 
 const isCollapse = ref(false)
+let disposeCollapse = null
+const handleCollapse = (item) => {
+  isCollapse.value = item
+}
 const initPage = () => {
   active.value = route.meta.activeName || route.name
   const screenWidth = document.body.clientWidth
@@ -97,15 +102,14 @@ const initPage = () => {
     isCollapse.value = !isCollapse.value
   }
 
-  emitter.on('collapse', (item) => {
-    isCollapse.value = item
-  })
+  disposeCollapse = bindEmitterHandler(emitter, 'collapse', handleCollapse)
 }
 
 initPage()
 
 onUnmounted(() => {
-  emitter.off('collapse')
+  disposeCollapse?.()
+  disposeCollapse = null
 })
 
 const selectMenuItem = (index, _, ele, aaa) => {
