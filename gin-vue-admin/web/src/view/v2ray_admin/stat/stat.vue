@@ -34,7 +34,7 @@
                   <el-icon><TrendCharts /></el-icon>
                   流量趋势
                 </span>
-                <el-tag type="info" size="small">{{ getDateRangeText() }}</el-tag>
+                <el-tag type="info" size="small">{{ dateRangeText }}</el-tag>
               </div>
             </template>
             <div ref="echart" class="chart-container trend-chart"></div>
@@ -69,6 +69,7 @@
       
       <el-table
           ref="multipleTable"
+          v-loading="tableLoading"
           style="width: 100%; min-height: 200px;"
           tooltip-effect="dark"
           :data="tableData"
@@ -133,33 +134,33 @@ export default {
 
 <script setup>
 import {
-  deleteStat,
-  findStat,
   getStatList,
-  getStatCharts,
 } from '@/api/stat'
 import {
   getAllUserApi
 } from '@/api/user'
 import { getAllServerApi } from '@/api/server'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, reactive, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { computed, ref, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
 import { TrendCharts, Trophy } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
+import {
+  formatFlow,
+  getDateRangeText as formatDateRangeText,
+  getTrafficTagType,
+  normalizeDateOnlyToUtcIso,
+} from './statTraffic.mjs'
+import {
+  buildRankChartOptions,
+  buildTrendChartOptions,
+} from './statChartOptions.mjs'
 
-const formData = ref({
-  tag: '',
-  down: '',
-  up: '',
-  total: '',
-})
-
-const elFormRef = ref()
 const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
+const tableLoading = ref(false)
 const today = new Date()
 const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000) // 1个月前
 const searchInfo = ref({
@@ -169,72 +170,11 @@ const searchInfo = ref({
 
 // 图表相关
 const chart = shallowRef(null)
-const rank_chart = shallowRef(null)
+const rankChart = shallowRef(null)
 const echart = ref(null)
 const rank_echart = ref(null)
 const chartData = useChartData()
-
-// 格式化流量
-const formatFlow = (value) => {
-  if (!value || value === 0) return '0 B'
-  if (value >= 1024 * 1024 * 1024) {
-    return (value / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
-  } else if (value >= 1024 * 1024) {
-    return (value / (1024 * 1024)).toFixed(1) + ' MB'
-  } else if (value >= 1024) {
-    return (value / 1024).toFixed(1) + ' KB'
-  } else {
-    return value.toFixed(1) + ' B'
-  }
-}
-
-// 格式化日期
-const formatDate = (timestamp) => {
-  if (!timestamp) return '-'
-  // 如果是秒级时间戳，转换为毫秒
-  const date = new Date(timestamp * 1000)
-  return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour12: false })
-}
-
-// 获取流量标签类型
-const getTrafficTagType = (trafficStr) => {
-  if (!trafficStr || typeof trafficStr !== 'string') return 'info'
-  
-  // 解析流量字符串，如 "726.27MB" -> 726.27 * 1024 * 1024
-  const match = trafficStr.match(/^([\d.]+)\s*(B|KB|MB|GB)$/i)
-  if (!match) return 'info'
-  
-  const value = parseFloat(match[1])
-  const unit = match[2].toUpperCase()
-  
-  let bytes = value
-  switch (unit) {
-    case 'KB':
-      bytes = value * 1024
-      break
-    case 'MB':
-      bytes = value * 1024 * 1024
-      break
-    case 'GB':
-      bytes = value * 1024 * 1024 * 1024
-      break
-  }
-  
-  if (bytes >= 1024 * 1024 * 1024) return 'danger'  // GB级别
-  if (bytes >= 100 * 1024 * 1024) return 'warning'  // 100MB以上
-  if (bytes >= 10 * 1024 * 1024) return 'success'   // 10MB以上
-  return 'info'  // 其他
-}
-
-// 获取日期范围文本
-const getDateRangeText = () => {
-  if (!searchInfo.value.startCreatedAt || !searchInfo.value.endCreatedAt) {
-    return '近7天'
-  }
-  const start = new Date(searchInfo.value.startCreatedAt).toLocaleDateString('zh-CN')
-  const end = new Date(searchInfo.value.endCreatedAt).toLocaleDateString('zh-CN')
-  return start === end ? start : `${start} - ${end}`
-}
+const dateRangeText = computed(() => formatDateRangeText(searchInfo.value))
 
 const onReset = () => {
   // 重置为近1个月
@@ -254,14 +194,10 @@ const onSubmit = () => {
   pageSize.value = 10
   // 将搜索时间转换为 UTC 时间
   if (searchInfo.value.startCreatedAt) {
-    const startDate = new Date(searchInfo.value.startCreatedAt)
-    const utcStartDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()))
-    searchInfo.value.startCreatedAt = utcStartDate.toISOString()
+    searchInfo.value.startCreatedAt = normalizeDateOnlyToUtcIso(searchInfo.value.startCreatedAt)
   }
   if (searchInfo.value.endCreatedAt) {
-    const endDate = new Date(searchInfo.value.endCreatedAt)
-    const utcEndDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()))
-    searchInfo.value.endCreatedAt = utcEndDate.toISOString()
+    searchInfo.value.endCreatedAt = normalizeDateOnlyToUtcIso(searchInfo.value.endCreatedAt)
   }
   getTableData()
   setChartData({...searchInfo.value})
@@ -281,6 +217,7 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
+  tableLoading.value = true
   try {
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
 
@@ -308,177 +245,25 @@ const getTableData = async() => {
     ElMessage.error('网络请求失败')
     tableData.value = []
     total.value = 0
+  } finally {
+    tableLoading.value = false
   }
 }
 
 // 初始化图表
 const initChart = () => {
+  if (!echart.value || !rank_echart.value) {
+    return
+  }
   chart.value = echarts.init(echart.value)
-  rank_chart.value = echarts.init(rank_echart.value)
+  rankChart.value = echarts.init(rank_echart.value)
   setOptions(chartData)
 }
 
 // 设置图表选项
 const setOptions = (data) => {
-  // 流量趋势图
-  chart.value?.setOption({
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross',
-        label: {
-          backgroundColor: '#6a7985'
-        }
-      },
-      formatter: (params) => {
-        let result = params[0].name + '<br>'
-        params.forEach(item => {
-          result += item.marker + ' ' + item.seriesName + ' : ' + formatFlow(item.value) + '<br>'
-        })
-        return result
-      }
-    },
-    legend: {
-      data: ['流量使用量'],
-      top: 10
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: data.data_axis,
-      axisLine: {
-        lineStyle: {
-          color: '#e6e6e6'
-        }
-      }
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: (value) => formatFlow(value)
-      },
-      axisLine: {
-        lineStyle: {
-          color: '#e6e6e6'
-        }
-      },
-      splitLine: {
-        lineStyle: {
-          color: '#f5f5f5'
-        }
-      }
-    },
-    series: [
-      {
-        name: '流量使用量',
-        type: 'line',
-        stack: 'Total',
-        smooth: true,
-        lineStyle: {
-          width: 3,
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 1, y2: 0,
-            colorStops: [
-              { offset: 0, color: '#409EFF' },
-              { offset: 1, color: '#67C23A' }
-            ]
-          }
-        },
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-              { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-              { offset: 1, color: 'rgba(64, 158, 255, 0.1)' }
-            ]
-          }
-        },
-        data: data.data
-      }
-    ]
-  })
-
-  // 流量排行榜
-  rank_chart.value?.setOption({
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      },
-      formatter: (params) => {
-        let result = params[0].name + '<br>'
-        params.forEach(item => {
-          result += item.marker + ' ' + item.seriesName + ' : ' + formatFlow(item.value) + '<br>'
-        })
-        return result
-      }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: (value) => formatFlow(value)
-      },
-      axisLine: {
-        lineStyle: {
-          color: '#e6e6e6'
-        }
-      },
-      splitLine: {
-        lineStyle: {
-          color: '#f5f5f5'
-        }
-      }
-    },
-    yAxis: {
-      type: 'category',
-      data: data.rank_axis,
-      axisLine: {
-        lineStyle: {
-          color: '#e6e6e6'
-        }
-      }
-    },
-    series: [
-      {
-        name: '流量使用量',
-        type: 'bar',
-        itemStyle: {
-          borderRadius: [0, 6, 6, 0],
-          color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 1, y2: 0,
-            colorStops: [
-              { offset: 0, color: '#FF6B6B' },
-              { offset: 0.5, color: '#4ECDC4' },
-              { offset: 1, color: '#45B7D1' }
-            ]
-          }
-        },
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        },
-        data: data.rank
-      }
-    ]
-  })
+  chart.value?.setOption(buildTrendChartOptions(data))
+  rankChart.value?.setOption(buildRankChartOptions(data))
 }
 
 const users = ref([])
@@ -504,12 +289,28 @@ const init = () => {
 
 // 监听图表数据变化
 watch(() => chartData, (newData) => {
-  if (chart.value && rank_chart.value) {
+  if (chart.value && rankChart.value) {
     setOptions(newData)
   }
 }, {
   deep: true
 })
+
+const handleResize = () => {
+  chart.value?.resize()
+  rankChart.value?.resize()
+}
+
+const disposeCharts = () => {
+  if (chart.value) {
+    chart.value.dispose()
+    chart.value = null
+  }
+  if (rankChart.value) {
+    rankChart.value.dispose()
+    rankChart.value = null
+  }
+}
 
 onMounted(async () => {
   init()
@@ -518,25 +319,12 @@ onMounted(async () => {
   
   await nextTick()
   initChart()
-  
-  // 监听窗口大小变化
-  const handleResize = () => {
-    chart.value?.resize()
-    rank_chart.value?.resize()
-  }
   window.addEventListener('resize', handleResize)
-  
-  onUnmounted(() => {
-    window.removeEventListener('resize', handleResize)
-    if (chart.value) {
-      chart.value.dispose()
-      chart.value = null
-    }
-    if (rank_chart.value) {
-      rank_chart.value.dispose()
-      rank_chart.value = null
-    }
-  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  disposeCharts()
 })
 </script>
 
