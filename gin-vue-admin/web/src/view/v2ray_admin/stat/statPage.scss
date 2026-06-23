@@ -46,6 +46,10 @@
   height: 360px;
 }
 
+.stat-filter-select {
+  width: 194px;
+}
+
 .trend-chart {
   background: linear-gradient(180deg, var(--gva-color-chart-trend-bg) 0%, var(--gva-color-panel-bg) 100%);
 }
@@ -116,6 +120,10 @@
 
   .chart-container {
     height: 280px;
+  }
+
+  .stat-filter-select {
+    width: 100%;
   }
 
   .gva-table-box {
