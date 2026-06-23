@@ -69,8 +69,8 @@
       
       <el-table
           ref="multipleTable"
+          class="stat-table"
           v-loading="tableLoading"
-          style="width: 100%; min-height: 200px;"
           tooltip-effect="dark"
           :data="tableData"
           row-key="ID"

@@ -46,7 +46,7 @@
       
       <el-table
           ref="multipleTable"
-          style="width: 100%; min-height: 200px;"
+          class="stat-table"
           tooltip-effect="dark"
           :data="tableData"
           row-key="ID"
