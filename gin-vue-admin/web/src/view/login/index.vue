@@ -6,7 +6,7 @@
           <img
             class="login_panel_form_title_logo"
             :src="$GIN_VUE_ADMIN.appLogo"
-            alt
+            alt="应用标识"
           >
           <p class="login_panel_form_title_p">{{ $GIN_VUE_ADMIN.appName }}</p>
         </div>
@@ -43,12 +43,18 @@
                 style="flex:1;padding-right: 20px;"
               />
               <div class="vPic">
-                <img
+                <button
                   v-if="picPath"
-                  :src="picPath"
-                  alt="请输入验证码"
+                  class="captcha-refresh"
+                  type="button"
+                  aria-label="刷新验证码"
                   @click="loginVerify()"
                 >
+                  <img
+                    :src="picPath"
+                    alt="验证码图片"
+                  >
+                </button>
               </div>
             </div>
           </el-form-item>
