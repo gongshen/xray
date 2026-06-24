@@ -477,6 +477,11 @@ input {
     padding: 0;
 }
 
+:focus-visible {
+    outline: 2px solid #409eff;
+    outline-offset: 2px;
+}
+
 input::-webkit-input-placeholder {
     color: #ccc;
 }
