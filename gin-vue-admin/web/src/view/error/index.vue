@@ -2,11 +2,11 @@
   <div>
     <div class="big">
       <div class="inner">
-        <img src="../../assets/notFound.png">
+        <img src="../../assets/notFound.png" alt="页面未找到插图">
         <p>页面被神秘力量吸走了（如果您是开源版请联系我们修复）</p>
         <p style="font-size:18px;line-height:40px;">常见问题为当前此角色无当前路由，如果确定要使用本路由，请到角色管理进行分配</p>
         <p>↓</p>
-        <img src="../../assets/qm.png" class="leftPic">
+        <img src="../../assets/qm.png" class="leftPic" alt="角色权限配置引导图">
       </div>
     </div>
   </div>

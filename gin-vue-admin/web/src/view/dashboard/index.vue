@@ -42,7 +42,7 @@
             </div>
           </div>
         </div>
-        <img src="@/assets/dashboard.png" class="gva-top-card-right" alt>
+        <img src="@/assets/dashboard.png" class="gva-top-card-right" alt="管理后台工作台插图">
       </div>
     </div>
 <!--    <div class="gva-card-box">-->
