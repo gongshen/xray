@@ -14,7 +14,7 @@
     </div>
 
     <!-- 图表区域 -->
-    <div class="charts-section">
+    <div class="charts-section" role="region" aria-label="流量统计图表">
       <el-row :gutter="20">
         <el-col :xs="24" :lg="24">
           <el-card class="chart-card" shadow="hover">
@@ -34,7 +34,7 @@
     </div>
 
     <!-- 详细数据表格 -->
-    <div class="gva-table-box">
+    <div class="gva-table-box" role="region" aria-label="流量记录明细">
       <div class="table-header">
         <h3>详细流量记录</h3>
         <div class="table-summary" role="status" aria-live="polite" aria-label="流量统计摘要">
