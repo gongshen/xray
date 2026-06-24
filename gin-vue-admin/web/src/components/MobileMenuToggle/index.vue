@@ -1,9 +1,16 @@
 <template>
-  <div class="mobile-menu-toggle" v-if="isMobile" @click="toggleMobileMenu">
+  <button
+    v-if="isMobile"
+    type="button"
+    class="mobile-menu-toggle"
+    :aria-expanded="isMenuVisible"
+    :aria-label="isMenuVisible ? '关闭移动端菜单' : '打开移动端菜单'"
+    @click="toggleMobileMenu"
+  >
     <el-icon size="24">
       <component :is="isMenuVisible ? 'Close' : 'Menu'" />
     </el-icon>
-  </div>
+  </button>
 </template>
 
 <script setup>
@@ -73,12 +80,14 @@ onUnmounted(() => {
     width: 40px;
     height: 40px;
     border-radius: 50%;
+    border: 0;
     background: var(--el-color-primary);
     color: white;
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
     cursor: pointer;
+    padding: 0;
   }
 }
 </style>
