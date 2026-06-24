@@ -17,7 +17,7 @@
       </el-form>
     </div>
     <div class="gva-table-box" role="region" aria-label="服务器列表明细">
-        <div class="gva-btn-list">
+        <div class="gva-btn-list" role="group" aria-label="服务器列表操作">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
             <el-popover v-model:visible="deleteVisible" placement="top" width="160">
             <p>确定要删除吗？</p>
