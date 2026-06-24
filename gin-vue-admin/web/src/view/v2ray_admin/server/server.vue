@@ -20,13 +20,13 @@
         <div class="gva-btn-list" role="group" aria-label="服务器列表操作">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
             <el-popover v-model:visible="deleteVisible" placement="top" width="160">
-            <p>确定要删除吗？</p>
+            <p>确定要删除选中的服务器吗？</p>
             <div style="text-align: right; margin-top: 8px;">
                 <el-button type="primary" link aria-label="取消批量删除服务器" @click="deleteVisible = false">取消</el-button>
                 <el-button type="danger" aria-label="确认批量删除服务器" @click="onDelete">确定</el-button>
             </div>
             <template #reference>
-                <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" aria-label="批量删除服务器" @click="deleteVisible = true">删除</el-button>
+                <el-button type="danger" icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" aria-label="批量删除服务器" @click="deleteVisible = true">删除</el-button>
             </template>
             </el-popover>
         </div>
