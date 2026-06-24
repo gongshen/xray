@@ -148,7 +148,7 @@
         <el-tag :type="isOnline ? 'success' : 'danger'" size="small">{{ isOnline ? '在线' : '离线' }}</el-tag>
       </div>
 
-      <el-form :model="trafficAnalysisForm" class="analysis-form" label-position="top" @keyup.enter="queryTrafficAnalysis">
+      <el-form :model="trafficAnalysisForm" class="analysis-form" label-position="top" role="search" aria-label="流量分析筛选" @keyup.enter="queryTrafficAnalysis">
         <el-form-item label="用户">
           <el-select
             v-model="trafficAnalysisForm.user_tag"
