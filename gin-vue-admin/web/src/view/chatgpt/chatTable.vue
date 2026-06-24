@@ -136,6 +136,7 @@
                 <el-button 
                   type="primary" 
                   class="send-button" 
+                  aria-label="发送问题"
                   :disabled="!form.chat || !form.dbname" 
                   @click="handleQueryTable"
                 >
