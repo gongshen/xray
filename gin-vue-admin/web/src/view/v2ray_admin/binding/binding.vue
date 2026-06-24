@@ -1,25 +1,25 @@
 <template>
   <div>
     <div class="gva-search-box">
-      <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
+      <el-form :inline="true" :model="searchInfo" class="demo-form-inline" role="search" aria-label="绑定筛选" @keyup.enter="onSubmit">
       <el-form-item label="创建时间">
-      <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间"></el-date-picker>
+      <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" aria-label="绑定创建开始日期"></el-date-picker>
        —
-      <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间"></el-date-picker>
+      <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" aria-label="绑定创建结束日期"></el-date-picker>
       </el-form-item>
         <el-form-item label="服务器ip">
-         <el-select v-model="searchInfo.server_id" clearable filterable style="width:194px">
+         <el-select v-model="searchInfo.server_id" clearable filterable style="width:194px" aria-label="绑定服务器筛选">
            <el-option v-for="item in srvs" :key="item.ID" :value="item.ID" :label="item.ip" />
          </el-select>
          <el-icon class="auto-icon" @click="getSrvs"><refresh /></el-icon>
         </el-form-item>
         <el-form-item label="用户名">
-         <el-select v-model="searchInfo.user_id" clearable filterable style="width:194px">
+         <el-select v-model="searchInfo.user_id" clearable filterable style="width:194px" aria-label="绑定用户筛选">
            <el-option v-for="item in users" :key="item.ID" :value="item.ID" :label="item.nickName" />
          </el-select>
           <el-icon class="auto-icon" @click="getUsers"><refresh /></el-icon>
         </el-form-item>
-        <el-form-item>
+        <el-form-item role="group" aria-label="绑定查询操作">
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
           <el-button icon="refresh" @click="onReset">重置</el-button>
         </el-form-item>
