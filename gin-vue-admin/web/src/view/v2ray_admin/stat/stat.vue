@@ -3,8 +3,8 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
         <el-form-item label="创建时间">
-          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" :default-value="monthAgo"></el-date-picker>
-          <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" :default-value="today"></el-date-picker>
+          <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" aria-label="统计开始日期" :default-value="monthAgo"></el-date-picker>
+          <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" aria-label="统计结束日期" :default-value="today"></el-date-picker>
         </el-form-item>
         <el-form-item label="用户名">
           <el-select v-model="searchInfo.tag" clearable filterable class="stat-filter-select">
