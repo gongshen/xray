@@ -39,11 +39,13 @@
       v-show="contextMenuVisible"
       :style="{ left: left + 'px', top: top + 'px' }"
       class="contextmenu"
+      role="menu"
+      aria-label="标签页操作"
     >
-      <li @click="closeAll">关闭所有</li>
-      <li @click="closeLeft">关闭左侧</li>
-      <li @click="closeRight">关闭右侧</li>
-      <li @click="closeOther">关闭其他</li>
+      <li role="none"><button class="contextmenu-action" type="button" role="menuitem" @click="closeAll">关闭所有</button></li>
+      <li role="none"><button class="contextmenu-action" type="button" role="menuitem" @click="closeLeft">关闭左侧</button></li>
+      <li role="none"><button class="contextmenu-action" type="button" role="menuitem" @click="closeRight">关闭右侧</button></li>
+      <li role="none"><button class="contextmenu-action" type="button" role="menuitem" @click="closeOther">关闭其他</button></li>
     </ul>
   </div>
 </template>
@@ -379,10 +381,19 @@ onUnmounted(() => {
 
 .contextmenu li {
   margin: 0;
-  padding: 7px 16px;
 }
-.contextmenu li:hover {
-  background: #f2f2f2;
+.contextmenu-action {
+  border: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
+  display: block;
+  font: inherit;
+  padding: 7px 16px;
+  text-align: left;
+  width: 100%;
+}
+.contextmenu-action:hover {
+  background: #f2f2f2;
 }
 </style>
