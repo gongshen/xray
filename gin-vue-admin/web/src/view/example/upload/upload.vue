@@ -20,7 +20,7 @@
 
         <el-form ref="searchForm" :inline="true" :model="search">
           <el-form-item label="">
-            <el-input v-model="search.keyword" class="keyword" placeholder="请输入文件名或备注" />
+            <el-input v-model="search.keyword" class="keyword" placeholder="请输入文件名或备注" aria-label="上传文件搜索" />
           </el-form-item>
 
           <el-form-item>
