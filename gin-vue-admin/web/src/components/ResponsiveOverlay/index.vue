@@ -1,6 +1,12 @@
 <template>
   <transition name="fade">
-    <div class="responsive-overlay" v-if="visible" @click="closeOverlay"></div>
+    <button
+      v-if="visible"
+      type="button"
+      class="responsive-overlay"
+      aria-label="关闭移动端菜单"
+      @click="closeOverlay"
+    />
   </transition>
 </template>
 
@@ -36,8 +42,10 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
+  border: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
+  padding: 0;
 }
 
 .fade-enter-active,
