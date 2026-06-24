@@ -1,10 +1,12 @@
 <template>
   <div>
     <div class="gva-search-box">
-      <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
+      <el-form :inline="true" :model="searchInfo" class="demo-form-inline" role="search" aria-label="用户绑定筛选" @keyup.enter="onSubmit">
       <el-form-item label="创建时间">
-      <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间"></el-date-picker>
-      <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间"></el-date-picker>
+      <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" aria-label="绑定开始日期"></el-date-picker>
+      <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" aria-label="绑定结束日期"></el-date-picker>
+      </el-form-item>
+      <el-form-item role="group" aria-label="绑定查询操作">
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
           <el-button icon="refresh" @click="onReset">重置</el-button>
       </el-form-item>
