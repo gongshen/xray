@@ -56,7 +56,7 @@
         <el-table-column align="left" label="创建日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="按钮组">
+        <el-table-column align="left" label="操作">
             <template #default="scope">
                 <div class="table-row-actions" role="group" aria-label="服务器行操作">
                     <el-button type="primary" link icon="document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>

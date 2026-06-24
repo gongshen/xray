@@ -34,7 +34,7 @@
         <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-          <el-table-column align="left" label="按钮组">
+          <el-table-column align="left" label="操作">
             <template #default="scope">
                 <div class="table-row-actions" role="group" aria-label="绑定行操作">
                     <el-button type="primary" link icon="share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>
