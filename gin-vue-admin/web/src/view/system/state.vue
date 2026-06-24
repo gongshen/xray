@@ -23,7 +23,7 @@
             <template #header>
               <div class="card-header">
                 <span>服务器信息</span>
-                <el-tag :type="isOnline ? 'success' : 'danger'" size="small">
+                <el-tag :type="isOnline ? 'success' : 'danger'" size="small" role="status" aria-live="polite">
                   {{ isOnline ? '在线' : '离线' }}
                 </el-tag>
               </div>
@@ -145,7 +145,7 @@
           <div class="analysis-title">{{ currentServer?.remark || currentServer?.ip || '-' }}</div>
           <div class="analysis-subtitle">服务器：{{ currentServer?.ip || '-' }} · Stat 端口：{{ currentServer?.stat_port || 56611 }}</div>
         </div>
-        <el-tag :type="isOnline ? 'success' : 'danger'" size="small">{{ isOnline ? '在线' : '离线' }}</el-tag>
+        <el-tag :type="isOnline ? 'success' : 'danger'" size="small" role="status" aria-live="polite">{{ isOnline ? '在线' : '离线' }}</el-tag>
       </div>
 
       <el-form :model="trafficAnalysisForm" class="analysis-form" label-position="top" role="search" aria-label="流量分析筛选" @keyup.enter="queryTrafficAnalysis">
