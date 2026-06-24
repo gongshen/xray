@@ -12,7 +12,7 @@
       </el-form-item>
       </el-form>
     </div>
-    <div class="gva-table-box">
+    <div class="gva-table-box" role="region" aria-label="绑定列表明细">
         <el-table
         ref="multipleTable"
         style="width: 100%"
