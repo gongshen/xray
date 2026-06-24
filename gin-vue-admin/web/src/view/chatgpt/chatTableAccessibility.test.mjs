@@ -6,6 +6,9 @@ const source = fs.readFileSync(new URL('./chatTable.vue', import.meta.url), 'utf
 const selectChatButton = source.match(/<button[^>]*class="history-select"[^>]*@click="selectChat\(index\)"[^>]*>/)
 const deleteChatButton = source.match(/<button[^>]*class="delete-icon"[^>]*@click\.stop="deleteChat\(index\)"[^>]*>/)
 const sendButton = source.match(/<el-button[^>]*class="send-button"[^>]*@click="handleQueryTable"[^>]*>/)
+const skInput = source.match(/<el-input[^>]*v-model="skObj\.sk"[^>]*>/)
+const databaseSelect = source.match(/<el-select[^>]*v-model="form\.dbname"[^>]*>/)
+const questionInput = source.match(/<el-input[^>]*v-model="form\.chat"[^>]*>/)
 
 assert.ok(selectChatButton, 'chat history selection should use a native button element')
 assert.match(selectChatButton[0], /type="button"/, 'chat history selection button should not submit forms')
@@ -22,5 +25,14 @@ assert.doesNotMatch(source, /<el-icon[^>]*class="delete-icon"[^>]*@click\.stop="
 assert.ok(sendButton, 'chat send action should keep the Element Plus button')
 assert.match(sendButton[0], /aria-label="发送问题"/, 'icon-only chat send button should have an accessible name')
 assert.match(sendButton[0], /:disabled="!form\.chat \|\| !form\.dbname"/, 'chat send button should keep its disabled guard')
+
+assert.ok(skInput, 'ChatGPT SK input should be rendered')
+assert.match(skInput[0], /aria-label="ChatGPT SK"/, 'ChatGPT SK input should have an accessible name')
+
+assert.ok(databaseSelect, 'chat database selector should be rendered')
+assert.match(databaseSelect[0], /aria-label="查询数据库"/, 'chat database selector should have an accessible name')
+
+assert.ok(questionInput, 'chat question input should be rendered')
+assert.match(questionInput[0], /aria-label="聊天问题"/, 'chat question input should have an accessible name')
 
 console.log('chatTableAccessibility tests passed')

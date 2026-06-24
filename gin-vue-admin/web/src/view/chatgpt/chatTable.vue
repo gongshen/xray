@@ -6,7 +6,7 @@
     <!-- SK Input Section -->
     <div v-if="!chatToken" class="sk-container">
       <div class="sk-input-wrapper">
-        <el-input v-model="skObj.sk" class="query-ipt" placeholder="请输入您的ChatGpt SK" clearable />
+        <el-input v-model="skObj.sk" class="query-ipt" placeholder="请输入您的ChatGpt SK" aria-label="ChatGPT SK" clearable />
         <el-button type="primary" @click="save">保存</el-button>
       </div>
       <div class="secret">
@@ -115,7 +115,7 @@
           <div class="input-container">
             <el-form :model="form" class="chat-form">
               <div class="model-selector">
-                <el-select v-model="form.dbname" placeholder="请选择数据库" size="large">
+                <el-select v-model="form.dbname" placeholder="请选择数据库" aria-label="查询数据库" size="large">
                   <el-option
                     v-for="(item, index) in dbArr"
                     :key="index"
@@ -131,6 +131,7 @@
                   type="textarea"
                   clearable
                   placeholder="输入您的问题..."
+                  aria-label="聊天问题"
                   @keyup.enter.native="handleQueryTable"
                 />
                 <el-button 
