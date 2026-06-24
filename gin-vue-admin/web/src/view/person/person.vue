@@ -31,18 +31,39 @@
             <div class="user-personality">
               <p v-if="!editFlag" class="nickName">
                 {{ userStore.userInfo.nickName }}
-                <el-icon class="pointer" color="#66b1ff" @click="openEdit">
-                  <edit />
-                </el-icon>
+                <button
+                  class="pointer nick-action"
+                  type="button"
+                  aria-label="编辑昵称"
+                  @click="openEdit"
+                >
+                  <el-icon color="#66b1ff">
+                    <edit />
+                  </el-icon>
+                </button>
               </p>
               <p v-if="editFlag" class="nickName">
                 <el-input v-model="nickName" />
-                <el-icon class="pointer" color="#67c23a" @click="enterEdit">
-                  <check />
-                </el-icon>
-                <el-icon class="pointer" color="#f23c3c" @click="closeEdit">
-                  <close />
-                </el-icon>
+                <button
+                  class="pointer nick-action"
+                  type="button"
+                  aria-label="保存昵称"
+                  @click="enterEdit"
+                >
+                  <el-icon color="#67c23a">
+                    <check />
+                  </el-icon>
+                </button>
+                <button
+                  class="pointer nick-action"
+                  type="button"
+                  aria-label="取消编辑昵称"
+                  @click="closeEdit"
+                >
+                  <el-icon color="#f23c3c">
+                    <close />
+                  </el-icon>
+                </button>
               </p>
               <p class="person-info">这个家伙很懒，什么都没有留下</p>
             </div>
@@ -518,6 +539,14 @@ const changeEmail = async() => {
 }
 .pointer {
   cursor: pointer;
+}
+.nick-action {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
 }
 .code-box{
   display: flex;
