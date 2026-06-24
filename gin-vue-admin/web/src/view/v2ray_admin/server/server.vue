@@ -61,7 +61,7 @@
                 <div class="table-row-actions" role="group" aria-label="服务器行操作">
                     <el-button type="primary" link icon="document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>
                     <el-button type="primary" link icon="edit" class="table-button" @click="updateServerFunc(scope.row)">编辑</el-button>
-                    <el-button type="primary" link icon="refresh" @click="restartXray(scope.row)">代理重启</el-button>
+                    <el-button type="warning" link icon="refresh" aria-label="重启服务器代理" @click="restartXray(scope.row)">代理重启</el-button>
                     <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
                 </div>
             </template>
@@ -246,8 +246,8 @@ const deleteRow = (row) => {
     }
 
 const restartXray = (row) => {
-  ElMessageBox.confirm('确定要重启代理吗?', '提示', {
-    confirmButtonText: '确定',
+  ElMessageBox.confirm('确定要重启该服务器代理吗?', '重启代理', {
+    confirmButtonText: '重启',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
