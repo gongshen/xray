@@ -62,7 +62,7 @@
                     <el-button type="primary" link icon="document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>
                     <el-button type="primary" link icon="edit" class="table-button" @click="updateServerFunc(scope.row)">编辑</el-button>
                     <el-button type="warning" link icon="refresh" aria-label="重启服务器代理" @click="restartXray(scope.row)">代理重启</el-button>
-                    <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+                    <el-button type="danger" link icon="delete" aria-label="删除服务器" @click="deleteRow(scope.row)">删除</el-button>
                 </div>
             </template>
         </el-table-column>
