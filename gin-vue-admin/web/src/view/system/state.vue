@@ -805,11 +805,8 @@ export default {
     width: 100%;
   }
   
-  /* 按钮容器 */
-  .server-selector {
-    .el-button {
-      width: 100%;
-    }
+  .server-selector :deep(.el-button) {
+    width: 100%;
   }
 
   .system_state {
