@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <div class="gva-search-box">
+    <div class="gva-search-box" role="search" aria-label="流量统计筛选">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
         <el-form-item label="创建时间">
           <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" aria-label="统计开始日期" :default-value="monthAgo"></el-date-picker>
