@@ -2,7 +2,7 @@
   <div class="server-state">
     <!-- 服务器选择器 -->
     <div class="server-selector" role="group" aria-label="服务器状态操作">
-      <el-select v-model="selectedServerId" placeholder="选择代理服务器" aria-label="代理服务器" @change="onServerChange" class="server-select">
+      <el-select v-model="selectedServerId" placeholder="选择代理服务器" aria-label="代理服务器" :loading="loading" @change="onServerChange" class="server-select">
         <el-option
           v-for="server in serverList"
           :key="server.ID"
