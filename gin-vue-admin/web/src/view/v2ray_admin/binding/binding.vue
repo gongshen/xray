@@ -25,7 +25,7 @@
         </el-form-item>
       </el-form>
     </div>
-    <div class="gva-table-box">
+    <div class="gva-table-box" role="region" aria-label="绑定列表明细">
         <div class="gva-btn-list">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
             <el-popover v-model:visible="deleteVisible" placement="top" width="160">
