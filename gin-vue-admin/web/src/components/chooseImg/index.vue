@@ -43,7 +43,12 @@
             </template>
           </el-image>
         </div>
-        <div class="img-title" @click="editFileNameFunc(item)">{{ item.name }}</div>
+        <button
+          class="img-title"
+          type="button"
+          :aria-label="`编辑文件名或备注：${item.name}`"
+          @click="editFileNameFunc(item)"
+        >{{ item.name }}</button>
       </div>
     </div>
     <el-pagination
@@ -168,6 +173,10 @@ defineExpose({ open })
     margin-left: 20px;
 
     .img-title {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      color: inherit;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
