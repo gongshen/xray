@@ -137,7 +137,7 @@
     </template>
 
     <!-- 无数据提示 -->
-    <el-empty v-if="!currentServer && !loading" description="请选择一个代理服务器" />
+    <el-empty v-if="!currentServer && !loading" description="请选择一个代理服务器" role="status" aria-live="polite" aria-label="服务器状态空状态" />
 
     <el-dialog v-model="trafficAnalysisVisible" :before-close="closeTrafficAnalysis" title="用户流量分析" :width="isMobile ? '95%' : '1120px'" class="traffic-analysis-dialog">
       <div class="analysis-header">
