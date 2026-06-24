@@ -79,14 +79,24 @@
                   <p class="title">密保手机</p>
                   <p class="desc">
                     已绑定手机:{{ userStore.userInfo.phone }}
-                    <a href="javascript:void(0)" @click="changePhoneFlag = true">立即修改</a>
+                    <button
+                      class="link-action"
+                      type="button"
+                      aria-label="修改密保手机"
+                      @click="changePhoneFlag = true"
+                    >立即修改</button>
                   </p>
                 </li>
                 <li>
                   <p class="title">密保邮箱</p>
                   <p class="desc">
                     已绑定邮箱：{{ userStore.userInfo.email }}
-                    <a href="javascript:void(0)" @click="changeEmailFlag = true">立即修改</a>
+                    <button
+                      class="link-action"
+                      type="button"
+                      aria-label="修改密保邮箱"
+                      @click="changeEmailFlag = true"
+                    >立即修改</button>
                   </p>
                 </li>
                 <li>
@@ -100,10 +110,12 @@
                   <p class="title">修改密码</p>
                   <p class="desc">
                     修改个人密码
-                    <a
-                      href="javascript:void(0)"
+                    <button
+                      class="link-action"
+                      type="button"
+                      aria-label="修改个人密码"
                       @click="showPassword = true"
-                    >修改密码</a>
+                    >修改密码</button>
                   </p>
                 </li>
               </ul>
@@ -488,7 +500,13 @@ const changeEmail = async() => {
         font-size: 16px;
         padding: 0 10px 20px 10px;
         color: #a9a9a9;
-        a {
+        a,
+        .link-action {
+          border: 0;
+          background: transparent;
+          padding: 0;
+          cursor: pointer;
+          font: inherit;
           color: rgb(64, 158, 255);
           float: right;
         }
@@ -603,7 +621,8 @@ const changeEmail = async() => {
         font-size: 0.8125rem !important;
         padding: 0 0.5rem 1rem 0.5rem !important;
         
-        a {
+        a,
+        .link-action {
           float: none !important;
           display: block;
           margin-top: 0.5rem;
