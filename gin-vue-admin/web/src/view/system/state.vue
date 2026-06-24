@@ -509,12 +509,11 @@ onMounted(() => {
   disposeResize = bindWindowEvent(window, 'resize', checkMobile)
   loadServerList()
   getUsers()
+  // 定时刷新 (每30秒)
+  timer.value = setInterval(() => {
+    loadServerList()
+  }, 1000 * 30)
 })
-
-// 定时刷新 (每30秒)
-timer.value = setInterval(() => {
-  loadServerList()
-}, 1000 * 30)
 
 onUnmounted(() => {
   clearInterval(timer.value)
