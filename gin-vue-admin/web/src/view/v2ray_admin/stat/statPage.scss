@@ -239,6 +239,9 @@
 }
 
 :deep(.el-pagination) {
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
   --el-pagination-button-color: var(--gva-color-text-regular);
   --el-pagination-hover-color: var(--gva-color-brand-secondary);
 }
