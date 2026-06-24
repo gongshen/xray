@@ -3,13 +3,13 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo">
         <el-form-item label="请求方法">
-          <el-input v-model="searchInfo.method" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.method" placeholder="搜索条件" aria-label="请求方法筛选" />
         </el-form-item>
         <el-form-item label="请求路径">
-          <el-input v-model="searchInfo.path" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.path" placeholder="搜索条件" aria-label="请求路径筛选" />
         </el-form-item>
         <el-form-item label="结果状态码">
-          <el-input v-model="searchInfo.status" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.status" placeholder="搜索条件" aria-label="结果状态码筛选" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
