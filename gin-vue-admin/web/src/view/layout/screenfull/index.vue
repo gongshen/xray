@@ -1,8 +1,13 @@
 <template>
-  <div @click="clickFull">
-    <div v-if="isShow" class="gvaIcon gvaIcon-fullscreen-expand" />
-    <div v-else class="gvaIcon gvaIcon-fullscreen-shrink" />
-  </div>
+  <button
+    type="button"
+    class="screenfull-toggle"
+    :aria-label="isShow ? '进入全屏' : '退出全屏'"
+    @click="clickFull"
+  >
+    <span v-if="isShow" class="gvaIcon gvaIcon-fullscreen-expand" aria-hidden="true" />
+    <span v-else class="gvaIcon gvaIcon-fullscreen-shrink" aria-hidden="true" />
+  </button>
 </template>
 
 <script>
@@ -53,6 +58,14 @@ const changeFullShow = () => {
 </script>
 
 <style scoped lang="scss">
+.screenfull-toggle {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
 .screenfull-svg {
   width: 16px;
   height: 16px;
