@@ -3,13 +3,13 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo">
         <el-form-item label="展示值">
-          <el-input v-model="searchInfo.label" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.label" placeholder="搜索条件" aria-label="字典项展示值筛选" />
         </el-form-item>
         <el-form-item label="字典值">
-          <el-input v-model="searchInfo.value" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.value" placeholder="搜索条件" aria-label="字典项值筛选" />
         </el-form-item>
         <el-form-item label="启用状态" prop="status">
-          <el-select v-model="searchInfo.status" placeholder="请选择">
+          <el-select v-model="searchInfo.status" placeholder="请选择" aria-label="字典项启用状态筛选">
             <el-option key="true" label="是" value="true" />
             <el-option key="false" label="否" value="false" />
           </el-select>

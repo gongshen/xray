@@ -6,19 +6,19 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo">
         <el-form-item label="字典名（中）">
-          <el-input v-model="searchInfo.name" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.name" placeholder="搜索条件" aria-label="字典中文名筛选" />
         </el-form-item>
         <el-form-item label="字典名（英）">
-          <el-input v-model="searchInfo.type" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.type" placeholder="搜索条件" aria-label="字典英文名筛选" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
-          <el-select v-model="searchInfo.status" clear placeholder="请选择">
+          <el-select v-model="searchInfo.status" clear placeholder="请选择" aria-label="字典状态筛选">
             <el-option key="true" label="是" value="true" />
             <el-option key="false" label="否" value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="searchInfo.desc" placeholder="搜索条件" />
+          <el-input v-model="searchInfo.desc" placeholder="搜索条件" aria-label="字典描述筛选" />
         </el-form-item>
         <el-form-item>
           <el-button
