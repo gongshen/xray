@@ -3,10 +3,13 @@
     <div class="gva-table-box">
       <el-divider content-position="left">大文件上传</el-divider>
       <form id="fromCont" method="post">
-        <div class="fileUpload" @click="inputChange">
-          选择文件
-          <input v-show="false" id="file" ref="FileInput" multiple="multiple" type="file" @change="choseFile">
-        </div>
+        <button
+          class="fileUpload"
+          type="button"
+          aria-label="选择断点续传文件"
+          @click="inputChange"
+        >选择文件</button>
+        <input v-show="false" id="file" ref="FileInput" multiple="multiple" type="file" @change="choseFile">
       </form>
       <el-button :disabled="limitFileSize" type="primary" class="uploadBtn" @click="getFile">上传文件</el-button>
       <div class="el-upload__tip">请上传不超过5MB的文件</div>
@@ -200,6 +203,7 @@ a {
   display: inline-block;
 }
 .fileUpload{
+    background: transparent;
     padding: 3px 10px;
     font-size: 12px;
     height: 20px;
