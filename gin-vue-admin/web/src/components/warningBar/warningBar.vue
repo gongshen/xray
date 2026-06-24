@@ -1,8 +1,21 @@
 <template>
-  <div
-    class="warning-bar"
-    :class="href&&'can-click'"
+  <button
+    v-if="href"
+    class="warning-bar can-click"
+    type="button"
+    :aria-label="`打开提示链接：${title}`"
     @click="open"
+  >
+    <el-icon>
+      <warning-filled />
+    </el-icon>
+    <span>
+      {{ title }}
+    </span>
+  </button>
+  <div
+    v-else
+    class="warning-bar"
   >
     <el-icon>
       <warning-filled />
@@ -33,8 +46,11 @@ const open = () => {
 </script>
 <style lang="scss" scoped>
 .warning-bar{
+    border: 0;
     background-color: #FFF5ED;
+    color: inherit;
     font-size: 14px;
+    font-family: inherit;
     padding: 6px 14px;
     display: flex;
     align-items: center;
