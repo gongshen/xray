@@ -1,15 +1,15 @@
 <template>
   <span class="headerAvatar">
     <template v-if="picType === 'avatar'">
-      <el-avatar v-if="userStore.userInfo.headerImg" :size="30" :src="avatar" />
-      <el-avatar v-else :size="30" :src="noAvatar" />
+      <el-avatar v-if="userStore.userInfo.headerImg" :size="30" :src="avatar" alt="用户头像" />
+      <el-avatar v-else :size="30" :src="noAvatar" alt="默认用户头像" />
     </template>
     <template v-if="picType === 'img'">
-      <img v-if="userStore.userInfo.headerImg" :src="avatar" class="avatar">
-      <img v-else :src="noAvatar" class="avatar">
+      <img v-if="userStore.userInfo.headerImg" :src="avatar" class="avatar" alt="用户头像">
+      <img v-else :src="noAvatar" class="avatar" alt="默认用户头像">
     </template>
     <template v-if="picType === 'file'">
-      <img :src="file" class="file">
+      <img :src="file" class="file" alt="文件预览">
     </template>
   </span>
 </template>
