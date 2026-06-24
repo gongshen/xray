@@ -66,7 +66,9 @@
                   <pre>{{ fmtBody(scope.row.body) }}</pre>
                 </div>
                 <template #reference>
-                  <el-icon style="cursor: pointer;"><warning /></el-icon>
+                  <button class="payload-popover-trigger" type="button" aria-label="查看请求内容">
+                    <el-icon><warning /></el-icon>
+                  </button>
                 </template>
               </el-popover>
 
@@ -82,7 +84,9 @@
                   <pre>{{ fmtBody(scope.row.resp) }}</pre>
                 </div>
                 <template #reference>
-                  <el-icon style="cursor: pointer;"><warning /></el-icon>
+                  <button class="payload-popover-trigger" type="button" aria-label="查看响应内容">
+                    <el-icon><warning /></el-icon>
+                  </button>
                 </template>
               </el-popover>
               <span v-else>无</span>
@@ -253,5 +257,14 @@ export default {
 }
 .popover-box::-webkit-scrollbar {
   display: none; /* Chrome Safari */
+}
+.payload-popover-trigger {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
 </style>
