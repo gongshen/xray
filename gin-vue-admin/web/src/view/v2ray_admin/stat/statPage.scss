@@ -13,7 +13,7 @@
   border-radius: var(--gva-radius-panel);
   overflow: hidden;
   box-shadow: var(--gva-shadow-panel);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .chart-card:hover {
@@ -208,6 +208,7 @@
   .chart-card,
   .gva-table-box {
     animation: none;
+    transition: none;
   }
 }
 
