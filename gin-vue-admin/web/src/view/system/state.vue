@@ -12,7 +12,7 @@
       </el-select>
       <el-button type="primary" :icon="Refresh" @click="refreshData" :loading="loading">刷新</el-button>
       <el-button type="primary" :icon="Search" @click="openTrafficAnalysis" :disabled="!currentServer">流量分析</el-button>
-      <el-button type="danger" :icon="RefreshRight" @click="restartVPS" :loading="restartLoading">重启服务器</el-button>
+      <el-button type="danger" :icon="RefreshRight" aria-label="重启当前服务器" @click="restartVPS" :loading="restartLoading">重启服务器</el-button>
     </div>
 
     <template v-if="currentServer">
@@ -480,8 +480,8 @@ const restartVPS = () => {
     return
   }
   
-  ElMessageBox.confirm('确定要重启该服务器吗？重启可能需要几分钟时间。', '提示', {
-    confirmButtonText: '确定',
+  ElMessageBox.confirm('确定要重启当前服务器吗？重启可能需要几分钟时间。', '重启服务器', {
+    confirmButtonText: '重启',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
