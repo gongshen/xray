@@ -2,7 +2,7 @@
   <el-container class="layout-cont">
     <el-container :class="[isSider?'openside':'hideside',isMobile ? 'mobile': '']">
       <el-row :class="[isShadowBg?'shadowBg':'']" @click="changeShadow()" />
-      <el-aside class="main-cont main-left gva-aside">
+      <el-aside class="main-cont main-left gva-aside" id="layout-sidebar">
         <div class="tilte" :style="{background: backgroundColor}">
           <img alt class="logoimg" :src="$GIN_VUE_ADMIN.appLogo">
           <div v-if="isSider" class="tit-text" :style="{color:textColor}">{{ $GIN_VUE_ADMIN.appName }}</div>
@@ -21,10 +21,17 @@
                 <el-header class="header-cont">
                   <el-row class="pd-0">
                     <el-col :xs="2" :lg="1" :md="1" :sm="1" :xl="1" style="z-index:100">
-                      <div class="menu-total" @click="totalCollapse">
+                      <button
+                        class="menu-total"
+                        type="button"
+                        aria-controls="layout-sidebar"
+                        :aria-expanded="!isCollapse"
+                        :aria-label="isCollapse ? '展开侧边栏' : '收起侧边栏'"
+                        @click="totalCollapse"
+                      >
                         <div v-if="isCollapse" class="gvaIcon gvaIcon-arrow-double-right" />
                         <div v-else class="gvaIcon gvaIcon-arrow-double-left" />
-                      </div>
+                      </button>
                     </el-col>
                     <el-col :xs="10" :lg="14" :md="14" :sm="9" :xl="14" :pull="1">
                       <!-- 修改为手机端不显示顶部标签 -->

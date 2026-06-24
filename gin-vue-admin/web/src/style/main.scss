@@ -849,6 +849,9 @@ li {
     .main-cont.el-main {
         background-color: $bg-main;
         .menu-total {
+            border: 0;
+            background: transparent;
+            padding: 0;
             cursor: pointer;
             font-size: 24px;
             color: #000000;
