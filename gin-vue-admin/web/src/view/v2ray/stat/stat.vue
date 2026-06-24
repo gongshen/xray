@@ -27,7 +27,7 @@
                 <el-tag type="info" size="small">{{ dateRangeText }}</el-tag>
               </div>
             </template>
-            <div ref="echart" class="chart-container trend-chart" role="img" aria-label="流量趋势图表"></div>
+            <div ref="echart" class="chart-container trend-chart" role="img" :aria-label="trafficTrendChartLabel"></div>
           </el-card>
         </el-col>
       </el-row>
@@ -144,6 +144,7 @@ let disposeResize = null
 const echart = ref(null)
 const chartData = useChartData()
 const dateRangeText = computed(() => formatDateRangeText(searchInfo.value))
+const trafficTrendChartLabel = computed(() => `流量趋势图表，${dateRangeText.value}`)
 
 const onReset = () => {
   // 重置为近1个月

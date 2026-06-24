@@ -37,7 +37,7 @@
                 <el-tag type="info" size="small">{{ dateRangeText }}</el-tag>
               </div>
             </template>
-            <div ref="echart" class="chart-container trend-chart" role="img" aria-label="流量趋势图表"></div>
+            <div ref="echart" class="chart-container trend-chart" role="img" :aria-label="trafficTrendChartLabel"></div>
           </el-card>
         </el-col>
         <el-col :xs="24" :lg="10">
@@ -51,7 +51,7 @@
                 <el-tag type="success" size="small">TOP 10</el-tag>
               </div>
             </template>
-            <div ref="rank_echart" class="chart-container rank-chart" role="img" aria-label="流量排行榜图表"></div>
+            <div ref="rank_echart" class="chart-container rank-chart" role="img" :aria-label="trafficRankChartLabel"></div>
           </el-card>
         </el-col>
       </el-row>
@@ -179,6 +179,8 @@ const echart = ref(null)
 const rank_echart = ref(null)
 const chartData = useChartData()
 const dateRangeText = computed(() => formatDateRangeText(searchInfo.value))
+const trafficTrendChartLabel = computed(() => `流量趋势图表，${dateRangeText.value}`)
+const trafficRankChartLabel = computed(() => `流量排行榜图表，${dateRangeText.value}`)
 
 const onReset = () => {
   // 重置为近1个月
