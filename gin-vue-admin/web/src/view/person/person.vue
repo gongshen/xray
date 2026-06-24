@@ -17,11 +17,16 @@
                 'background-size': 'cover',
               }"
             >
-              <span class="update" @click="openChooseImg">
+              <button
+                class="update"
+                type="button"
+                aria-label="重新上传头像"
+                @click="openChooseImg"
+              >
                 <el-icon>
                   <edit />
                 </el-icon>
-                重新上传</span>
+                重新上传</button>
             </div>
             <div class="user-personality">
               <p v-if="!editFlag" class="nickName">
@@ -501,6 +506,10 @@ const changeEmail = async() => {
     }
   }
   .update {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
     height: 120px;
     width: 120px;
     text-align: center;
