@@ -76,6 +76,7 @@
                   :percentage="diskPercent"
                   :color="colors"
                   :width="progressWidth"
+                  aria-label="磁盘使用率"
                 />
               </div>
             </div>
@@ -96,6 +97,7 @@
                 :percentage="cpuPercent"
                 :color="colors"
                 :width="progressWidth"
+                aria-label="CPU 使用率"
               />
               <div class="cpu-text">使用率: {{ cpuPercent }}%</div>
             </div>
@@ -125,6 +127,7 @@
                   :percentage="memPercent"
                   :color="colors"
                   :width="progressWidth"
+                  aria-label="内存使用率"
                 />
               </div>
             </div>
@@ -153,6 +156,7 @@
             filterable
             :loading="trafficUserLoading"
             placeholder="请选择用户"
+            aria-label="流量分析用户"
           >
             <el-option
               v-for="item in users"
@@ -170,13 +174,14 @@
             format="YYYY-MM-DD"
             clearable
             placeholder="选择日期"
+            aria-label="流量分析日期"
           />
         </el-form-item>
         <el-form-item label="开始">
-          <el-input v-model="trafficAnalysisForm.start" clearable placeholder="8:10" />
+          <el-input v-model="trafficAnalysisForm.start" clearable placeholder="8:10" aria-label="流量分析开始时间" />
         </el-form-item>
         <el-form-item label="结束">
-          <el-input v-model="trafficAnalysisForm.end" clearable placeholder="9:00" />
+          <el-input v-model="trafficAnalysisForm.end" clearable placeholder="9:00" aria-label="流量分析结束时间" />
         </el-form-item>
         <el-form-item class="analysis-action">
           <el-button type="primary" :icon="Search" :loading="trafficAnalysisLoading" @click="queryTrafficAnalysis">查询</el-button>

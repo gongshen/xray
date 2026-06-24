@@ -7,12 +7,12 @@
           <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" aria-label="统计结束日期" :default-value="today"></el-date-picker>
         </el-form-item>
         <el-form-item label="用户名">
-          <el-select v-model="searchInfo.tag" clearable filterable class="stat-filter-select">
+          <el-select v-model="searchInfo.tag" clearable filterable class="stat-filter-select" aria-label="统计用户筛选">
             <el-option v-for="item in users" :key="item.ID" :value="item.ID" :label="item.nickName" />
           </el-select>
         </el-form-item>
         <el-form-item label="服务器Ip">
-          <el-select v-model="searchInfo.server_ip" clearable filterable class="stat-filter-select">
+          <el-select v-model="searchInfo.server_ip" clearable filterable class="stat-filter-select" aria-label="统计服务器筛选">
             <el-option v-for="item in srvs" :key="item.ip" :value="item.ip" :label="item.ip" />
           </el-select>
         </el-form-item>
