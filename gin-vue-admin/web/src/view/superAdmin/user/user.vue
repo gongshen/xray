@@ -127,10 +127,15 @@
             />
           </el-form-item>
           <el-form-item label="头像" label-width="80px">
-            <div style="display:inline-block" @click="openHeaderChange">
+            <button
+              class="header-img-trigger"
+              type="button"
+              aria-label="选择用户头像"
+              @click="openHeaderChange"
+            >
               <img v-if="userInfo.headerImg" alt="头像" class="header-img-box" :src="(userInfo.headerImg && userInfo.headerImg.slice(0, 4) !== 'http')?path+userInfo.headerImg:userInfo.headerImg">
-              <div v-else class="header-img-box">从媒体库选择</div>
-            </div>
+              <span v-else class="header-img-box">从媒体库选择</span>
+            </button>
           </el-form-item>
 
         </el-form>
@@ -416,6 +421,13 @@ const switchEnable = async(row) => {
 
 <style lang="scss">
 .user-dialog {
+  .header-img-trigger {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: inline-block;
+  }
+
   .header-img-box {
   width: 200px;
   height: 200px;
