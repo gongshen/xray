@@ -11,13 +11,13 @@
          <el-select v-model="searchInfo.server_id" clearable filterable style="width:194px" aria-label="绑定服务器筛选">
            <el-option v-for="item in srvs" :key="item.ID" :value="item.ID" :label="item.ip" />
          </el-select>
-         <el-icon class="auto-icon" role="button" tabindex="0" aria-label="刷新服务器选项" @click="getSrvs" @keydown.enter.prevent="getSrvs" @keydown.space.prevent="getSrvs"><refresh /></el-icon>
+         <button class="auto-icon" type="button" aria-label="刷新服务器选项" @click="getSrvs"><refresh /></button>
         </el-form-item>
         <el-form-item label="用户名">
          <el-select v-model="searchInfo.user_id" clearable filterable style="width:194px" aria-label="绑定用户筛选">
            <el-option v-for="item in users" :key="item.ID" :value="item.ID" :label="item.nickName" />
          </el-select>
-          <el-icon class="auto-icon" role="button" tabindex="0" aria-label="刷新用户选项" @click="getUsers" @keydown.enter.prevent="getUsers" @keydown.space.prevent="getUsers"><refresh /></el-icon>
+          <button class="auto-icon" type="button" aria-label="刷新用户选项" @click="getUsers"><refresh /></button>
         </el-form-item>
         <el-form-item role="group" aria-label="绑定查询操作">
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
@@ -607,6 +607,16 @@ init()
 </script>
 
 <style scoped>
+.auto-icon {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* 分享弹窗样式 */
 :deep(.share-dialog) {
   .el-dialog {
