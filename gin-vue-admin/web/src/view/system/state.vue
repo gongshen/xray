@@ -188,7 +188,7 @@
         </el-form-item>
       </el-form>
 
-      <div v-if="trafficAnalysisResult" class="analysis-summary">
+      <div v-if="trafficAnalysisResult" class="analysis-summary" role="status" aria-live="polite" aria-label="流量分析摘要">
         <div class="summary-item">
           <span>时间范围</span>
           <strong>{{ trafficAnalysisResult.start_time }} ~ {{ trafficAnalysisResult.end_time }}</strong>

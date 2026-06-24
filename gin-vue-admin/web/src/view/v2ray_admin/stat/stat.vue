@@ -61,7 +61,7 @@
     <div class="gva-table-box">
       <div class="table-header">
         <h3>详细流量记录</h3>
-        <div class="table-summary">
+        <div class="table-summary" role="status" aria-live="polite" aria-label="流量统计摘要">
           <el-tag type="primary" effect="light">总流量 {{ formatFlow(chartData.total) }}</el-tag>
           <el-tag type="info" effect="plain">共 {{ total }} 条记录</el-tag>
         </div>
