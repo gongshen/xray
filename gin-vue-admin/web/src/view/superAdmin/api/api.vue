@@ -3,16 +3,16 @@
     <div class="gva-search-box">
       <el-form ref="searchForm" :inline="true" :model="searchInfo">
         <el-form-item label="路径">
-          <el-input v-model="searchInfo.path" placeholder="路径" />
+          <el-input v-model="searchInfo.path" placeholder="路径" aria-label="API 路径筛选" />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="searchInfo.description" placeholder="描述" />
+          <el-input v-model="searchInfo.description" placeholder="描述" aria-label="API 描述筛选" />
         </el-form-item>
         <el-form-item label="API组">
-          <el-input v-model="searchInfo.apiGroup" placeholder="api组" />
+          <el-input v-model="searchInfo.apiGroup" placeholder="api组" aria-label="API 分组筛选" />
         </el-form-item>
         <el-form-item label="请求">
-          <el-select v-model="searchInfo.method" clearable placeholder="请选择">
+          <el-select v-model="searchInfo.method" clearable placeholder="请选择" aria-label="请求方法筛选">
             <el-option
               v-for="item in methodOptions"
               :key="item.value"
