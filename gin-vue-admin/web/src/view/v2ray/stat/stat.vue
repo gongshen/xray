@@ -53,6 +53,7 @@
           stripe
           v-loading="loading"
           :aria-busy="loading"
+          aria-label="详细流量记录表"
           :empty-text="loading ? '加载中...' : (tableData.length === 0 ? '暂无数据' : '')"
       >
         <el-table-column type="selection" width="55" />

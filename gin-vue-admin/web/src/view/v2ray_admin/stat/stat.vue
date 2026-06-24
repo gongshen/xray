@@ -72,6 +72,7 @@
           class="stat-table"
           v-loading="tableLoading"
           :aria-busy="tableLoading"
+          aria-label="详细流量记录表"
           tooltip-effect="dark"
           :data="tableData"
           row-key="ID"

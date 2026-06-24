@@ -210,6 +210,7 @@
       <el-table
         v-loading="trafficAnalysisLoading"
         :aria-busy="trafficAnalysisLoading"
+        aria-label="用户流量分钟明细表"
         :data="trafficAnalysisRows"
         border
         height="420"
