@@ -29,10 +29,23 @@
             :key="index" 
             class="history-item"
             :class="{ 'active': currentChatIndex === index }"
-            @click="selectChat(index)"
           >
-            <span class="history-title">{{ chat.title || '新对话' }}</span>
-            <el-icon class="delete-icon" @click.stop="deleteChat(index)"><Delete /></el-icon>
+            <button
+              class="history-select"
+              type="button"
+              :aria-current="currentChatIndex === index ? 'true' : undefined"
+              @click="selectChat(index)"
+            >
+              <span class="history-title">{{ chat.title || '新对话' }}</span>
+            </button>
+            <button
+              class="delete-icon"
+              type="button"
+              :aria-label="`删除对话：${chat.title || '新对话'}`"
+              @click.stop="deleteChat(index)"
+            >
+              <Delete />
+            </button>
           </div>
         </div>
         <div class="sidebar-footer">
@@ -424,8 +437,27 @@ watch(messages, () => {
         text-overflow: ellipsis;
         flex: 1;
       }
+
+      .history-select {
+        border: 0;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        cursor: pointer;
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+      }
       
       .delete-icon {
+        border: 0;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
         opacity: 0;
         transition: opacity 0.2s;
       }
