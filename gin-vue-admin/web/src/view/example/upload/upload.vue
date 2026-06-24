@@ -43,7 +43,12 @@
         </el-table-column>
         <el-table-column align="left" label="文件名/备注" prop="name" width="180">
           <template #default="scope">
-            <div class="name" @click="editFileNameFunc(scope.row)">{{ scope.row.name }}</div>
+            <button
+              class="name"
+              type="button"
+              :aria-label="`编辑文件名或备注：${scope.row.name}`"
+              @click="editFileNameFunc(scope.row)"
+            >{{ scope.row.name }}</button>
           </template>
         </el-table-column>
         <el-table-column align="left" label="链接" prop="url" min-width="300" />
@@ -199,6 +204,10 @@ export default {
 </script>
 <style scoped>
 .name {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
   cursor: pointer;
 }
 
