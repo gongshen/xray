@@ -214,7 +214,7 @@
         :data="trafficAnalysisRows"
         border
         height="420"
-        empty-text="暂无数据"
+        :empty-text="trafficAnalysisLoading ? '加载中...' : '暂无数据'"
         class="analysis-table"
       >
         <el-table-column label="分钟" prop="minute" width="160" />
