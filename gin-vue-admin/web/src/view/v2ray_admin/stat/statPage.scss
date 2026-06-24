@@ -145,7 +145,7 @@
       z-index: 1;
       width: 2rem;
       content: '';
-      background: linear-gradient(to left, rgba(255, 255, 255, 0.9), transparent);
+      background: linear-gradient(to left, var(--gva-color-panel-bg), transparent);
       pointer-events: none;
     }
   }
@@ -196,6 +196,10 @@
 
   .table-header {
     border-bottom-color: var(--gva-color-dark-border);
+  }
+
+  .gva-table-box::before {
+    background: linear-gradient(to left, var(--gva-color-dark-panel-bg), transparent);
   }
 }
 
