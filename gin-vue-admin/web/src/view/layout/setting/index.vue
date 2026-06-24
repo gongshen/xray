@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-button type="primary" class="drawer-container" icon="setting" @click="showSettingDrawer" />
+    <el-button type="primary" class="drawer-container" icon="setting" aria-label="打开系统配置" @click="showSettingDrawer" />
     <el-drawer
       v-model="drawer"
       title="系统配置"
@@ -10,29 +10,41 @@
       <div class="setting_body">
         <div class="setting_card">
           <div class="setting_content">
-            <div class="theme-box">
-              <div class="item" @click="changeMode('light')">
+            <div class="theme-box" role="group" aria-label="主题模式">
+              <button
+                class="item"
+                type="button"
+                :aria-pressed="userStore.mode === 'light'"
+                aria-label="切换为简约白主题"
+                @click="changeMode('light')"
+              >
                 <div class="item-top">
                   <el-icon v-if="userStore.mode === 'light'" class="check">
                     <check />
                   </el-icon>
                   <img :src="themeLight" alt="light theme">
                 </div>
-                <p>
+                <span class="item-label">
                   简约白
-                </p>
-              </div>
-              <div class="item" @click="changeMode('dark')">
+                </span>
+              </button>
+              <button
+                class="item"
+                type="button"
+                :aria-pressed="userStore.mode === 'dark'"
+                aria-label="切换为商务黑主题"
+                @click="changeMode('dark')"
+              >
                 <div class="item-top">
                   <el-icon v-if="userStore.mode === 'dark'" class="check">
                     <check />
                   </el-icon>
                   <img :src="themeDark" alt="dark theme">
                 </div>
-                <p>
+                <span class="item-label">
                   商务黑
-                </p>
-              </div>
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -113,6 +125,11 @@ const changeMode = (e) => {
       }
     }
     .item{
+      border: 0;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -128,7 +145,7 @@ const changeMode = (e) => {
         right:10px;
         bottom: 10px;
       }
-      p{
+      .item-label{
         text-align: center;
         font-size: 12px;
       }
