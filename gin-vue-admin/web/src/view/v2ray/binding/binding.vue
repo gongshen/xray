@@ -63,7 +63,7 @@
       class="share-dialog"
       center
     >
-      <div v-loading="shareLoading" :aria-busy="shareLoading" aria-label="分享配置内容" class="share-container">
+      <div v-loading="shareLoading" :aria-busy="shareLoading" role="region" aria-label="分享配置内容" class="share-container">
         <!-- 第一个配置 -->
         <div class="config-section">
           <div class="config-header">
