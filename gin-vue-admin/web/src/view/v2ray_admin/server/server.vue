@@ -65,7 +65,7 @@
             </template>
         </el-table-column>
         </el-table>
-        <div class="gva-pagination">
+        <div class="gva-pagination" role="navigation" aria-label="服务器列表分页">
             <el-pagination
             layout="total, sizes, prev, pager, next, jumper"
             :current-page="page"
