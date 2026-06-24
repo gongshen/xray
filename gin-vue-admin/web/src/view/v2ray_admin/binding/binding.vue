@@ -198,7 +198,7 @@
         </div>
       </template>
     </el-dialog>
-    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" title="弹窗操作">
+    <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" title="绑定信息">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="服务器ip:">
           <el-select v-model="formData.server_id" clearable filterable style="width:194px">
