@@ -553,6 +553,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
   padding: 14px 16px;
   margin-bottom: 16px;
@@ -565,12 +566,14 @@ export default {
   font-size: 15px;
   font-weight: 600;
   color: var(--gva-color-text-strong);
+  word-break: break-word;
 }
 
 .analysis-subtitle {
   margin-top: 4px;
   font-size: 13px;
   color: var(--gva-color-text-regular);
+  word-break: break-word;
 }
 
 .analysis-form {
