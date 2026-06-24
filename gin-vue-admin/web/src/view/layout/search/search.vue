@@ -20,12 +20,24 @@
       <div
         class="user-box"
       >
-        <div class="gvaIcon gvaIcon-refresh" :class="[reload ? 'reloading' : '']" @click="handleReload" />
+        <button
+          type="button"
+          class="gvaIcon gvaIcon-refresh search-action"
+          :class="[reload ? 'reloading' : '']"
+          :aria-busy="reload"
+          aria-label="刷新当前页面"
+          @click="handleReload"
+        ></button>
       </div>
       <div
         class="user-box"
       >
-        <div class="gvaIcon gvaIcon-search" @click="showSearch" />
+        <button
+          type="button"
+          class="gvaIcon gvaIcon-search search-action"
+          aria-label="打开页面搜索"
+          @click="showSearch"
+        ></button>
       </div>
       <div
         class="user-box"
@@ -87,6 +99,14 @@ const handleReload = () => {
 <style scoped lang="scss">
 .reload{
   font-size: 18px;
+}
+
+.search-action {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
 }
 
 .transition-box {
