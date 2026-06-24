@@ -16,7 +16,7 @@
             <el-option v-for="item in srvs" :key="item.ip" :value="item.ip" :label="item.ip" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="stat-action-group" role="group" aria-label="统计查询操作">
           <el-button type="primary" :icon="Search" @click="onSubmit">查询</el-button>
           <el-button :icon="Refresh" @click="onReset">重置</el-button>
         </el-form-item>

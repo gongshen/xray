@@ -6,7 +6,7 @@
           <el-date-picker v-model="searchInfo.startCreatedAt" type="date" placeholder="开始时间" aria-label="统计开始日期" :default-value="monthAgo"></el-date-picker>
           <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" aria-label="统计结束日期" :default-value="today"></el-date-picker>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="stat-action-group" role="group" aria-label="统计查询操作">
           <el-button type="primary" :icon="Search" @click="onSubmit">查询</el-button>
           <el-button :icon="Refresh" @click="onReset">重置</el-button>
         </el-form-item>
