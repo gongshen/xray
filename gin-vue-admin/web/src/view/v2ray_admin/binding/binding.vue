@@ -66,9 +66,11 @@
         </el-table-column>
         <el-table-column align="left" label="按钮组">
             <template #default="scope">
-            <el-button type="primary" link icon="share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>
-            <el-button v-if="scope.row.is_limited" type="primary" link icon="unlock" class="table-button" @click="removeLimitedFunc(scope.row)">解除限流</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+                <div class="table-row-actions" role="group" aria-label="绑定行操作">
+                    <el-button type="primary" link icon="share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>
+                    <el-button v-if="scope.row.is_limited" type="primary" link icon="unlock" class="table-button" @click="removeLimitedFunc(scope.row)">解除限流</el-button>
+                    <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+                </div>
             </template>
         </el-table-column>
         </el-table>
