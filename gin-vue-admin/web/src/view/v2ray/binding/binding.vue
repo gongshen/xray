@@ -75,7 +75,7 @@
           <div class="config-content">
             <div class="qr-container">
               <div class="qr-wrapper">
-                <img :src="shareInfo.share1" alt="配置二维码" class="qr-image"/>
+                <img :src="shareInfo.share1" alt="Shadowrocket / Qv2ray / V2rayXS 配置二维码" class="qr-image"/>
                 <div class="qr-overlay">
                   <el-icon class="qr-icon"><Picture /></el-icon>
                 </div>
@@ -123,7 +123,7 @@
           <div class="config-content">
             <div class="qr-container">
               <div class="qr-wrapper">
-                <img :src="shareInfo.share2" alt="配置二维码" class="qr-image"/>
+                <img :src="shareInfo.share2" alt="V2rayN / V2rayNG / V2rayXS 配置二维码" class="qr-image"/>
                 <div class="qr-overlay">
                   <el-icon class="qr-icon"><Picture /></el-icon>
                 </div>
