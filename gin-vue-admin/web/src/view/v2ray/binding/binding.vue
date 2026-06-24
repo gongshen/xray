@@ -18,6 +18,9 @@
         style="width: 100%"
         tooltip-effect="dark"
         :data="tableData"
+        :aria-busy="tableLoading"
+        aria-label="用户绑定列表"
+        :empty-text="tableLoading ? '加载中...' : '暂无数据'"
         row-key="ID"
         v-loading="tableLoading"
         >
