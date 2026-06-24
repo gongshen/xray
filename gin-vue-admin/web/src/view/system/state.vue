@@ -183,7 +183,7 @@
         <el-form-item label="结束">
           <el-input v-model="trafficAnalysisForm.end" clearable placeholder="9:00" aria-label="流量分析结束时间" />
         </el-form-item>
-        <el-form-item class="analysis-action">
+        <el-form-item class="analysis-action" role="group" aria-label="流量分析查询操作">
           <el-button type="primary" :icon="Search" :loading="trafficAnalysisLoading" @click="queryTrafficAnalysis">查询</el-button>
         </el-form-item>
       </el-form>
