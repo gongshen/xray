@@ -77,7 +77,7 @@
           :data="tableData"
           row-key="ID"
           stripe
-          :empty-text="tableData.length === 0 ? '暂无数据' : ''"
+          :empty-text="tableLoading ? '加载中...' : (tableData.length === 0 ? '暂无数据' : '')"
       >
         <el-table-column type="selection" width="55" />
         <el-table-column align="left" label="用户" prop="username" width="120">
