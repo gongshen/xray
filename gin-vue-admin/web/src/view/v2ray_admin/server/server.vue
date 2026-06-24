@@ -32,9 +32,13 @@
         </div>
         <el-table
         ref="multipleTable"
+        v-loading="tableLoading"
         style="width: 100%"
         tooltip-effect="dark"
         :data="tableData"
+        :aria-busy="tableLoading"
+        aria-label="服务器列表"
+        :empty-text="tableLoading ? '加载中...' : '暂无数据'"
         row-key="ID"
         @selection-change="handleSelectionChange"
         >
@@ -163,6 +167,7 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
+const tableLoading = ref(false)
 const searchInfo = ref({})
 const configInfo = ref({
   content: '',
@@ -195,12 +200,17 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
-  const table = await getServerList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
-  if (table.code === 0) {
-    tableData.value = table.data.list
-    total.value = table.data.total
-    page.value = table.data.page
-    pageSize.value = table.data.pageSize
+  tableLoading.value = true
+  try {
+    const table = await getServerList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    if (table.code === 0) {
+      tableData.value = table.data.list
+      total.value = table.data.total
+      page.value = table.data.page
+      pageSize.value = table.data.pageSize
+    }
+  } finally {
+    tableLoading.value = false
   }
 }
 
