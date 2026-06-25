@@ -4,11 +4,12 @@
  * */
 // 加载网站配置文件夹
 import { register } from './global'
+import { devLog } from '@/utils/devLogger'
 
 export default {
   install: (app) => {
     register(app)
-    console.log(`
+    devLog(`
        欢迎使用 Gin-Vue-Admin
        当前版本:v2.5.5
        加群方式:微信：shouzi_1994 QQ群：622360840

@@ -24,13 +24,15 @@
           </el-form-item>
 
           <el-form-item>
-            <el-button type="primary" icon="search" @click="getTableData">查询</el-button>
+            <el-button type="primary" :icon="$gvaIcons.Search" @click="getTableData">查询</el-button>
           </el-form-item>
         </el-form>
 
       </div>
 
-      <el-table :data="tableData">
+      <el-table
+        aria-label="上传文件列表"
+        empty-text="暂无数据" :data="tableData">
         <el-table-column align="left" label="预览" width="100">
           <template #default="scope">
             <CustomPic pic-type="file" :pic-src="scope.row.url" />
@@ -63,13 +65,14 @@
         </el-table-column>
         <el-table-column align="left" label="操作" width="160">
           <template #default="scope">
-            <el-button icon="download" type="primary" link @click="downloadFile(scope.row)">下载</el-button>
-            <el-button icon="delete" type="primary" link @click="deleteFileFunc(scope.row)">删除</el-button>
+            <el-button :icon="$gvaIcons.Download" type="primary" link @click="downloadFile(scope.row)">下载</el-button>
+            <el-button :icon="$gvaIcons.Delete" type="primary" link @click="deleteFileFunc(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
       <div class="gva-pagination">
         <el-pagination
+          aria-label="上传文件列表分页"
           :current-page="page"
           :page-size="pageSize"
           :page-sizes="[10, 30, 50, 100]"

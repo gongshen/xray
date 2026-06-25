@@ -1,17 +1,7 @@
-const child_process = require('child_process')
-import * as dotenv from 'dotenv'
-import * as fs from 'fs'
+import { spawn } from 'node:child_process'
 
-const NODE_ENV = process.env.NODE_ENV || 'development'
-const envFiles = [
-  `.env.${NODE_ENV}`
-]
-for (const file of envFiles) {
-  const envConfig = dotenv.parse(fs.readFileSync(file))
-  for (const k in envConfig) {
-    process.env[k] = envConfig[k]
-  }
-}
+const requestOrigin = 'http://localhost'
+const unsafeShellChars = /[\r\n<>"|&^%!]/
 
 export default function GvaPositionServer() {
   return {
@@ -19,41 +9,81 @@ export default function GvaPositionServer() {
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req._parsedUrl.pathname === '/gvaPositionCode') {
-          const path = req._parsedUrl.query && req._parsedUrl.query.split('=')[1]
-          if (path && path !== 'null') {
-            if (process.env.VITE_EDITOR === 'webstorm') {
-              const linePath = path.split(':')[1]
-              const filePath = path.split(':')[0]
-              const platform = os()
-              if (platform === 'win32') {
-                child_process.exec(`webstorm64.exe  --line ${linePath} ${filePath}`)
-              } else {
-                child_process.exec(`webstorm64  --line ${linePath} ${filePath}`)
-              }
-            } else {
-              child_process.exec('code -r -g ' + path)
-            }
-          }
+        const url = new URL(req.url || '/', requestOrigin)
+        if (url.pathname !== '/gvaPositionCode') {
+          next()
+          return
         }
-        next()
+
+        const target = parseEditorTarget(url.searchParams.get('filePath'))
+        if (target) {
+          openInEditor(target)
+        }
+
+        res.statusCode = 204
+        res.end()
       })
     }
   }
 }
 
-function os() {
-  'use strict'
-  const os = require('os')
-  const platform = os.platform()
-  switch (platform) {
-    case 'darwin':
-      return 'MacOSX'
-    case 'linux':
-      return 'Linux'
-    case 'win32':
-      return 'Windows'
-    default:
-      return '无法确定操作系统!'
+export const parseEditorTarget = (rawPath) => {
+  if (!rawPath || rawPath === 'null' || unsafeShellChars.test(rawPath)) {
+    return null
   }
+
+  const lineSeparator = rawPath.lastIndexOf(':')
+  const line = lineSeparator > -1 ? rawPath.slice(lineSeparator + 1) : ''
+  if (!/^\d+$/.test(line)) {
+    return null
+  }
+
+  const filePath = rawPath.slice(0, lineSeparator)
+  if (!filePath) {
+    return null
+  }
+
+  return {
+    filePath,
+    line,
+    editorTarget: rawPath,
+  }
+}
+
+export const getEditorLaunch = (target, editor = process.env.VITE_EDITOR, platform = process.platform) => {
+  if (!target) {
+    return null
+  }
+
+  if (editor === 'webstorm') {
+    return {
+      command: platform === 'win32' ? 'webstorm64.exe' : 'webstorm64',
+      args: ['--line', target.line, target.filePath],
+      shell: false,
+    }
+  }
+
+  return {
+    command: platform === 'win32' ? 'cmd.exe' : 'code',
+    args: platform === 'win32'
+      ? ['/d', '/s', '/c', 'code', '-r', '-g', target.editorTarget]
+      : ['-r', '-g', target.editorTarget],
+    shell: false,
+  }
+}
+
+const openInEditor = (target) => {
+  const launch = getEditorLaunch(target)
+  if (!launch) {
+    return
+  }
+
+  const child = spawn(launch.command, launch.args, {
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+    shell: launch.shell,
+  })
+  child.on('error', () => {})
+  child.unref()
 }

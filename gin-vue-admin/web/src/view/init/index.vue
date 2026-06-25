@@ -165,7 +165,7 @@ const onSubmit = async() => {
       router.push({ name: 'Login' })
     }
     loading.close()
-  } catch (err) {
+  } catch {
     loading.close()
   }
 }
@@ -187,7 +187,7 @@ const onSubmit = async() => {
     width: 96vw;
     height: 94vh;
     background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 10px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: space-evenly;
@@ -303,6 +303,15 @@ const onSubmit = async() => {
     opacity: 1;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .slide-in-fwd-top,
+  .slide-out-right,
+  .slide-in-left {
+    -webkit-animation: none;
+    animation: none;
+  }
+}
+
 @media (max-width: 750px) {
   .form {
     width: 94vw !important;

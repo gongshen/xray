@@ -309,6 +309,11 @@ const trafficAnalysisForm = reactive({
   start: '',
   end: '',
 })
+let serverListRequestId = 0
+let trafficUserRequestId = 0
+let trafficAnalysisRequestId = 0
+let isUnmounted = false
+let targetClassificationRequestId = 0
 
 const colors = progressThresholdColors
 
@@ -370,6 +375,8 @@ const openTrafficAnalysis = () => {
 }
 
 const closeTrafficAnalysis = () => {
+  trafficAnalysisRequestId++
+  targetClassificationRequestId++
   trafficAnalysisVisible.value = false
   trafficAnalysisLoading.value = false
   targetClassificationLoading.value = false
@@ -389,6 +396,7 @@ const queryTrafficAnalysis = async () => {
     ElMessage.warning(message)
     return
   }
+  const requestId = ++trafficAnalysisRequestId
   trafficAnalysisLoading.value = true
   targetClassificationResult.value = ''
   targetClassificationMinute.value = ''
@@ -401,6 +409,9 @@ const queryTrafficAnalysis = async () => {
       start: String(trafficAnalysisForm.start || '').trim(),
       end: String(trafficAnalysisForm.end || '').trim(),
     })
+    if (requestId !== trafficAnalysisRequestId || !trafficAnalysisVisible.value) {
+      return
+    }
     if (res?.code === 0) {
       trafficAnalysisResult.value = res.data.analysis || {}
       trafficAnalysisRows.value = Array.isArray(trafficAnalysisResult.value.rows) ? trafficAnalysisResult.value.rows : []
@@ -408,8 +419,14 @@ const queryTrafficAnalysis = async () => {
         ElMessage.info('该时间段没有匹配到流量明细')
       }
     }
+  } catch {
+    if (requestId === trafficAnalysisRequestId && trafficAnalysisVisible.value) {
+      ElMessage.error('流量分析查询失败')
+    }
   } finally {
-    trafficAnalysisLoading.value = false
+    if (requestId === trafficAnalysisRequestId) {
+      trafficAnalysisLoading.value = false
+    }
   }
 }
 
@@ -419,47 +436,70 @@ const classifyTrafficTargets = async (row) => {
     ElMessage.warning('当前行没有可分类的域名/IP')
     return
   }
+  const requestId = ++targetClassificationRequestId
   targetClassificationLoading.value = true
   targetClassificationResult.value = ''
   targetClassificationMinute.value = row?.minute || ''
   targetClassificationTargetCount.value = targets.length
   try {
     const res = await classifyTrafficTargetsApi({ targets })
+    if (requestId !== targetClassificationRequestId || !trafficAnalysisVisible.value) {
+      return
+    }
     if (res?.code === 0) {
       targetClassificationResult.value = res.data.classification?.result || ''
       if (!targetClassificationResult.value) {
         ElMessage.warning('分类结果为空')
       }
     }
+  } catch {
+    if (requestId === targetClassificationRequestId && trafficAnalysisVisible.value) {
+      ElMessage.error('访问目标分类失败')
+    }
   } finally {
-    targetClassificationLoading.value = false
+    if (requestId === targetClassificationRequestId) {
+      targetClassificationLoading.value = false
+    }
   }
 }
 
 // 加载服务器列表
 const loadServerList = async () => {
+  const requestId = ++serverListRequestId
   loading.value = true
   try {
     const { data } = await getAllServerApi()
+    if (requestId !== serverListRequestId || isUnmounted) {
+      return
+    }
     serverList.value = data.srvs || []
     // 默认选中第一个服务器
     if (serverList.value.length > 0 && !selectedServerId.value) {
       selectedServerId.value = serverList.value[0].ID
     }
+  } catch {
+    if (requestId === serverListRequestId && !isUnmounted) {
+      ElMessage.error('服务器状态加载失败')
+    }
   } finally {
-    loading.value = false
+    if (requestId === serverListRequestId && !isUnmounted) {
+      loading.value = false
+    }
   }
 }
 
 const getUsers = async() => {
+  const requestId = ++trafficUserRequestId
   trafficUserLoading.value = true
   try {
     const res = await getAllUserApi()
-    if (res.code === 0) {
+    if (requestId === trafficUserRequestId && !isUnmounted && res.code === 0) {
       users.value = res.data.users || []
     }
   } finally {
-    trafficUserLoading.value = false
+    if (requestId === trafficUserRequestId && !isUnmounted) {
+      trafficUserLoading.value = false
+    }
   }
 }
 
@@ -474,32 +514,43 @@ const onServerChange = () => {
 }
 
 // 重启VPS服务器
+
 const restartVPS = () => {
   if (!currentServer.value) {
-    ElMessage.warning('请先选择服务器')
+    ElMessage.warning('\u8bf7\u5148\u9009\u62e9\u670d\u52a1\u5668')
     return
   }
-  
-  ElMessageBox.confirm('确定要重启当前服务器吗？重启可能需要几分钟时间。', '重启服务器', {
-    confirmButtonText: '重启',
-    cancelButtonText: '取消',
+
+  ElMessageBox.confirm('\u786e\u5b9a\u8981\u91cd\u542f\u5f53\u524d\u670d\u52a1\u5668\u5417\uff1f\u91cd\u542f\u53ef\u80fd\u9700\u8981\u51e0\u5206\u949f\u65f6\u95f4\u3002', '\u91cd\u542f\u670d\u52a1\u5668', {
+    confirmButtonText: '\u91cd\u542f',
+    cancelButtonText: '\u53d6\u6d88',
     type: 'warning'
   }).then(async () => {
+    if (isUnmounted) {
+      return
+    }
     restartLoading.value = true
     try {
       const res = await restartVPSApi({ ID: currentServer.value.ID })
+      if (isUnmounted) {
+        return
+      }
       if (res.code === 0) {
-        ElMessage.success('重启成功')
+        ElMessage.success('\u91cd\u542f\u6210\u529f')
       } else {
-        ElMessage.error(res.msg || '重启失败')
+        ElMessage.error(res.msg || '\u91cd\u542f\u5931\u8d25')
       }
     } catch (error) {
-      ElMessage.error('重启失败: ' + (error.message || '未知错误'))
+      if (!isUnmounted) {
+        ElMessage.error('\u91cd\u542f\u5931\u8d25: ' + (error.message || '\u672a\u77e5\u9519\u8bef'))
+      }
     } finally {
-      restartLoading.value = false
+      if (!isUnmounted) {
+        restartLoading.value = false
+      }
     }
   }).catch(() => {
-    // 用户取消
+    // user canceled
   })
 }
 
@@ -511,11 +562,18 @@ onMounted(() => {
   getUsers()
   // 定时刷新 (每30秒)
   timer.value = setInterval(() => {
-    loadServerList()
+    if (!isUnmounted) {
+      loadServerList()
+    }
   }, 1000 * 30)
 })
 
 onUnmounted(() => {
+  isUnmounted = true
+  serverListRequestId++
+  trafficUserRequestId++
+  trafficAnalysisRequestId++
+  targetClassificationRequestId++
   clearInterval(timer.value)
   timer.value = null
   disposeResize?.()

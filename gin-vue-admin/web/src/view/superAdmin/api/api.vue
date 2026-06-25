@@ -22,14 +22,14 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" :icon="$gvaIcons.Search" @click="onSubmit">查询</el-button>
+          <el-button :icon="$gvaIcons.Refresh" @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog('addApi')">新增</el-button>
+        <el-button type="primary" :icon="$gvaIcons.Plus" @click="openDialog('addApi')">新增</el-button>
         <el-popover v-model="deleteVisible" placement="top" width="160">
           <p>确定要删除吗？</p>
           <div style="text-align: right; margin-top: 8px;">
@@ -37,11 +37,13 @@
             <el-button type="primary" @click="onDelete">确定</el-button>
           </div>
           <template #reference>
-            <el-button icon="delete" :disabled="!apis.length" style="margin-left: 10px;" @click="deleteVisible = true">删除</el-button>
+            <el-button :icon="$gvaIcons.Delete" :disabled="!apis.length" style="margin-left: 10px;" @click="deleteVisible = true">删除</el-button>
           </template>
         </el-popover>
       </div>
-      <el-table :data="tableData" @sort-change="sortChange" @selection-change="handleSelectionChange">
+      <el-table
+        aria-label="API 列表"
+        empty-text="暂无数据" :data="tableData" @sort-change="sortChange" @selection-change="handleSelectionChange">
         <el-table-column
           type="selection"
           width="55"
@@ -61,14 +63,14 @@
         <el-table-column align="left" fixed="right" label="操作" width="200">
           <template #default="scope">
             <el-button
-              icon="edit"
+              :icon="$gvaIcons.Edit"
 
               type="primary"
               link
               @click="editApiFunc(scope.row)"
             >编辑</el-button>
             <el-button
-              icon="delete"
+              :icon="$gvaIcons.Delete"
 
               type="primary"
               link
@@ -79,6 +81,7 @@
       </el-table>
       <div class="gva-pagination">
         <el-pagination
+          aria-label="API 列表分页"
           :current-page="page"
           :page-size="pageSize"
           :page-sizes="[10, 30, 50, 100]"

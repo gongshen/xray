@@ -135,5 +135,5 @@ watch(filterText, (val) => {
 </script>
 
 <style lang="scss" scoped>
-@import "@/style/button.scss";
+@use "@/style/button.scss" as *;
 </style>

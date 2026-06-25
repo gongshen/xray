@@ -6,11 +6,32 @@ import { ref } from 'vue'
 
 const routerListArr = []
 const notLayoutRouterArr = []
-const keepAliveRoutersArr = []
 const nameMap = {}
+const pendingNameMap = {}
+let keepAliveCacheVersion = 0
+
+const clearObject = (target) => {
+  Object.keys(target).forEach((key) => {
+    delete target[key]
+  })
+}
+
+const resetRouterCache = (routeMap) => {
+  keepAliveCacheVersion++
+  routerListArr.length = 0
+  notLayoutRouterArr.length = 0
+  clearObject(nameMap)
+  clearObject(pendingNameMap)
+  clearObject(routeMap)
+}
+
+const routeNeedsKeepAlive = (route) => {
+  return Boolean(route?.meta?.keepAlive || route?.children?.some(child => child?.meta?.keepAlive))
+}
 
 const formatRouter = (routes, routeMap) => {
   routes && routes.forEach(item => {
+    item.meta = item.meta || {}
     if ((!item.children || item.children.every(ch => ch.hidden)) && item.name !== '404' && !item.hidden) {
       routerListArr.push({ label: item.meta.title, value: item.name })
     }
@@ -30,72 +51,138 @@ const formatRouter = (routes, routeMap) => {
   })
 }
 
-const KeepAliveFilter = (routes) => {
-  routes && routes.forEach(item => {
-    // 子菜单中有 keep-alive 的，父菜单也必须 keep-alive，否则无效。这里将子菜单中有 keep-alive 的父菜单也加入。
-    if ((item.children && item.children.some(ch => ch.meta.keepAlive) || item.meta.keepAlive)) {
-      item.component && item.component().then(val => {
-        keepAliveRoutersArr.push(val.default.name)
-        nameMap[item.name] = val.default.name
-      })
+const resolveKeepAliveName = (routeName, routeRecord) => {
+  if (!routeName || nameMap[routeName]) {
+    return Promise.resolve(nameMap[routeName] || '')
+  }
+
+  if (pendingNameMap[routeName]) {
+    return pendingNameMap[routeName]
+  }
+
+  if (typeof routeRecord?.component !== 'function') {
+    nameMap[routeName] = routeName
+    return Promise.resolve(routeName)
+  }
+
+  const cacheVersion = keepAliveCacheVersion
+  const pendingPromise = routeRecord.component()
+    .then((module) => {
+      if (cacheVersion !== keepAliveCacheVersion) {
+        return ''
+      }
+      const componentName = module?.default?.name || routeName
+      nameMap[routeName] = componentName
+      return componentName
+    })
+    .catch(() => '')
+    .finally(() => {
+      if (pendingNameMap[routeName] === pendingPromise) {
+        delete pendingNameMap[routeName]
+      }
+    })
+
+  pendingNameMap[routeName] = pendingPromise
+  return pendingPromise
+}
+
+const collectResolvedKeepAliveNames = (history, routeMap) => {
+  return Array.from(new Set((history || []).map((item) => {
+    const routeRecord = routeMap[item.name]
+    if (!routeNeedsKeepAlive(item) && !routeNeedsKeepAlive(routeRecord)) {
+      return ''
     }
-    if (item.children && item.children.length > 0) {
-      KeepAliveFilter(item.children)
-    }
-  })
+    return nameMap[item.name] || ''
+  }).filter(Boolean)))
 }
 
 export const useRouterStore = defineStore('router', () => {
   const keepAliveRouters = ref([])
   const asyncRouterFlag = ref(0)
-  const setKeepAliveRouters = (history) => {
-    const keepArrTemp = []
-    history.forEach(item => {
-      if (nameMap[item.name]) {
-        keepArrTemp.push(nameMap[item.name])
-      }
-    })
-    keepAliveRouters.value = Array.from(new Set(keepArrTemp))
-  }
-  emitter.on('setKeepAlive', setKeepAliveRouters)
+  let keepAliveResolveVersion = 0
 
   const asyncRouters = ref([])
   const routerList = ref(routerListArr)
   const routeMap = ({})
-  // 从后台获取动态路由
-  const SetAsyncRouter = async() => {
-    asyncRouterFlag.value++
+  let setAsyncRouterPromise = null
+
+  const setKeepAliveRouters = (history = []) => {
+    const version = ++keepAliveResolveVersion
+    const pending = []
+
+    history.forEach((item) => {
+      const routeRecord = routeMap[item.name]
+      if (!routeNeedsKeepAlive(item) && !routeNeedsKeepAlive(routeRecord)) {
+        return
+      }
+      if (!nameMap[item.name]) {
+        pending.push(resolveKeepAliveName(item.name, routeRecord))
+      }
+    })
+
+    keepAliveRouters.value = collectResolvedKeepAliveNames(history, routeMap)
+
+    if (pending.length) {
+      Promise.all(pending).then(() => {
+        if (version === keepAliveResolveVersion) {
+          keepAliveRouters.value = collectResolvedKeepAliveNames(history, routeMap)
+        }
+      })
+    }
+  }
+  emitter.on('setKeepAlive', setKeepAliveRouters)
+
+  // Load dynamic routes from backend
+  const buildAsyncRouter = async() => {
+    const asyncRouterRes = await asyncMenu()
+    const asyncRouter = asyncRouterRes.data?.menus || []
+    resetRouterCache(routeMap)
+    keepAliveResolveVersion++
+    keepAliveRouters.value = []
     const baseRouter = [{
       path: '/layout',
       name: 'layout',
       component: 'view/layout/index.vue',
       meta: {
-        title: '底层layout'
+        title: '\u5e95\u5c42layout'
       },
       children: []
     }]
-    const asyncRouterRes = await asyncMenu()
-    const asyncRouter = asyncRouterRes.data.menus
-    asyncRouter && asyncRouter.push({
-      path: 'reload',
-      name: 'Reload',
-      hidden: true,
-      meta: {
-        title: '',
-        closeTab: true,
-      },
-      component: 'view/error/reload.vue'
-    })
+    if (!asyncRouter.some(item => item.name === 'Reload')) {
+      asyncRouter.push({
+        path: 'reload',
+        name: 'Reload',
+        hidden: true,
+        meta: {
+          title: '',
+          closeTab: true,
+        },
+        component: 'view/error/reload.vue'
+      })
+    }
     formatRouter(asyncRouter, routeMap)
     baseRouter[0].children = asyncRouter
     if (notLayoutRouterArr.length !== 0) {
       baseRouter.push(...notLayoutRouterArr)
     }
     asyncRouterHandle(baseRouter)
-    KeepAliveFilter(asyncRouter)
     asyncRouters.value = baseRouter
-    routerList.value = routerListArr
+    routerList.value = [...routerListArr]
+    asyncRouterFlag.value++
     return true
+  }
+
+  const SetAsyncRouter = async() => {
+    if (setAsyncRouterPromise) {
+      return setAsyncRouterPromise
+    }
+
+    setAsyncRouterPromise = buildAsyncRouter()
+    try {
+      return await setAsyncRouterPromise
+    } finally {
+      setAsyncRouterPromise = null
+    }
   }
 
   return {
@@ -107,4 +194,3 @@ export const useRouterStore = defineStore('router', () => {
     routeMap
   }
 })
-

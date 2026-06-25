@@ -17,7 +17,7 @@ const getRouter = async(userStore) => {
 }
 
 async function handleKeepAlive(to) {
-  if (to.matched.some(item => item.meta.keepAlive)) {
+  if (to.matched?.some(item => item.meta?.keepAlive)) {
     if (to.matched && to.matched.length > 2) {
       for (let i = 1; i < to.matched.length; i++) {
         const element = to.matched[i - 1]
@@ -26,7 +26,7 @@ async function handleKeepAlive(to) {
           await handleKeepAlive(to)
         }
         // 如果没有按需加载完成则等待加载
-        if (typeof element.components.default === 'function') {
+        if (typeof element?.components?.default === 'function') {
           await element.components.default()
           await handleKeepAlive(to)
         }
@@ -40,7 +40,7 @@ router.beforeEach(async(to, from) => {
   Nprogress.start()
   const userStore = useUserStore()
   to.meta.matched = [...to.matched]
-  handleKeepAlive(to)
+  await handleKeepAlive(to)
   const token = userStore.token
   // 在白名单中的判断情况
   document.title = getPageTitle(to.meta.title, to)

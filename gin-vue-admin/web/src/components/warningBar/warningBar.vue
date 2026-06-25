@@ -3,7 +3,7 @@
     v-if="href"
     class="warning-bar can-click"
     type="button"
-    :aria-label="`打开提示链接：${title}`"
+    :aria-label="warningLinkLabel"
     @click="open"
   >
     <el-icon>
@@ -27,6 +27,8 @@
 </template>
 <script setup>
 import { WarningFilled } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { openExternalUrl } from '@/utils/openExternalUrl'
 const prop = defineProps({
   title: {
     type: String,
@@ -38,10 +40,11 @@ const prop = defineProps({
   }
 })
 
+
+const warningLinkLabel = computed(() => `\u6253\u5f00\u63d0\u793a\u94fe\u63a5\uff1a${prop.title}`)
+
 const open = () => {
-  if (prop.href) {
-    window.open(prop.href)
-  }
+  openExternalUrl(prop.href)
 }
 </script>
 <style lang="scss" scoped>

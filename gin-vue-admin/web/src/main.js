@@ -1,6 +1,4 @@
 import { createApp } from 'vue'
-// 引入gin-vue-admin前端初始化相关内容
-import './core/gin-vue-admin'
 // 引入封装的router
 import router from '@/router/index'
 import '@/permission'
@@ -13,6 +11,7 @@ import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/loading/style/css'
 import 'element-plus/es/components/notification/style/css'
 import 'element-plus/es/components/message-box/style/css'
+import './style/iconfont.css'
 import './style/element_visiable.scss'
 
 initDom()
@@ -22,7 +21,6 @@ initDom()
  * */
 import Nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
-import * as echarts from "echarts";
 Nprogress.configure({ showSpinner: false, ease: 'ease', speed: 500 })
 Nprogress.start()
 

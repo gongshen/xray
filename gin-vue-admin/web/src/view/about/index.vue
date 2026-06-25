@@ -12,7 +12,7 @@
                 <img
                   class="org-img dom-center"
                   :src="logo"
-                  alt="gin-vue-admin"
+                  alt="gin-vue-admin" decoding="async" loading="lazy"
                 >
               </el-col>
             </el-row>
@@ -37,14 +37,14 @@
                 <img
                   class="org-img dom-center"
                   :src="flippedAurora"
-                  alt="flipped-aurora"
+                  alt="flipped-aurora" decoding="async" loading="lazy"
                 >
               </el-col>
             </el-row>
             <el-row style="margin-left: 40px" :gutter="20">
               <el-col v-for="item in members" :key="item.name" :span="8">
                 <div class="member-item">
-                  <img class="avatar-img" :src="item.avatar" :alt="item.name">
+                  <img class="avatar-img" :src="item.avatar" :alt="item.name" decoding="async" loading="lazy">
                   <span class="author-name">{{ item.name }}</span>
                 </div>
               </el-col>
@@ -60,8 +60,8 @@
           <div>
             <el-timeline>
               <el-timeline-item
-                v-for="(item,index) in dataTimeline"
-                :key="index"
+                v-for="item in dataTimeline"
+                :key="item.from || item.title"
                 :timestamp="item.from"
                 placement="top"
               >

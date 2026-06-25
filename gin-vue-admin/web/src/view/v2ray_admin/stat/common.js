@@ -10,12 +10,23 @@ import {
 } from './statChartData.mjs'
 
 const chartData = reactive(createChartDataState({includeRank: true}))
+let chartDataRequestId = 0
 
 export const useChartData = () => {
     return chartData
 }
 
 export const setChartData = async (searchInfo) => {
-    await loadRankChartData(chartData, getStatRank, searchInfo)
-    await loadTrendChartData(chartData, getStatCharts, searchInfo)
+    const requestId = ++chartDataRequestId
+    const nextChartData = createChartDataState({includeRank: true})
+    const [rankLoaded, trendLoaded] = await Promise.all([
+        loadRankChartData(nextChartData, getStatRank, searchInfo),
+        loadTrendChartData(nextChartData, getStatCharts, searchInfo),
+    ])
+    if (requestId !== chartDataRequestId) {
+        return false
+    }
+
+    Object.assign(chartData, nextChartData)
+    return rankLoaded && trendLoaded
 }

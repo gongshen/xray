@@ -69,7 +69,7 @@ export const useUserStore = defineStore('user', () => {
         loadingInstance.value.close()
         return true
       }
-    } catch (e) {
+    } catch {
       loadingInstance.value.close()
     }
     loadingInstance.value.close()

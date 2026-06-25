@@ -3,9 +3,11 @@
     <warning-bar title="在资源权限中将此角色的资源权限清空 或者不包含创建者的角色 即可屏蔽此客户资源的显示" />
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+        <el-button type="primary" :icon="$gvaIcons.Plus" @click="openDialog">新增</el-button>
       </div>
       <el-table
+        aria-label="客户列表"
+        empty-text="暂无数据"
         ref="multipleTable"
         :data="tableData"
         style="width: 100%"
@@ -23,7 +25,7 @@
         <el-table-column align="left" label="接入人ID" prop="sysUserId" width="120" />
         <el-table-column align="left" label="按钮组" min-width="160">
           <template #default="scope">
-            <el-button type="primary" link icon="edit" @click="updateCustomer(scope.row)">变更</el-button>
+            <el-button type="primary" link :icon="$gvaIcons.Edit" @click="updateCustomer(scope.row)">变更</el-button>
             <el-popover v-model="scope.row.visible" placement="top" width="160">
               <p>确定要删除吗？</p>
               <div style="text-align: right; margin-top: 8px;">
@@ -31,7 +33,7 @@
                 <el-button type="primary" @click="deleteCustomer(scope.row)">确定</el-button>
               </div>
               <template #reference>
-                <el-button type="primary" link icon="delete" @click="scope.row.visible = true">删除</el-button>
+                <el-button type="primary" link :icon="$gvaIcons.Delete" @click="scope.row.visible = true">删除</el-button>
               </template>
             </el-popover>
           </template>
@@ -39,6 +41,7 @@
       </el-table>
       <div class="gva-pagination">
         <el-pagination
+          aria-label="客户列表分页"
           :current-page="page"
           :page-size="pageSize"
           :page-sizes="[10, 30, 50, 100]"

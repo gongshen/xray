@@ -1,10 +1,16 @@
 <template>
   <el-container class="layout-cont">
     <el-container :class="[isSider?'openside':'hideside',isMobile ? 'mobile': '']">
-      <el-row :class="[isShadowBg?'shadowBg':'']" @click="changeShadow()" />
+      <button
+        v-show="isShadowBg"
+        class="shadowBg"
+        type="button"
+        aria-label="关闭侧边栏遮罩"
+        @click="changeShadow"
+      />
       <el-aside class="main-cont main-left gva-aside" id="layout-sidebar">
         <div class="tilte" :style="{background: backgroundColor}">
-          <img alt class="logoimg" :src="$GIN_VUE_ADMIN.appLogo">
+          <img class="logoimg" :src="$GIN_VUE_ADMIN.appLogo" alt="应用标识" decoding="async">
           <div v-if="isSider" class="tit-text" :style="{color:textColor}">{{ $GIN_VUE_ADMIN.appName }}</div>
         </div>
         <Aside class="aside" />
@@ -69,8 +75,8 @@
                                   </span>
                                 </el-dropdown-item>
                               </template>
-                              <el-dropdown-item icon="avatar" @click="toPerson">个人信息</el-dropdown-item>
-                              <el-dropdown-item icon="reading-lamp" @click="userStore.LoginOut">登 出</el-dropdown-item>
+                              <el-dropdown-item :icon="$gvaIcons.Avatar" @click="toPerson">个人信息</el-dropdown-item>
+                              <el-dropdown-item :icon="$gvaIcons.ReadingLamp" @click="userStore.LoginOut">登 出</el-dropdown-item>
                             </el-dropdown-menu>
                           </template>
                         </el-dropdown>
@@ -126,6 +132,7 @@ import { computed, ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useRouterStore } from '@/pinia/modules/router'
 import { fmtTitle } from '@/utils/fmtRouterTitle'
+import { markCloseAllHistory } from '@/view/layout/aside/historyComponent/historyStorage.mjs'
 import { useUserStore } from '@/pinia/modules/user'
 import {
   bindLayoutEventHandlers,
@@ -196,7 +203,7 @@ const changeUserAuth = async(id) => {
     authorityId: id
   })
   if (res.code === 0) {
-    window.sessionStorage.setItem('needCloseAll', 'true')
+    markCloseAllHistory()
     window.location.reload()
   }
 }
@@ -263,5 +270,5 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss">
-@import '@/style/mobile.scss';
+@use '@/style/mobile.scss' as *;
 </style>

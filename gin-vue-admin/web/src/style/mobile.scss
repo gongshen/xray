@@ -1,4 +1,4 @@
-@import '@/style/basics.scss';
+@use '@/style/basics.scss' as *;
 
 // Mobile devices (portrait phones)
 @media screen and (max-width: 480px) {

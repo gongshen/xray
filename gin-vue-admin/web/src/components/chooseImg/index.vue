@@ -22,17 +22,16 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" icon="search" @click="open">查询</el-button>
+          <el-button type="primary" :icon="$gvaIcons.Search" @click="open">查询</el-button>
         </el-form-item>
       </el-form>
     </div>
     <div class="media">
-      <div v-for="(item,key) in picList" :key="key" class="media-box">
+      <div v-for="item in picList" :key="item.ID || item.id || item.url" class="media-box">
         <div class="header-img-box-list">
           <el-image
-            :key="key"
+            :key="item.ID || item.id || item.url"
             :src="(item.url && item.url.slice(0, 4) !== 'http')?path+item.url:item.url"
-            @click="chooseImg(item.url,target,targetKey)"
           >
             <template #error>
               <div class="header-img-box-list">
@@ -42,6 +41,12 @@
               </div>
             </template>
           </el-image>
+          <button
+            class="choose-img-trigger"
+            type="button"
+            :aria-label="`选择图片：${item.name}`"
+            @click="chooseImg(item.url,target,targetKey)"
+          ></button>
         </div>
         <button
           class="img-title"
@@ -52,6 +57,7 @@
       </div>
     </div>
     <el-pagination
+      aria-label="媒体库分页"
       :current-page="page"
       :page-size="pageSize"
       :total="total"
@@ -139,7 +145,6 @@ const editFileNameFunc = async(row) => {
     inputValue: row.name
   }).then(async({ value }) => {
     row.name = value
-    // console.log(row)
     const res = await editFileName(row)
     if (res.code === 0) {
       ElMessage({
@@ -186,6 +191,7 @@ defineExpose({ open })
     }
 
     .header-img-box-list {
+      position: relative;
       width: 120px;
       height: 120px;
       border: 1px dashed #ccc;
@@ -194,6 +200,18 @@ defineExpose({ open })
       line-height: 120px;
       cursor: pointer;
       overflow: hidden;
+      .choose-img-trigger {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+      }
+      .choose-img-trigger:focus-visible {
+        outline: 2px solid var(--el-color-primary);
+        outline-offset: -2px;
+      }
       .el-image__inner {
         max-width: 120px;
         max-height: 120px;

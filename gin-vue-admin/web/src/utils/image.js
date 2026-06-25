@@ -8,7 +8,6 @@ export default class ImageCompress {
   compress() {
     // 压缩
     const fileType = this.file.type
-    const fileSize = this.file.size / 1024
     return new Promise(resolve => {
       const reader = new FileReader()
       reader.readAsDataURL(this.file)
@@ -29,8 +28,6 @@ export default class ImageCompress {
           const newImgData = canvas.toDataURL(fileType, 0.90)
 
           // 压缩宽高后的图像大小
-          const newImgSize = this.fileSizeKB(newImgData)
-
           const blob = this.dataURLtoBlob(newImgData, fileType)
           const nfile = new File([blob], this.file.name)
           resolve(nfile)
@@ -64,9 +61,7 @@ export default class ImageCompress {
   }
 
   fileSizeKB(dataURL) {
-    let sizeKB = 0
-    sizeKB = Math.round((dataURL.split(',')[1].length * 3 / 4) / 1024)
-    return sizeKB
+    return Math.round((dataURL.split(',')[1].length * 3 / 4) / 1024)
   }
 
   /**

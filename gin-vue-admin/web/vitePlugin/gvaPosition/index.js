@@ -26,7 +26,7 @@ const addLineAttr = (lineStr, line, id) => {
     return lineStr
   }
 
-  const reg = /((((^(\s)+\<))|(^\<))[\w-]+)|(<\/template)/g
+  const reg = /((((^(\s)+<))|(^<))[\w-]+)|(<\/template)/g
   let leftTagList = lineStr.match(reg)
   if (leftTagList) {
     leftTagList = Array.from(new Set(leftTagList))

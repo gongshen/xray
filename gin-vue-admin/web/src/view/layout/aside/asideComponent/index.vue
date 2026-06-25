@@ -6,9 +6,9 @@
     :theme="theme"
     :router-info="routerInfo"
   >
-    <template v-if="routerInfo.children&&routerInfo.children.length">
+    <template v-if="visibleChildren.length">
       <AsideComponent
-        v-for="item in routerInfo.children"
+        v-for="item in visibleChildren"
         :key="item.name"
         :is-collapse="false"
         :router-info="item"
@@ -31,7 +31,7 @@ import { computed } from 'vue'
 const props = defineProps({
   routerInfo: {
     type: Object,
-    default: () => null,
+    default: () => ({}),
   },
   isCollapse: {
     default: function() {
@@ -47,12 +47,10 @@ const props = defineProps({
   }
 })
 
+const visibleChildren = computed(() => props.routerInfo.children?.filter(item => !item.hidden) || [])
+
 const menuComponent = computed(() => {
-  if (props.routerInfo.children && props.routerInfo.children.filter(item => !item.hidden).length) {
-    return AsyncSubmenu
-  } else {
-    return MenuItem
-  }
+  return visibleChildren.value.length ? AsyncSubmenu : MenuItem
 })
 
 </script>

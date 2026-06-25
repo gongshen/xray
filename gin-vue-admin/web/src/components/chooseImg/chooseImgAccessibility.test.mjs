@@ -4,7 +4,29 @@ import fs from 'node:fs'
 const source = fs.readFileSync(new URL('./index.vue', import.meta.url), 'utf8')
 
 const editNameButton = source.match(/<button[^>]*class="img-title"[^>]*@click="editFileNameFunc\(item\)"[^>]*>/)
+const chooseImageButton = source.match(/<button[^>]*class="choose-img-trigger"[^>]*@click="chooseImg\(item\.url,target,targetKey\)"[^>]*>/)
 const searchInput = source.match(/<el-input[^>]*v-model="search\.keyword"[^>]*>/)
+const chooseImageStyle = source.match(/\.choose-img-trigger\s*\{([\s\S]*?)\n\s*\}/)
+
+assert.ok(chooseImageButton, 'media library image choose control should use a native button element')
+assert.match(chooseImageButton[0], /type="button"/, 'media library image choose button should not submit forms')
+assert.match(chooseImageButton[0], /:aria-label="`选择图片：\$\{item\.name\}`"/, 'media library image choose button should include the current filename in its accessible name')
+assert.doesNotMatch(source, /<el-image[^>]*@click="chooseImg\(item\.url,target,targetKey\)"/, 'media library image should not be directly clickable')
+
+assert.ok(chooseImageStyle, 'media library image choose button should have overlay styles')
+for (const declaration of [
+  'position: absolute;',
+  'inset: 0;',
+  'border: 0;',
+  'background: transparent;',
+  'padding: 0;',
+  'cursor: pointer;'
+]) {
+  assert.ok(
+    chooseImageStyle[1].includes(declaration),
+    `media library image choose button style should include ${declaration}`
+  )
+}
 
 assert.ok(editNameButton, 'media library filename edit control should use a native button element')
 assert.match(editNameButton[0], /type="button"/, 'media library filename edit button should not submit forms')

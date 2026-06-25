@@ -66,14 +66,14 @@ watch(() => props.theme, () => {
 
 <style lang="scss" scoped>
 .el-sub-menu{
-  ::v-deep(.el-sub-menu__title){
+  :deep(.el-sub-menu__title){
       padding: 6px;
       color: v-bind(normalText);
   }
 }
 
   .is-active:not(.is-opened){
-  ::v-deep(.el-sub-menu__title) .gva-subMenu{
+  :deep(.el-sub-menu__title) .gva-subMenu{
       flex:1;
       height: 100%;
       line-height: 44px;

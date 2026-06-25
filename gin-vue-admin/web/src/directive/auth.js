@@ -7,22 +7,8 @@ export default {
       // 当被绑定的元素插入到 DOM 中时……
       mounted: function(el, binding) {
         const userInfo = userStore.userInfo
-        let type = ''
-        switch (Object.prototype.toString.call(binding.value)) {
-          case '[object Array]':
-            type = 'Array'
-            break
-          case '[object String]':
-            type = 'String'
-            break
-          case '[object Number]':
-            type = 'Number'
-            break
-          default:
-            type = ''
-            break
-        }
-        if (type === '') {
+        const valueType = Object.prototype.toString.call(binding.value)
+        if (!['[object Array]', '[object String]', '[object Number]'].includes(valueType)) {
           el.parentNode.removeChild(el)
           return
         }

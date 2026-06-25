@@ -6,7 +6,7 @@
           <img
             class="login_panel_form_title_logo"
             :src="$GIN_VUE_ADMIN.appLogo"
-            alt="应用标识"
+            alt="应用标识" decoding="async"
           >
           <p class="login_panel_form_title_p">{{ $GIN_VUE_ADMIN.appName }}</p>
         </div>
@@ -22,7 +22,7 @@
               v-model="loginFormData.username"
               size="large"
               placeholder="请输入用户名"
-              suffix-icon="user"
+              suffix-:icon="$gvaIcons.User"
             />
           </el-form-item>
           <el-form-item prop="password">
@@ -52,7 +52,7 @@
                 >
                   <img
                     :src="picPath"
-                    alt="验证码图片"
+                    alt="验证码图片" decoding="async"
                   >
                 </button>
               </div>
@@ -87,12 +87,9 @@ export default {
 
 <script setup>
 import { captcha } from '@/api/user'
-import { checkDB } from '@/api/initdb'
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/modules/user'
-const router = useRouter()
 // 验证函数
 const checkUsername = (rule, value, callback) => {
   if (value.length < 5) {
@@ -169,24 +166,8 @@ const submitForm = () => {
   })
 }
 
-// 跳转初始化
-const checkInit = async() => {
-  const res = await checkDB()
-  if (res.code === 0) {
-    if (res.data?.needInit) {
-      userStore.NeedInit()
-      router.push({ name: 'Init' })
-    } else {
-      ElMessage({
-        type: 'info',
-        message: '已配置数据库信息，无法初始化',
-      })
-    }
-  }
-}
-
 </script>
 
 <style lang="scss" scoped>
-@import "@/style/newLogin.scss";
+@use "@/style/newLogin.scss" as *;
 </style>

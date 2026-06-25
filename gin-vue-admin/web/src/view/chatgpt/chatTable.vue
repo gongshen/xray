@@ -26,7 +26,7 @@
         <div class="chat-history">
           <div 
             v-for="(chat, index) in chatHistory" 
-            :key="index" 
+            :key="chat.id || chat.title"
             class="history-item"
             :class="{ 'active': currentChatIndex === index }"
           >
@@ -73,9 +73,9 @@
           </div>
           
           <div v-else class="message-container">
-            <div v-for="(item, index) in messages" :key="index" class="message" :class="item.role">
+            <div v-for="item in messages" :key="item.id || `${item.role}-${item.content || item.sql || 'message'}`" class="message" :class="item.role">
               <div class="message-avatar">
-                <el-avatar :icon="item.role === 'user' ? 'UserFilled' : 'Service'" :size="36"></el-avatar>
+                <el-avatar :icon="item.role === 'user' ? UserFilled : Service" :size="36"></el-avatar>
               </div>
               <div class="message-content">
                 <div v-if="item.role === 'assistant' && item.sql" class="sql-block">
@@ -87,14 +87,16 @@
                 </div>
                 <div v-if="item.role === 'assistant' && item.data && item.data.length">
                   <el-table
+                    aria-label="聊天查询结果表"
+                    empty-text="暂无数据"
                     :data="item.data"
                     style="width: 100%"
                     tooltip-effect="dark"
                     max-height="300px"
                   >
                     <el-table-column
-                      v-for="(col, colIndex) in Object.keys(item.data[0])"
-                      :key="colIndex"
+                      v-for="col in Object.keys(item.data[0])"
+                      :key="col"
                       :prop="col"
                       :label="col"
                       min-width="120"
@@ -117,8 +119,8 @@
               <div class="model-selector">
                 <el-select v-model="form.dbname" placeholder="请选择数据库" aria-label="查询数据库" size="large">
                   <el-option
-                    v-for="(item, index) in dbArr"
-                    :key="index"
+                    v-for="item in dbArr"
+                    :key="item.database"
                     :label="item.database"
                     :value="item.database"
                   />
@@ -132,7 +134,7 @@
                   clearable
                   placeholder="输入您的问题..."
                   aria-label="聊天问题"
-                  @keyup.enter.native="handleQueryTable"
+                  @keyup.enter="handleQueryTable"
                 />
                 <el-button 
                   type="primary" 
@@ -163,6 +165,7 @@ import { getTableApi,
   deleteSKApi } from '@/api/chatgpt'
 import { ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { copyTextToClipboard } from '@/utils/clipboard'
 import { Delete, Plus, Position, UserFilled, Service } from '@element-plus/icons-vue'
 
 const chatToken = ref(null)
@@ -174,6 +177,10 @@ const messages = ref([])
 const chatMessagesRef = ref(null)
 const chatHistory = ref([])
 const currentChatIndex = ref(0)
+let chatSequence = 0
+let messageSequence = 0
+const nextChatId = () => `chat-${Date.now()}-${chatSequence++}`
+const nextMessageId = () => `message-${Date.now()}-${messageSequence++}`
 
 // 获取SK
 const getSK = async() => {
@@ -224,6 +231,7 @@ const handleQueryTable = async() => {
   
   // 添加用户消息
   messages.value.push({
+    id: nextMessageId(),
     role: 'user',
     content: form.value.chat
   })
@@ -235,6 +243,7 @@ const handleQueryTable = async() => {
   // 添加当前对话到历史记录
   if (chatHistory.value.length === 0) {
     chatHistory.value.push({
+      id: nextChatId(),
       title: form.value.chat.substring(0, 20) + (form.value.chat.length > 20 ? '...' : ''),
       messages: [...messages.value]
     })
@@ -251,6 +260,7 @@ const handleQueryTable = async() => {
     
     // 添加AI回复
     messages.value.push({
+      id: nextMessageId(),
       role: 'assistant',
       content: tableData.value.length ? `已为您查询到${tableData.value.length}条结果` : '未查询到相关数据',
       sql: res.data.sql,
@@ -266,6 +276,7 @@ const handleQueryTable = async() => {
   } else {
     // 添加错误消息
     messages.value.push({
+      id: nextMessageId(),
       role: 'assistant',
       content: '查询失败: ' + (res.msg || '未知错误'),
     })
@@ -283,17 +294,15 @@ const scrollToBottom = () => {
 }
 
 // 复制SQL
-const copySql = (sql) => {
-  navigator.clipboard.writeText(sql)
-    .then(() => {
-      ElMessage.success('SQL已复制到剪贴板')
-    })
-    .catch(() => {
-      ElMessage.error('复制失败')
-    })
+const copySql = async(sql) => {
+  const copied = await copyTextToClipboard(sql)
+  if (copied) {
+    ElMessage.success('SQL\u5df2\u590d\u5236\u5230\u526a\u8d34\u677f')
+  } else {
+    ElMessage.error('\u590d\u5236\u5931\u8d25')
+  }
 }
 
-// 新建对话
 const startNewChat = () => {
   messages.value = []
   tableData.value = []
@@ -301,6 +310,7 @@ const startNewChat = () => {
   sql.value = ''
   
   chatHistory.value.push({
+    id: nextChatId(),
     title: '新对话',
     messages: []
   })

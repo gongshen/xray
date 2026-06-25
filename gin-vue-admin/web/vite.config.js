@@ -1,37 +1,96 @@
 import legacyPlugin from '@vitejs/plugin-legacy'
 import vuePlugin from '@vitejs/plugin-vue'
 import * as dotenv from 'dotenv'
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import AutoImport from 'unplugin-auto-import/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
 import Banner from 'vite-plugin-banner'
-import { viteLogo } from './src/core/config'
-import GvaPositionServer from './vitePlugin/codeServer'
-import fullImportPlugin from './vitePlugin/fullImport/fullImport.js'
-import GvaPosition from './vitePlugin/gvaPosition'
+import webConfig from './src/core/config'
+import { viteLogo } from './vitePlugin/viteLogo'
+
+const vendorChunkRules = [
+  ['vue-vendor', ['node_modules/vue', 'node_modules/@vue', 'node_modules/vue-router', 'node_modules/pinia']],
+  ['echarts', ['node_modules/echarts', 'node_modules/zrender']],
+  ['http-vendor', ['node_modules/axios', 'node_modules/qs']],
+]
+
+const manualChunks = (id) => {
+  const normalizedId = id.split(path.sep).join('/')
+  const matched = vendorChunkRules.find(([, packages]) => packages.some((packageName) => normalizedId.includes(packageName)))
+  if (matched) {
+    return matched[0]
+  }
+  if (normalizedId.includes('node_modules')) {
+    return 'vendor'
+  }
+}
+
+const injectElementTheme = (source, filename = '') => {
+  const normalizedFilename = filename.replace(/\\/g, '/')
+  if (normalizedFilename.endsWith('/node_modules/element-plus/theme-chalk/src/common/var.scss')) {
+    return source
+  }
+  if (normalizedFilename.includes('/node_modules/element-plus/theme-chalk/')) {
+    return `@use "@/style/element/index.scss" as *;\n${source}`
+  }
+  return source
+}
+
+const createDevInspectorPlugins = async (enabled) => {
+  if (!enabled) {
+    return []
+  }
+  const [
+    { default: GvaPositionServer },
+    { default: GvaPosition },
+  ] = await Promise.all([
+    import('./vitePlugin/codeServer/index.js'),
+    import('./vitePlugin/gvaPosition/index.js'),
+  ])
+  return [GvaPositionServer(), GvaPosition()]
+}
+
+const createFullImportPlugin = async () => {
+  const { default: fullImportPlugin } = await import('./vitePlugin/fullImport/fullImport.js')
+  return fullImportPlugin()
+}
+
 // @see https://cn.vitejs.dev/config/
-export default ({
+export default async ({
   command,
   mode
 }) => {
   const NODE_ENV = process.env.NODE_ENV || 'development'
+  const isServe = command === 'serve'
   const envFiles = [
     `.env.${NODE_ENV}`
   ]
   for (const file of envFiles) {
+    if (!fs.existsSync(file)) {
+      continue
+    }
     const envConfig = dotenv.parse(fs.readFileSync(file))
     for (const k in envConfig) {
       process.env[k] = envConfig[k]
     }
   }
 
-  viteLogo(process.env)
+  viteLogo(process.env, isServe && webConfig.showViteLogo)
 
-  const timestamp = Date.parse(new Date())
+  const timestamp = Date.now()
 
-  const optimizeDeps = {}
+  const optimizeDeps = isServe ? {
+    include: [
+      'vue',
+      'vue-router',
+      'pinia',
+      'axios',
+      'element-plus',
+      '@element-plus/icons-vue',
+    ]
+  } : {}
 
   const alias = {
     '@': path.resolve(__dirname, './src'),
@@ -41,8 +100,8 @@ export default ({
   const esbuild = {}
 
   const config = {
-    base: './', // index.html文件所在位置
-    root: './', // js导入的资源路径，src
+    base: './', // index.html file location
+    root: './', // imported resource root
     resolve: {
       alias,
     },
@@ -50,33 +109,43 @@ export default ({
       'process.env': {}
     },
     server: {
-      // 如果使用docker-compose开发模式，设置为false
+      // Set to false when using docker-compose development mode.
       open: true,
       port: process.env.VITE_CLI_PORT,
       proxy: {
-        // 把key的路径代理到target位置
-        // detail: https://cli.vuejs.org/config/#devserver-proxy
-        [process.env.VITE_BASE_API]: { // 需要代理的路径   例如 '/api'
-          target: `${process.env.VITE_BASE_PATH}:${process.env.VITE_SERVER_PORT}/`, // 代理到 目标路径
+        [process.env.VITE_BASE_API]: {
+          target: `${process.env.VITE_BASE_PATH}:${process.env.VITE_SERVER_PORT}/`,
           changeOrigin: true,
           rewrite: path => path.replace(new RegExp('^' + process.env.VITE_BASE_API), ''),
         }
       },
     },
     build: {
-      target: 'es2017',
-      minify: 'terser', // 是否进行压缩,boolean | 'terser' | 'esbuild',默认使用terser
-      manifest: false, // 是否产出manifest.json
-      sourcemap: false, // 是否产出sourcemap.json
-      outDir: 'dist', // 产出目录
-      chunkSizeWarningLimit: 1000, // 调整chunk大小警告限制到1000kb
-      // rollupOptions,
+      minify: 'terser',
+      manifest: false,
+      sourcemap: false,
+      outDir: 'dist',
+      chunkSizeWarningLimit: 1000,
+      reportCompressedSize: false,
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+        },
+        format: {
+          comments: false,
+        }
+      },
+      rollupOptions: {
+        output: {
+          manualChunks,
+        }
+      },
     },
     esbuild,
     optimizeDeps,
     plugins: [
-      GvaPositionServer(),
-      GvaPosition(),
+      ...(await createDevInspectorPlugins(isServe)),
       legacyPlugin({
         targets: ['Android > 39', 'Chrome >= 60', 'Safari >= 10.1', 'iOS >= 10.3', 'Firefox >= 54', 'Edge >= 15'],
       }),
@@ -86,7 +155,7 @@ export default ({
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@use "@/style/element/index.scss" as *;`,
+          additionalData: injectElementTheme,
         }
       }
     },
@@ -94,7 +163,7 @@ export default ({
 
   if (NODE_ENV === 'development') {
     config.plugins.push(
-      fullImportPlugin()
+      await createFullImportPlugin()
     )
   } else {
     config.plugins.push(AutoImport({

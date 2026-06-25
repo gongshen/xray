@@ -57,26 +57,49 @@ export default {
 <script setup>
 import Screenfull from '@/view/layout/screenfull/index.vue'
 import { emitter } from '@/utils/bus.js'
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRouterStore } from '@/pinia/modules/router'
+import { openExternalUrl } from '@/utils/openExternalUrl'
 
 const router = useRouter()
 
 const routerStore = useRouterStore()
 
+
 const changeRouter = (e) => {
-  if (e.indexOf('http:') > -1 || e.indexOf('https:') > -1) {
-    window.open(e)
+  if (!e) {
+    return
+  }
+  if (openExternalUrl(e)) {
     return
   }
   router.push({ name: e })
 }
 
 const show = ref(false)
+let hiddenSearchTimer = null
+let reloadStateTimer = null
+
+const clearHiddenSearchTimer = () => {
+  if (hiddenSearchTimer) {
+    clearTimeout(hiddenSearchTimer)
+    hiddenSearchTimer = null
+  }
+}
+
+const clearReloadStateTimer = () => {
+  if (reloadStateTimer) {
+    clearTimeout(reloadStateTimer)
+    reloadStateTimer = null
+  }
+}
+
 const hiddenSearch = async() => {
-  setTimeout(() => {
+  clearHiddenSearchTimer()
+  hiddenSearchTimer = setTimeout(() => {
     show.value = false
+    hiddenSearchTimer = null
   }, 100)
 }
 
@@ -84,17 +107,24 @@ const searchInput = ref(null)
 const showSearch = async() => {
   show.value = true
   await nextTick()
-  searchInput.value.focus()
+  searchInput.value?.focus()
 }
 
 const reload = ref(false)
 const handleReload = () => {
+  clearReloadStateTimer()
   reload.value = true
   emitter.emit('reload')
-  setTimeout(() => {
+  reloadStateTimer = setTimeout(() => {
     reload.value = false
+    reloadStateTimer = null
   }, 500)
 }
+
+onUnmounted(() => {
+  clearHiddenSearchTimer()
+  clearReloadStateTimer()
+})
 </script>
 <style scoped lang="scss">
 .reload{
@@ -114,16 +144,16 @@ const handleReload = () => {
   width: 160px;
   margin-right: 32px;
   text-align: center;
-  ::v-deep(.el-input__wrapper){
+  :deep(.el-input__wrapper){
     .el-input__inner{
       border-bottom: 1px solid var(--el-color-info-light-7);
     }
     box-shadow: none !important;
   }
-  ::v-deep(.el-select .el-input .el-input__wrapper.is-focus){
+  :deep(.el-select .el-input .el-input__wrapper.is-focus){
     box-shadow: none !important;
   }
-::v-deep(.el-select .el-input.is-focus .el-input__wrapper){
+:deep(.el-select .el-input.is-focus .el-input__wrapper){
     box-shadow: none !important;
   }
 }
@@ -138,6 +168,12 @@ const handleReload = () => {
   50%{transform:rotate(180deg);}
   75%{transform:rotate(270deg);}
   100%{transform:rotate(360deg);}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reloading{
+    animation: none;
+  }
 }
 
 .service {

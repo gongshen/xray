@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-button type="primary" class="drawer-container" icon="setting" aria-label="打开系统配置" @click="showSettingDrawer" />
+    <el-button type="primary" class="drawer-container" :icon="$gvaIcons.Setting" aria-label="打开系统配置" @click="showSettingDrawer" />
     <el-drawer
       v-model="drawer"
       title="系统配置"
@@ -22,7 +22,7 @@
                   <el-icon v-if="userStore.mode === 'light'" class="check">
                     <check />
                   </el-icon>
-                  <img :src="themeLight" alt="light theme">
+                  <img :src="themeLight" alt="light theme" decoding="async" loading="lazy">
                 </div>
                 <span class="item-label">
                   简约白
@@ -39,7 +39,7 @@
                   <el-icon v-if="userStore.mode === 'dark'" class="check">
                     <check />
                   </el-icon>
-                  <img :src="themeDark" alt="dark theme">
+                  <img :src="themeDark" alt="dark theme" decoding="async" loading="lazy">
                 </div>
                 <span class="item-label">
                   商务黑
@@ -88,7 +88,7 @@ const changeMode = (e) => {
 
 <style lang="scss" scoped>
 .drawer-container {
-  transition: all 0.2s;
+  transition: right 0.2s ease;
   &:hover{
     right: 0
   }

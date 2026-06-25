@@ -3,9 +3,11 @@
     <warning-bar title="注：右上角头像下拉可切换角色" />
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="addAuthority(0)">新增角色</el-button>
+        <el-button type="primary" :icon="$gvaIcons.Plus" @click="addAuthority(0)">新增角色</el-button>
       </div>
       <el-table
+        aria-label="角色列表"
+        empty-text="暂无数据"
         :data="tableData"
         :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
         row-key="authorityId"
@@ -16,35 +18,35 @@
         <el-table-column align="left" label="操作" width="460">
           <template #default="scope">
             <el-button
-              icon="setting"
+              :icon="$gvaIcons.Setting"
 
               type="primary"
               link
               @click="opdendrawer(scope.row)"
             >设置权限</el-button>
             <el-button
-              icon="plus"
+              :icon="$gvaIcons.Plus"
 
               type="primary"
               link
               @click="addAuthority(scope.row.authorityId)"
             >新增子角色</el-button>
             <el-button
-              icon="copy-document"
+              :icon="$gvaIcons.CopyDocument"
 
               type="primary"
               link
               @click="copyAuthorityFunc(scope.row)"
             >拷贝</el-button>
             <el-button
-              icon="edit"
+              :icon="$gvaIcons.Edit"
 
               type="primary"
               link
               @click="editAuthority(scope.row)"
             >编辑</el-button>
             <el-button
-              icon="delete"
+              :icon="$gvaIcons.Delete"
 
               type="primary"
               link

@@ -386,10 +386,10 @@ export default {
 <script setup>
 import { getSystemConfig, setSystemConfig } from '@/api/system'
 import { emailTest } from '@/api/email'
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
-const activeNames = reactive([])
+const activeNames = ref([])
 const config = ref({
   system: {
     'iplimit-count': 0,
@@ -461,7 +461,7 @@ const email = async() => {
     font-size: 16px;
     box-shadow: -4px 0px 0px 0px #e7e8e8;
   }
-  ::v-deep(.el-input-number__increase){
+  :deep(.el-input-number__increase){
     top:5px !important;
   }
   .gva-btn-list{

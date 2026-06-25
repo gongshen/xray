@@ -8,24 +8,38 @@ const service = axios.create({
   baseURL: import.meta.env.VITE_BASE_API,
   timeout: 99999
 })
-let acitveAxios = 0
-let timer
+const HTML_ESCAPE_MAP = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+}
+let activeAxios = 0
+let loadingTimer = null
+
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, char => HTML_ESCAPE_MAP[char])
+
 const showLoading = () => {
-  acitveAxios++
-  if (timer) {
-    clearTimeout(timer)
+  activeAxios++
+  if (loadingTimer) {
+    clearTimeout(loadingTimer)
   }
-  timer = setTimeout(() => {
-    if (acitveAxios > 0) {
+  loadingTimer = setTimeout(() => {
+    if (activeAxios > 0) {
       emitter.emit('showLoading')
     }
+    loadingTimer = null
   }, 400)
 }
 
 const closeLoading = () => {
-  acitveAxios--
-  if (acitveAxios <= 0) {
-    clearTimeout(timer)
+  activeAxios = Math.max(activeAxios - 1, 0)
+  if (activeAxios <= 0) {
+    if (loadingTimer) {
+      clearTimeout(loadingTimer)
+      loadingTimer = null
+    }
     emitter.emit('closeLoading')
   }
 }
@@ -45,7 +59,7 @@ service.interceptors.request.use(
     return config
   },
   error => {
-    if (!error.config.donNotShowLoading) {
+    if (!error.config?.donNotShowLoading) {
       closeLoading()
     }
     ElMessage({
@@ -87,14 +101,14 @@ service.interceptors.response.use(
     }
   },
   error => {
-    if (!error.config.donNotShowLoading) {
+    if (!error.config?.donNotShowLoading) {
       closeLoading()
     }
 
     if (!error.response) {
       ElMessageBox.confirm(`
         <p>检测到请求错误</p>
-        <p>${error}</p>
+        <p>${escapeHtml(error)}</p>
         `, '请求报错', {
         dangerouslyUseHTMLString: true,
         distinguishCancelAndClose: true,
@@ -107,7 +121,7 @@ service.interceptors.response.use(
     switch (error.response.status) {
       case 500:
         ElMessageBox.confirm(`
-        <p>检测到接口错误${error}</p>
+        <p>检测到接口错误${escapeHtml(error)}</p>
         <p>错误码<span style="color:red"> 500 </span>：此类错误内容常见于后台panic，请先查看后台日志，如果影响您正常使用可强制登出清理缓存</p>
         `, '接口报错', {
           dangerouslyUseHTMLString: true,
@@ -124,7 +138,7 @@ service.interceptors.response.use(
         break
       case 404:
         ElMessageBox.confirm(`
-          <p>检测到接口错误${error}</p>
+          <p>检测到接口错误${escapeHtml(error)}</p>
           <p>错误码<span style="color:red"> 404 </span>：此类错误多为接口未注册（或未重启）或者请求路径（方法）与api路径（方法）不符--如果为自动化代码请检查是否存在空格</p>
           `, '接口报错', {
           dangerouslyUseHTMLString: true,

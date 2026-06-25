@@ -13,7 +13,7 @@ export default {
 </script>
 
 <script setup>
-import zhCn from 'element-plus/lib/locale/lang/zh-cn'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 </script>
 <style lang="scss">
 // 引入初始化样式

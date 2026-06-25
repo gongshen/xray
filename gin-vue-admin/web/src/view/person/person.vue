@@ -43,7 +43,7 @@
                 </button>
               </p>
               <p v-if="editFlag" class="nickName">
-                <el-input v-model="nickName" />
+                <el-input v-model="nickName" aria-label="编辑昵称" />
                 <button
                   class="pointer nick-action"
                   type="button"
@@ -103,7 +103,12 @@
                   <p class="title">密保问题</p>
                   <p class="desc">
                     未设置密保问题
-                    <a href="javascript:void(0)">去设置</a>
+                    <button
+                      class="link-action"
+                      type="button"
+                      disabled
+                      aria-label="密保问题设置暂未开放"
+                    >去设置</button>
                   </p>
                 </li>
                 <li>
@@ -229,7 +234,7 @@ export default {
 <script setup>
 import ChooseImg from '@/components/chooseImg/index.vue'
 import { setSelfInfo, changePassword } from '@/api/user.js'
-import { reactive, ref } from 'vue'
+import { onUnmounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/pinia/modules/user'
 
@@ -338,23 +343,33 @@ const handleClick = () => {}
 
 const changePhoneFlag = ref(false)
 const time = ref(0)
+let phoneCodeTimer = null
 const phoneForm = reactive({
   phone: '',
   code: ''
 })
 
+const clearPhoneCodeTimer = () => {
+  if (phoneCodeTimer) {
+    clearInterval(phoneCodeTimer)
+    phoneCodeTimer = null
+  }
+}
+
 const getCode = async() => {
+  clearPhoneCodeTimer()
   time.value = 60
-  let timer = setInterval(() => {
+  phoneCodeTimer = setInterval(() => {
     time.value--
     if (time.value <= 0) {
-      clearInterval(timer)
-      timer = null
+      clearPhoneCodeTimer()
     }
   }, 1000)
 }
 
 const closeChangePhone = () => {
+  clearPhoneCodeTimer()
+  time.value = 0
   changePhoneFlag.value = false
   phoneForm.phone = ''
   phoneForm.code = ''
@@ -371,23 +386,33 @@ const changePhone = async() => {
 
 const changeEmailFlag = ref(false)
 const emailTime = ref(0)
+let emailCodeTimer = null
 const emailForm = reactive({
   email: '',
   code: ''
 })
 
+const clearEmailCodeTimer = () => {
+  if (emailCodeTimer) {
+    clearInterval(emailCodeTimer)
+    emailCodeTimer = null
+  }
+}
+
 const getEmailCode = async() => {
+  clearEmailCodeTimer()
   emailTime.value = 60
-  let timer = setInterval(() => {
+  emailCodeTimer = setInterval(() => {
     emailTime.value--
     if (emailTime.value <= 0) {
-      clearInterval(timer)
-      timer = null
+      clearEmailCodeTimer()
     }
   }, 1000)
 }
 
 const closeChangeEmail = () => {
+  clearEmailCodeTimer()
+  emailTime.value = 0
   changeEmailFlag.value = false
   emailForm.email = ''
   emailForm.code = ''
@@ -402,6 +427,11 @@ const changeEmail = async() => {
   }
 }
 
+
+onUnmounted(() => {
+  clearPhoneCodeTimer()
+  clearEmailCodeTimer()
+})
 </script>
 
 <style lang="scss">
@@ -510,6 +540,10 @@ const changeEmail = async() => {
           color: rgb(64, 158, 255);
           float: right;
         }
+        .link-action:disabled {
+          cursor: not-allowed;
+          opacity: .6;
+        }
       }
       border-bottom: 2px solid #f0f2f5;
       &:last-child{
@@ -525,7 +559,7 @@ const changeEmail = async() => {
   margin: 0 auto;
   display: flex;
   justify-content: center;
-  border-radius: 20px;
+  border-radius: 8px;
   &:hover {
     color: #fff;
     background: linear-gradient(

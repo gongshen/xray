@@ -67,7 +67,7 @@ const choseFile = async(e) => {
       spark.append(blob) // 文件流丢进工具
       fileMd5.value = spark.end() // 工具结束 产生一个a 总文件的md5
       const FileSliceCap = 1 * 1024 * 1024 // 分片字节数
-      let start = 0 // 定义分片开始切的地方
+      let start // 定义分片开始切的地方
       let end = 0 // 每片结束切的地方a
       let i = 0 // 第几片
       formDataList.value = [] // 分片存储的一个池子 丢全局
@@ -259,11 +259,21 @@ a {
         }
 }
 .list-enter-active, .list-leave-active {
-  transition: all 1s;
+  transition: opacity 1s, transform 1s;
 }
 .list-enter, .list-leave-to
 /* .list-leave-active for below version 2.1.8 */ {
   opacity: 0;
   transform: translateY(-30px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list-enter-active, .list-leave-active {
+    transition: none;
+  }
+
+  .list-enter, .list-leave-to {
+    transform: none;
+  }
 }
 </style>

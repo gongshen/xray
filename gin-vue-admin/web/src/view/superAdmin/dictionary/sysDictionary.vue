@@ -24,12 +24,12 @@
           <el-button
 
             type="primary"
-            icon="search"
+            :icon="$gvaIcons.Search"
             @click="onSubmit"
           >查询</el-button>
           <el-button
 
-            icon="refresh"
+            :icon="$gvaIcons.Refresh"
             @click="onReset"
           >重置</el-button>
         </el-form-item>
@@ -40,11 +40,13 @@
         <el-button
 
           type="primary"
-          icon="plus"
+          :icon="$gvaIcons.Plus"
           @click="openDialog"
         >新增</el-button>
       </div>
       <el-table
+        aria-label="字典列表"
+        empty-text="暂无数据"
         ref="multipleTable"
         :data="tableData"
         style="width: 100%"
@@ -84,14 +86,14 @@
           <template #default="scope">
             <el-button
 
-              icon="document"
+              :icon="$gvaIcons.Document"
               type="primary"
               link
               @click="toDetail(scope.row)"
             >详情</el-button>
             <el-button
 
-              icon="edit"
+              :icon="$gvaIcons.Edit"
               type="primary"
               link
               @click="updateSysDictionaryFunc(scope.row)"
@@ -119,7 +121,7 @@
                 <el-button
                   type="primary"
                   link
-                  icon="delete"
+                  :icon="$gvaIcons.Delete"
 
                   style="margin-left: 10px"
                   @click="scope.row.visible = true"
@@ -132,6 +134,7 @@
 
       <div class="gva-pagination">
         <el-pagination
+          aria-label="字典列表分页"
           :current-page="page"
           :page-size="pageSize"
           :page-sizes="[10, 30, 50, 100]"

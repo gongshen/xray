@@ -66,6 +66,14 @@ import {
   bindBodyClickHandler,
   bindEmitterHandlers,
 } from './historyEvents.mjs'
+import {
+  clearCloseAllHistoryFlag,
+  readActiveValue,
+  readHistoryStorage,
+  shouldCloseAllHistory,
+  writeActiveValue,
+  writeHistoryStorage,
+} from './historyStorage.mjs'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,6 +102,7 @@ const rightActive = ref('')
 let disposeBodyClick = null
 let disposeEmitterHandlers = null
 const defaultRouter = computed(() => userStore.userInfo.authority.defaultRouter)
+
 const openContextMenu = (e) => {
   if (
     historys.value.length === 1 &&
@@ -101,11 +110,12 @@ const openContextMenu = (e) => {
   ) {
     return false
   }
-  let id = ''
-  if (e.srcElement.nodeName === 'SPAN') {
-    id = e.srcElement.offsetParent.id
+  const eventTarget = e.target || e.srcElement
+  let id
+  if (eventTarget?.nodeName === 'SPAN') {
+    id = eventTarget.offsetParent?.id || ''
   } else {
-    id = e.srcElement.id
+    id = eventTarget?.id || ''
   }
   if (id) {
     contextMenuVisible.value = true
@@ -136,8 +146,9 @@ const closeAll = () => {
   ]
   router.push({ name: defaultRouter.value })
   contextMenuVisible.value = false
-  sessionStorage.setItem('historys', JSON.stringify(historys.value))
+  writeHistoryStorage(historys.value)
 }
+
 const closeLeft = () => {
   let right
   const rightIndex = historys.value.findIndex((item) => {
@@ -146,6 +157,10 @@ const closeLeft = () => {
     }
     return getFmtString(item) === rightActive.value
   })
+  if (rightIndex === -1) {
+    contextMenuVisible.value = false
+    return
+  }
   const activeIndex = historys.value.findIndex(
     (item) => getFmtString(item) === activeValue.value
   )
@@ -153,8 +168,10 @@ const closeLeft = () => {
   if (rightIndex > activeIndex) {
     router.push(right)
   }
-  sessionStorage.setItem('historys', JSON.stringify(historys.value))
+  writeHistoryStorage(historys.value)
+  contextMenuVisible.value = false
 }
+
 const closeRight = () => {
   let right
   const leftIndex = historys.value.findIndex((item) => {
@@ -163,6 +180,10 @@ const closeRight = () => {
     }
     return getFmtString(item) === rightActive.value
   })
+  if (leftIndex === -1) {
+    contextMenuVisible.value = false
+    return
+  }
   const activeIndex = historys.value.findIndex(
     (item) => getFmtString(item) === activeValue.value
   )
@@ -170,8 +191,10 @@ const closeRight = () => {
   if (leftIndex < activeIndex) {
     router.push(right)
   }
-  sessionStorage.setItem('historys', JSON.stringify(historys.value))
+  writeHistoryStorage(historys.value)
+  contextMenuVisible.value = false
 }
+
 const closeOther = () => {
   let right
   historys.value = historys.value.filter((item) => {
@@ -180,8 +203,11 @@ const closeOther = () => {
     }
     return getFmtString(item) === rightActive.value
   })
-  router.push(right)
-  sessionStorage.setItem('historys', JSON.stringify(historys.value))
+  if (right) {
+    router.push(right)
+  }
+  writeHistoryStorage(historys.value)
+  contextMenuVisible.value = false
 }
 const isSame = (route1, route2) => {
   if (route1.name !== route2.name) {
@@ -212,7 +238,7 @@ const setTab = (route) => {
     obj.params = route.params
     historys.value.push(obj)
   }
-  window.sessionStorage.setItem('activeValue', getFmtString(route))
+  writeActiveValue(getFmtString(route))
 }
 
 const historyMap = ref({})
@@ -227,10 +253,14 @@ const changeTab = (TabsPaneContext) => {
     params: tab.params,
   })
 }
+
 const removeTab = (tab) => {
   const index = historys.value.findIndex(
     (item) => getFmtString(item) === tab
   )
+  if (index === -1) {
+    return
+  }
   if (getFmtString(route) === tab) {
     if (historys.value.length === 1) {
       router.push({ name: defaultRouter.value })
@@ -274,12 +304,12 @@ watch(() => route, (to, now) => {
   }
   historys.value = historys.value.filter((item) => !item.meta.closeTab)
   setTab(to)
-  sessionStorage.setItem('historys', JSON.stringify(historys.value))
-  activeValue.value = window.sessionStorage.getItem('activeValue')
+  writeHistoryStorage(historys.value)
+  activeValue.value = readActiveValue()
 }, { deep: true })
 
 watch(() => historys.value, () => {
-  sessionStorage.setItem('historys', JSON.stringify(historys.value))
+  writeHistoryStorage(historys.value)
   historyMap.value = {}
   historys.value.forEach((item) => {
     historyMap.value[getFmtString(item)] = item
@@ -307,17 +337,17 @@ const initPage = () => {
       params: {},
     },
   ]
-  historys.value =
-      JSON.parse(sessionStorage.getItem('historys')) || initHistorys
-  if (!window.sessionStorage.getItem('activeValue')) {
+  historys.value = readHistoryStorage(initHistorys)
+  const storedActiveValue = readActiveValue()
+  if (!storedActiveValue) {
     activeValue.value = getFmtString(route)
   } else {
-    activeValue.value = window.sessionStorage.getItem('activeValue')
+    activeValue.value = storedActiveValue
   }
   setTab(route)
-  if (window.sessionStorage.getItem('needCloseAll') === 'true') {
+  if (shouldCloseAllHistory()) {
     closeAll()
-    window.sessionStorage.removeItem('needCloseAll')
+    clearCloseAllHistoryFlag()
   }
 }
 

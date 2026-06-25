@@ -12,8 +12,8 @@
           <el-input v-model="searchInfo.status" placeholder="搜索条件" aria-label="结果状态码筛选" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" :icon="$gvaIcons.Search" @click="onSubmit">查询</el-button>
+          <el-button :icon="$gvaIcons.Refresh" @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -27,11 +27,13 @@
             <el-button type="primary" @click="onDelete">确定</el-button>
           </div>
           <template #reference>
-            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
+            <el-button :icon="$gvaIcons.Delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
           </template>
         </el-popover>
       </div>
       <el-table
+        aria-label="操作日志列表"
+        empty-text="暂无数据"
         ref="multipleTable"
         :data="tableData"
         style="width: 100%"
@@ -102,7 +104,7 @@
                 <el-button type="primary" @click="deleteSysOperationRecordFunc(scope.row)">确定</el-button>
               </div>
               <template #reference>
-                <el-button icon="delete" type="primary" link @click="scope.row.visible = true">删除</el-button>
+                <el-button :icon="$gvaIcons.Delete" type="primary" link @click="scope.row.visible = true">删除</el-button>
               </template>
             </el-popover>
           </template>
@@ -110,6 +112,7 @@
       </el-table>
       <div class="gva-pagination">
         <el-pagination
+          aria-label="操作日志列表分页"
           :current-page="page"
           :page-size="pageSize"
           :page-sizes="[10, 30, 50, 100]"
@@ -220,7 +223,7 @@ const deleteSysOperationRecordFunc = async(row) => {
 const fmtBody = (value) => {
   try {
     return JSON.parse(value)
-  } catch (err) {
+  } catch {
     return value
   }
 }

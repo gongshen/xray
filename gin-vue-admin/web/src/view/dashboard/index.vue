@@ -42,38 +42,9 @@
             </div>
           </div>
         </div>
-        <img src="@/assets/dashboard.png" class="gva-top-card-right" alt="管理后台工作台插图">
+        <img src="@/assets/dashboard.png" class="gva-top-card-right" alt="管理后台工作台插图" decoding="async">
       </div>
     </div>
-<!--    <div class="gva-card-box">-->
-<!--      <el-card class="gva-card quick-entrance">-->
-<!--        <template #header>-->
-<!--          <div class="card-header">-->
-<!--            <span>快捷入口</span>-->
-<!--          </div>-->
-<!--        </template>-->
-<!--        <el-row :gutter="20">-->
-<!--          <el-col-->
-<!--            v-for="(card, key) in toolCards"-->
-<!--            :key="key"-->
-<!--            :span="4"-->
-<!--            :xs="8"-->
-<!--            class="quick-entrance-items"-->
-<!--            @click="toTarget(card.name)"-->
-<!--          >-->
-<!--            <div class="quick-entrance-item">-->
-<!--              <div class="quick-entrance-item-icon" :style="{ backgroundColor: card.bg }">-->
-<!--                <el-icon>-->
-<!--                  <component :is="card.icon" :style="{ color: card.color }" />-->
-<!--                </el-icon>-->
-<!--              </div>-->
-<!--              <p>{{ card.label }}</p>-->
-<!--            </div>-->
-<!--          </el-col>-->
-<!--        </el-row>-->
-<!--      </el-card>-->
-<!--    &lt;!&ndash; <div class="quick-entrance-title"></div> &ndash;&gt;-->
-<!--    </div>-->
     <div class="gva-card-box">
       <div class="gva-card">
         <div class="card-header">
@@ -95,65 +66,12 @@
 </template>
 
 <script setup>
-import EchartsLine from '@/view/dashboard/dashboardCharts/echartsLine.vue'
+import { defineAsyncComponent } from 'vue'
 import DashboardTable from '@/view/dashboard/dashboardTable/dashboardTable.vue'
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useWeatherInfo } from '@/view/dashboard/weather.js'
 
+const EchartsLine = defineAsyncComponent(() => import('@/view/dashboard/dashboardCharts/echartsLine.vue'))
 const weatherInfo = useWeatherInfo()
-
-const toolCards = ref([
-  {
-    label: '用户管理',
-    icon: 'monitor',
-    name: 'user',
-    color: '#ff9c6e',
-    bg: 'rgba(255, 156, 110,.3)'
-  },
-  {
-    label: '角色管理',
-    icon: 'setting',
-    name: 'authority',
-    color: '#69c0ff',
-    bg: 'rgba(105, 192, 255,.3)'
-  },
-  {
-    label: '菜单管理',
-    icon: 'menu',
-    name: 'menu',
-    color: '#b37feb',
-    bg: 'rgba(179, 127, 235,.3)'
-  },
-  {
-    label: '代码生成器',
-    icon: 'cpu',
-    name: 'autoCode',
-    color: '#ffd666',
-    bg: 'rgba(255, 214, 102,.3)'
-  },
-  {
-    label: '表单生成器',
-    icon: 'document-checked',
-    name: 'formCreate',
-    color: '#ff85c0',
-    bg: 'rgba(255, 133, 192,.3)'
-  },
-  {
-    label: '关于我们',
-    icon: 'user',
-    name: 'about',
-    color: '#5cdbd3',
-    bg: 'rgba(92, 219, 211,.3)'
-  }
-])
-
-const router = useRouter()
-
-const toTarget = (name) => {
-  router.push({ name })
-}
-
 </script>
 <script>
 export default {
@@ -222,7 +140,7 @@ export default {
             margin-top: 28px;
         }
     }
-     ::v-deep(.el-card__header){
+     :deep(.el-card__header){
           padding:0;
           border-bottom: none;
         }
@@ -247,7 +165,7 @@ export default {
           margin-top: -16px;
           margin-bottom: -16px;
           border-radius: 4px;
-          transition: all 0.2s;
+          transition: box-shadow 0.2s ease;
           &:hover{
             box-shadow: 0px 0px 7px 0px rgba(217, 217, 217, 0.55);
           }

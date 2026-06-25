@@ -7,8 +7,8 @@
       <el-date-picker v-model="searchInfo.endCreatedAt" type="date" placeholder="结束时间" aria-label="绑定结束日期"></el-date-picker>
       </el-form-item>
       <el-form-item role="group" aria-label="绑定查询操作">
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" :icon="$gvaIcons.Search" @click="onSubmit">查询</el-button>
+          <el-button :icon="$gvaIcons.Refresh" @click="onReset">重置</el-button>
       </el-form-item>
       </el-form>
     </div>
@@ -37,13 +37,14 @@
           <el-table-column align="left" label="操作">
             <template #default="scope">
                 <div class="table-row-actions" role="group" aria-label="绑定行操作">
-                    <el-button type="primary" link icon="share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>
+                    <el-button type="primary" link :icon="$gvaIcons.Share" class="table-button" @click="shareBindingFunc(scope.row)">分享</el-button>
                 </div>
             </template>
         </el-table-column>
         </el-table>
         <div class="gva-pagination" role="navigation" aria-label="绑定列表分页">
             <el-pagination
+              aria-label="用户绑定列表分页"
             layout="total, sizes, prev, pager, next, jumper"
             :current-page="page"
             :page-size="pageSize"
@@ -77,7 +78,7 @@
           <div class="config-content">
             <div class="qr-container">
               <div class="qr-wrapper">
-                <img :src="shareInfo.share1" alt="Shadowrocket / Qv2ray / V2rayXS 配置二维码" class="qr-image"/>
+                <img :src="shareInfo.share1" alt="Shadowrocket / Qv2ray / V2rayXS 配置二维码" class="qr-image" decoding="async" loading="lazy"/>
                 <div class="qr-overlay">
                   <el-icon class="qr-icon"><Picture /></el-icon>
                 </div>
@@ -125,7 +126,7 @@
           <div class="config-content">
             <div class="qr-container">
               <div class="qr-wrapper">
-                <img :src="shareInfo.share2" alt="V2rayN / V2rayNG / V2rayXS 配置二维码" class="qr-image"/>
+                <img :src="shareInfo.share2" alt="V2rayN / V2rayNG / V2rayXS 配置二维码" class="qr-image" decoding="async" loading="lazy"/>
                 <div class="qr-overlay">
                   <el-icon class="qr-icon"><Picture /></el-icon>
                 </div>
@@ -183,6 +184,7 @@ import {
 import QRCode from 'qrcode'
 
 import { formatDate } from '@/utils/format'
+import { copyTextToClipboard } from '@/utils/clipboard'
 import { ElMessage } from 'element-plus'
 import { ref } from 'vue'
 import { 
@@ -261,7 +263,7 @@ const getTableData = async() => {
       tableData.value = []
       total.value = 0
     }
-  } catch (error) {
+  } catch {
     ElMessage.error('网络请求失败')
     tableData.value = []
     total.value = 0
@@ -288,7 +290,7 @@ const shareBindingFunc = async(row) => {
       shareFormVisible.value = false
       ElMessage.error(res.msg || '获取分享配置失败')
     }
-  } catch (error) {
+  } catch {
     shareFormVisible.value = false
     ElMessage.error('获取分享配置失败')
   } finally {
@@ -308,44 +310,20 @@ const handleCopy = async (configType) => {
   if (!textToCopy) {
     ElMessage({
       type: 'warning',
-      message: '暂无可复制的配置',
+      message: '\u6682\u65e0\u53ef\u590d\u5236\u7684\u914d\u7f6e',
       duration: 2000
     })
     return
   }
 
-  try {
-    await navigator.clipboard.writeText(textToCopy)
-    ElMessage({
-      type: 'success',
-      message: successMessage,
-      duration: 2000
-    })
-  } catch (err) {
-    // 如果现代API失败，使用传统方法
-    const textArea = document.createElement('textarea')
-    textArea.value = textToCopy
-    document.body.appendChild(textArea)
-    textArea.select()
-    try {
-      document.execCommand('copy')
-      ElMessage({
-        type: 'success',
-        message: successMessage,
-        duration: 2000
-      })
-    } catch (fallbackErr) {
-      ElMessage({
-        type: 'error',
-        message: '复制失败，请手动复制',
-        duration: 2000
-      })
-    }
-    document.body.removeChild(textArea)
-  }
+  const copied = await copyTextToClipboard(textToCopy)
+  ElMessage({
+    type: copied ? 'success' : 'error',
+    message: copied ? successMessage : '\u590d\u5236\u5931\u8d25\uff0c\u8bf7\u624b\u52a8\u590d\u5236',
+    duration: 2000
+  })
 }
 
-// 下载二维码
 const downloadQR = (dataUrl, filename) => {
   if (!dataUrl) {
     ElMessage({
@@ -420,10 +398,10 @@ const downloadQR = (dataUrl, filename) => {
 
 .config-section {
   background: white;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .config-section:hover {
@@ -473,14 +451,15 @@ const downloadQR = (dataUrl, filename) => {
   position: relative;
   width: 180px;
   height: 180px;
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .qr-wrapper:hover {
-  transform: scale(1.05);
+  border-color: rgba(64, 158, 255, 0.35);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
@@ -537,8 +516,7 @@ const downloadQR = (dataUrl, filename) => {
   height: 48px;
   font-size: 14px;
   font-weight: 500;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -547,6 +525,7 @@ const downloadQR = (dataUrl, filename) => {
   margin: 0;
   border: 1px solid transparent;
   line-height: 1;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .copy-btn {
@@ -562,12 +541,13 @@ const downloadQR = (dataUrl, filename) => {
 }
 
 .copy-btn:hover {
-  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.45);
   box-shadow: 0 8px 20px rgba(64, 158, 255, 0.3);
 }
 
 .qr-btn:hover {
-  transform: translateY(-2px);
+  background: #f0f9eb;
+  border-color: #67c23a;
   box-shadow: 0 8px 20px rgba(103, 194, 58, 0.3);
 }
 
@@ -598,11 +578,21 @@ const downloadQR = (dataUrl, filename) => {
 .dialog-footer .el-button {
   min-width: 120px;
   height: 40px;
-  border-radius: 20px;
+  border-radius: 8px;
   font-weight: 500;
 }
 
 /* 移动端优化 */
+@media (prefers-reduced-motion: reduce) {
+  .config-section,
+  .qr-wrapper,
+  .qr-overlay,
+  .copy-btn,
+  .qr-btn {
+    transition: none;
+  }
+}
+
 @media screen and (max-width: 768px) {
   :deep(.share-dialog) {
     width: 95% !important;

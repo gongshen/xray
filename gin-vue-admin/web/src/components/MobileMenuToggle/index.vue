@@ -20,25 +20,47 @@ import {
   bindEmitterHandler,
   bindWindowEvent,
 } from '@/utils/eventLifecycle.mjs'
+import { lockBodyScroll } from '@/utils/bodyScrollLock.mjs'
 
 const isMobile = ref(false)
 const isMenuVisible = ref(false)
 let disposeResize = null
 let disposeRouteChange = null
+let disposeToggleMobileMenu = null
+let releaseBodyScrollLock = null
 
-const toggleMobileMenu = () => {
-  isMenuVisible.value = !isMenuVisible.value
-  emitter.emit('toggleMobileMenu', isMenuVisible.value)
-  
-  // Toggle mobile-visible class on aside element
+const releaseMobileMenuScroll = () => {
+  releaseBodyScrollLock?.()
+  releaseBodyScrollLock = null
+}
+
+const syncAsideVisibility = (visible) => {
   const asideElement = document.querySelector('.gva-aside')
   if (asideElement) {
-    if (isMenuVisible.value) {
-      asideElement.classList.add('mobile-visible')
-    } else {
-      asideElement.classList.remove('mobile-visible')
-    }
+    asideElement.classList.toggle('mobile-visible', visible)
   }
+
+  if (visible) {
+    releaseMobileMenuScroll()
+    releaseBodyScrollLock = lockBodyScroll()
+  } else {
+    releaseMobileMenuScroll()
+  }
+}
+
+const setMobileMenuVisible = (visible, shouldEmit = false) => {
+  const nextVisible = Boolean(visible)
+  if (isMenuVisible.value !== nextVisible) {
+    isMenuVisible.value = nextVisible
+    syncAsideVisibility(nextVisible)
+  }
+  if (shouldEmit) {
+    emitter.emit('toggleMobileMenu', nextVisible)
+  }
+}
+
+const toggleMobileMenu = () => {
+  setMobileMenuVisible(!isMenuVisible.value, true)
 }
 
 const checkMobile = () => {
@@ -46,24 +68,29 @@ const checkMobile = () => {
   isMobile.value = screenWidth < 768
 }
 const closeMenuOnRouteChange = () => {
-  if (isMenuVisible.value) {
-    toggleMobileMenu()
-  }
+  setMobileMenuVisible(false, true)
+}
+const handleToggleMobileMenu = (visible) => {
+  setMobileMenuVisible(visible)
 }
 
 onMounted(() => {
   checkMobile()
   disposeResize = bindWindowEvent(window, 'resize', checkMobile)
   
-  // Listen for route changes to close menu
+  // Listen for route changes and overlay close actions to close menu
   disposeRouteChange = bindEmitterHandler(emitter, 'routeChange', closeMenuOnRouteChange)
+  disposeToggleMobileMenu = bindEmitterHandler(emitter, 'toggleMobileMenu', handleToggleMobileMenu)
 })
 
 onUnmounted(() => {
+  setMobileMenuVisible(false, true)
   disposeResize?.()
   disposeResize = null
   disposeRouteChange?.()
   disposeRouteChange = null
+  disposeToggleMobileMenu?.()
+  disposeToggleMobileMenu = null
 })
 </script>
 

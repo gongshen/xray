@@ -9,5 +9,6 @@ export const register = (app) => {
   for (const iconName in ElIconModules) {
     app.component(iconName, ElIconModules[iconName])
   }
+  app.config.globalProperties.$gvaIcons = ElIconModules
   app.config.globalProperties.$GIN_VUE_ADMIN = config
 }

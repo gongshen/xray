@@ -2,11 +2,13 @@
   <div>
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="addMenu('0')">新增根菜单</el-button>
+        <el-button type="primary" :icon="$gvaIcons.Plus" @click="addMenu('0')">新增根菜单</el-button>
       </div>
 
       <!-- 由于此处菜单跟左侧列表一一对应所以不需要分页 pageSize默认999 -->
-      <el-table :data="tableData" row-key="ID">
+      <el-table
+        aria-label="菜单列表"
+        empty-text="暂无数据" :data="tableData" row-key="ID">
         <el-table-column align="left" label="ID" min-width="100" prop="ID" />
         <el-table-column align="left" label="展示名称" min-width="120" prop="authorityName">
           <template #default="scope">
@@ -38,20 +40,20 @@
             <el-button
               type="primary"
               link
-              icon="plus"
+              :icon="$gvaIcons.Plus"
               @click="addMenu(scope.row.ID)"
             >添加子菜单</el-button>
             <el-button
               type="primary"
               link
-              icon="edit"
+              :icon="$gvaIcons.Edit"
               @click="editMenu(scope.row.ID)"
             >编辑</el-button>
             <el-button
 
               type="primary"
               link
-              icon="delete"
+              :icon="$gvaIcons.Delete"
               @click="deleteMenu(scope.row.ID)"
             >删除</el-button>
           </template>
@@ -164,10 +166,12 @@
       <div>
         <el-button
           type="primary"
-          icon="edit"
+          :icon="$gvaIcons.Edit"
           @click="addParameter(form)"
         >新增菜单参数</el-button>
-        <el-table :data="form.parameters" style="width: 100%;margin-top: 12px;">
+        <el-table
+          aria-label="菜单参数列表"
+          empty-text="暂无数据" :data="form.parameters" style="width: 100%;margin-top: 12px;">
           <el-table-column align="left" prop="type" label="参数类型" width="180">
             <template #default="scope">
               <el-select v-model="scope.row.type" placeholder="请选择">
@@ -179,14 +183,14 @@
           <el-table-column align="left" prop="key" label="参数key" width="180">
             <template #default="scope">
               <div>
-                <el-input v-model="scope.row.key" />
+                <el-input v-model="scope.row.key" aria-label="参数 key" />
               </div>
             </template>
           </el-table-column>
           <el-table-column align="left" prop="value" label="参数值">
             <template #default="scope">
               <div>
-                <el-input v-model="scope.row.value" />
+                <el-input v-model="scope.row.value" aria-label="参数值" />
               </div>
             </template>
           </el-table-column>
@@ -196,7 +200,7 @@
                 <el-button
                   type="danger"
 
-                  icon="delete"
+                  :icon="$gvaIcons.Delete"
                   @click="deleteParameter(form.parameters,scope.$index)"
                 >删除</el-button>
               </div>
@@ -207,21 +211,23 @@
         <el-button
           style="margin-top:12px"
           type="primary"
-          icon="edit"
+          :icon="$gvaIcons.Edit"
           @click="addBtn(form)"
         >新增可控按钮</el-button>
-        <el-table :data="form.menuBtn" style="width: 100%;margin-top: 12px;">
+        <el-table
+          aria-label="菜单按钮列表"
+          empty-text="暂无数据" :data="form.menuBtn" style="width: 100%;margin-top: 12px;">
           <el-table-column align="left" prop="name" label="按钮名称" width="180">
             <template #default="scope">
               <div>
-                <el-input v-model="scope.row.name" />
+                <el-input v-model="scope.row.name" aria-label="按钮名称" />
               </div>
             </template>
           </el-table-column>
           <el-table-column align="left" prop="name" label="备注" width="180">
             <template #default="scope">
               <div>
-                <el-input v-model="scope.row.desc" />
+                <el-input v-model="scope.row.desc" aria-label="按钮备注" />
               </div>
             </template>
           </el-table-column>
@@ -231,7 +237,7 @@
                 <el-button
                   type="danger"
 
-                  icon="delete"
+                  :icon="$gvaIcons.Delete"
                   @click="deleteBtn(form.menuBtn,scope.$index)"
                 >删除</el-button>
               </div>

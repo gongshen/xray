@@ -9,7 +9,7 @@
     </div>
     <div class="tree-content">
       <el-checkbox-group v-model="dataAuthorityId" @change="selectAuthority">
-        <el-checkbox v-for="(item,key) in authoritys" :key="key" :label="item">{{ item.authorityName }}</el-checkbox>
+        <el-checkbox v-for="item in authoritys" :key="item.authorityId || item.authorityName" :label="item">{{ item.authorityName }}</el-checkbox>
       </el-checkbox-group>
     </div>
   </div>

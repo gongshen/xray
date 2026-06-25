@@ -16,10 +16,12 @@
           unique-opened
           @select="selectMenuItem"
         >
-          <template v-for="item in routerStore.asyncRouters[0].children">
+          <template
+            v-for="item in menuRouters"
+            :key="item.name"
+          >
             <aside-component
               v-if="!item.hidden"
-              :key="item.name"
               :is-collapse="isCollapse"
               :router-info="item"
               :theme="theme"
@@ -40,17 +42,20 @@ export default {
 <script setup>
 import AsideComponent from '@/view/layout/aside/asideComponent/index.vue'
 import { emitter } from '@/utils/bus.js'
-import { ref, watch, onUnmounted } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/modules/user'
 import { useRouterStore } from '@/pinia/modules/router'
 import { bindEmitterHandler } from '@/utils/eventLifecycle.mjs'
+import { openExternalUrl } from '@/utils/openExternalUrl'
 
 const route = useRoute()
 const router = useRouter()
 
 const userStore = useUserStore()
 const routerStore = useRouterStore()
+
+const menuRouters = computed(() => routerStore.asyncRouters[0]?.children || [])
 
 const theme = ref({})
 
@@ -112,23 +117,25 @@ onUnmounted(() => {
   disposeCollapse = null
 })
 
-const selectMenuItem = (index, _, ele, aaa) => {
+
+const selectMenuItem = (index) => {
+  if (!index) {
+    return
+  }
   const query = {}
   const params = {}
- routerStore.routeMap[index]?.parameters &&
-    routerStore.routeMap[index]?.parameters.forEach((item) => {
-      if (item.type === 'query') {
-        query[item.key] = item.value
-      } else {
-        params[item.key] = item.value
-      }
-    })
- if (index === route.name) return
- if (index.indexOf('http://') > -1 || index.indexOf('https://') > -1) {
-   window.open(index)
- } else {
-   router.push({ name: index, query, params })
- }
+  routerStore.routeMap[index]?.parameters?.forEach((item) => {
+    if (item.type === 'query') {
+      query[item.key] = item.value
+    } else {
+      params[item.key] = item.value
+    }
+  })
+  if (index === route.name) return
+  if (openExternalUrl(index)) {
+    return
+  }
+  router.push({ name: index, query, params })
 }
 </script>
 

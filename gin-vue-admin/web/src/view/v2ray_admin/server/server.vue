@@ -11,14 +11,14 @@
 
         </el-form-item>
         <el-form-item role="group" aria-label="服务器查询操作">
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" :icon="$gvaIcons.Search" @click="onSubmit">查询</el-button>
+          <el-button :icon="$gvaIcons.Refresh" @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
     <div class="gva-table-box" role="region" aria-label="服务器列表明细">
         <div class="gva-btn-list" role="group" aria-label="服务器列表操作">
-            <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+            <el-button type="primary" :icon="$gvaIcons.Plus" @click="openDialog">新增</el-button>
             <el-popover v-model:visible="deleteVisible" placement="top" width="160">
             <p>确定要删除选中的服务器吗？</p>
             <div style="text-align: right; margin-top: 8px;">
@@ -26,7 +26,7 @@
                 <el-button type="danger" aria-label="确认批量删除服务器" @click="onDelete">确定</el-button>
             </div>
             <template #reference>
-                <el-button type="danger" icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" aria-label="批量删除服务器" @click="deleteVisible = true">删除</el-button>
+                <el-button type="danger" :icon="$gvaIcons.Delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" aria-label="批量删除服务器" @click="deleteVisible = true">删除</el-button>
             </template>
             </el-popover>
         </div>
@@ -59,16 +59,17 @@
         <el-table-column align="left" label="操作">
             <template #default="scope">
                 <div class="table-row-actions" role="group" aria-label="服务器行操作">
-                    <el-button type="primary" link icon="document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>
-                    <el-button type="primary" link icon="edit" class="table-button" @click="updateServerFunc(scope.row)">编辑</el-button>
-                    <el-button type="warning" link icon="refresh" aria-label="重启服务器代理" @click="restartXray(scope.row)">代理重启</el-button>
-                    <el-button type="danger" link icon="delete" aria-label="删除服务器" @click="deleteRow(scope.row)">删除</el-button>
+                    <el-button type="primary" link :icon="$gvaIcons.Document" class="table-button" @click="showServerConfig(scope.row)">查看配置</el-button>
+                    <el-button type="primary" link :icon="$gvaIcons.Edit" class="table-button" @click="updateServerFunc(scope.row)">编辑</el-button>
+                    <el-button type="warning" link :icon="$gvaIcons.Refresh" aria-label="重启服务器代理" @click="restartXray(scope.row)">代理重启</el-button>
+                    <el-button type="danger" link :icon="$gvaIcons.Delete" aria-label="删除服务器" @click="deleteRow(scope.row)">删除</el-button>
                 </div>
             </template>
         </el-table-column>
         </el-table>
         <div class="gva-pagination" role="navigation" aria-label="服务器列表分页">
             <el-pagination
+              aria-label="服务器列表分页"
             layout="total, sizes, prev, pager, next, jumper"
             :current-page="page"
             :page-size="pageSize"
@@ -127,16 +128,16 @@ import {
   deleteServer,
   deleteServerByIds,
   updateServer,
-  findServer,
   getServerList,
   restartXrayApi
 } from '@/api/server'
 
 // 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/format'
+import { formatDate } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 import { buildServerPortChangeReminder } from './serverPortReminder.mjs'
+import { devError } from '@/utils/devLogger'
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
@@ -324,7 +325,7 @@ const updateServerFunc = async(row) => {
         }
     } catch (error) {
         // Handle unexpected errors
-        console.error('更新服务器时出错:', error)
+        devError('更新服务器时出错:', error)
         ElMessage({
             type: 'error',
             message: '更新服务器时发生错误'
@@ -393,7 +394,7 @@ const confirmPortChangeReminder = async () => {
       type: 'warning'
     })
     return true
-  } catch (error) {
+  } catch {
     return false
   }
 }

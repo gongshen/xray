@@ -3,9 +3,11 @@
     <warning-bar title="注：右上角头像下拉可切换角色" />
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="addUser">新增用户</el-button>
+        <el-button type="primary" :icon="$gvaIcons.Plus" @click="addUser">新增用户</el-button>
       </div>
       <el-table
+        aria-label="用户列表"
+        empty-text="暂无数据"
         :data="tableData"
         row-key="ID"
       >
@@ -31,6 +33,7 @@
               :options="authOptions"
               :show-all-levels="false"
               collapse-tags
+              :aria-label="`设置 ${scope.row.nickName || scope.row.userName} 的用户角色`"
               :props="{ multiple:true,checkStrictly: true,label:'authorityName',value:'authorityId',disabled:'disabled',emitPath:false}"
               :clearable="false"
               @visible-change="(flag)=>{changeAuthority(scope.row,flag,0)}"
@@ -43,6 +46,7 @@
             <el-switch
               v-model="scope.row.enable"
               inline-prompt
+              :aria-label="`${scope.row.nickName || scope.row.userName} 启用状态`"
               :active-value="1"
               :inactive-value="2"
               @change="()=>{switchEnable(scope.row)}"
@@ -59,17 +63,18 @@
                 <el-button type="primary" @click="deleteUserFunc(scope.row)">确定</el-button>
               </div>
               <template #reference>
-                <el-button type="primary" link icon="delete">删除</el-button>
+                <el-button type="primary" link :icon="$gvaIcons.Delete">删除</el-button>
               </template>
             </el-popover>
-            <el-button type="primary" link icon="edit" @click="openEdit(scope.row)">编辑</el-button>
-            <el-button type="primary" link icon="magic-stick" @click="resetPasswordFunc(scope.row)">重置密码</el-button>
+            <el-button type="primary" link :icon="$gvaIcons.Edit" @click="openEdit(scope.row)">编辑</el-button>
+            <el-button type="primary" link :icon="$gvaIcons.MagicStick" @click="resetPasswordFunc(scope.row)">重置密码</el-button>
           </template>
         </el-table-column>
 
       </el-table>
       <div class="gva-pagination">
         <el-pagination
+          aria-label="用户列表分页"
           :current-page="page"
           :page-size="pageSize"
           :page-sizes="[10, 30, 50, 100]"
@@ -112,6 +117,7 @@
             <el-cascader
               v-model="userInfo.authorityIds"
               style="width:100%"
+              aria-label="用户角色"
               :options="authOptions"
               :show-all-levels="false"
               :props="{ multiple:true,checkStrictly: true,label:'authorityName',value:'authorityId',disabled:'disabled',emitPath:false}"
@@ -122,6 +128,7 @@
             <el-switch
               v-model="userInfo.enable"
               inline-prompt
+              aria-label="用户启用状态"
               :active-value="1"
               :inactive-value="2"
             />
@@ -133,7 +140,7 @@
               aria-label="选择用户头像"
               @click="openHeaderChange"
             >
-              <img v-if="userInfo.headerImg" alt="头像" class="header-img-box" :src="(userInfo.headerImg && userInfo.headerImg.slice(0, 4) !== 'http')?path+userInfo.headerImg:userInfo.headerImg">
+              <img v-if="userInfo.headerImg" alt="头像" class="header-img-box" :src="(userInfo.headerImg && userInfo.headerImg.slice(0, 4) !== 'http')?path+userInfo.headerImg:userInfo.headerImg" decoding="async" loading="lazy">
               <span v-else class="header-img-box">从媒体库选择</span>
             </button>
           </el-form-item>
@@ -425,14 +432,20 @@ const switchEnable = async(row) => {
     border: 0;
     background: transparent;
     padding: 0;
+    cursor: pointer;
     display: inline-block;
+  }
+
+  .header-img-trigger:focus-visible {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 3px;
   }
 
   .header-img-box {
   width: 200px;
   height: 200px;
   border: 1px dashed #ccc;
-  border-radius: 20px;
+  border-radius: 8px;
   text-align: center;
   line-height: 200px;
   cursor: pointer;

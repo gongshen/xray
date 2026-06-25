@@ -115,6 +115,7 @@
       </el-table>
       <div class="gva-pagination" role="navigation" aria-label="流量记录分页">
         <el-pagination
+          aria-label="统计列表分页"
             layout="total, sizes, prev, pager, next, jumper"
             :current-page="page"
             :page-size="pageSize"
@@ -145,9 +146,10 @@ import { getAllServerApi } from '@/api/server'
 import { ElMessage } from 'element-plus'
 import { computed, ref, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
 import { Refresh, Search, TrendCharts, Trophy } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
 import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
+import { devError } from '@/utils/devLogger'
+import { loadEcharts } from '@/utils/loadEcharts'
 import {
   createDefaultTrafficSearchRange,
   formatFlow,
@@ -175,6 +177,10 @@ const searchInfo = ref({ ...initialSearchRange })
 const chart = shallowRef(null)
 const rankChart = shallowRef(null)
 let disposeResize = null
+let isUnmounted = false
+let tableRequestId = 0
+let usersRequestId = 0
+let srvsRequestId = 0
 const echart = ref(null)
 const rank_echart = ref(null)
 const chartData = useChartData()
@@ -212,10 +218,15 @@ const handleCurrentChange = (val) => {
 }
 
 // 查询
+
 const getTableData = async() => {
+  const requestId = ++tableRequestId
   tableLoading.value = true
   try {
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    if (requestId !== tableRequestId || isUnmounted) {
+      return
+    }
     const tableState = normalizeStatTableResponse(table, { page: page.value, pageSize: pageSize.value })
 
     if (tableState.ok) {
@@ -224,26 +235,36 @@ const getTableData = async() => {
       page.value = tableState.page
       pageSize.value = tableState.pageSize
     } else {
-      console.error('getStatList error:', table.msg)
-      ElMessage.error(tableState.message || '获取数据失败')
+      devError('getStatList error:', table.msg)
+      ElMessage.error(tableState.message || '\u83b7\u53d6\u6570\u636e\u5931\u8d25')
       tableData.value = tableState.list
       total.value = tableState.total
     }
   } catch (error) {
-    console.error('getTableData error:', error)
-    ElMessage.error('网络请求失败')
-    tableData.value = []
-    total.value = 0
+    if (requestId === tableRequestId && !isUnmounted) {
+      devError('getTableData error:', error)
+      ElMessage.error('\u7f51\u7edc\u8bf7\u6c42\u5931\u8d25')
+      tableData.value = []
+      total.value = 0
+    }
   } finally {
-    tableLoading.value = false
+    if (requestId === tableRequestId && !isUnmounted) {
+      tableLoading.value = false
+    }
   }
 }
 
 // 初始化图表
-const initChart = () => {
+const initChart = async() => {
   if (!echart.value || !rank_echart.value) {
     return
   }
+
+  const echarts = await loadEcharts()
+  if (!echart.value || !rank_echart.value || isUnmounted) {
+    return
+  }
+
   chart.value = echarts.init(echart.value)
   rankChart.value = echarts.init(rank_echart.value)
   setOptions(chartData)
@@ -256,18 +277,22 @@ const setOptions = (data) => {
 }
 
 const users = ref([])
+
 const getUsers = async() => {
+  const requestId = ++usersRequestId
   const res = await getAllUserApi()
-  if (res.code === 0) {
-    users.value = res.data.users
+  if (requestId === usersRequestId && !isUnmounted && res.code === 0) {
+    users.value = res.data.users || []
   }
 }
 
 const srvs = ref([])
+
 const getSrvs = async() => {
+  const requestId = ++srvsRequestId
   const res = await getAllServerApi()
-  if (res.code === 0) {
-    srvs.value = res.data.srvs
+  if (requestId === srvsRequestId && !isUnmounted && res.code === 0) {
+    srvs.value = res.data.srvs || []
   }
 }
 
@@ -307,11 +332,17 @@ onMounted(async () => {
   setChartData({...searchInfo.value})
   
   await nextTick()
-  initChart()
-  disposeResize = bindWindowEvent(window, 'resize', handleResize)
+  await initChart()
+  if (!isUnmounted) {
+    disposeResize = bindWindowEvent(window, 'resize', handleResize)
+  }
 })
 
 onUnmounted(() => {
+  isUnmounted = true
+  tableRequestId++
+  usersRequestId++
+  srvsRequestId++
   disposeResize?.()
   disposeResize = null
   disposeCharts()

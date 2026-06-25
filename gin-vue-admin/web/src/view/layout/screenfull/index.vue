@@ -3,6 +3,7 @@
     type="button"
     class="screenfull-toggle"
     :aria-label="isShow ? '进入全屏' : '退出全屏'"
+    :aria-pressed="!isShow"
     @click="clickFull"
   >
     <span v-if="isShow" class="gvaIcon gvaIcon-fullscreen-expand" aria-hidden="true" />
@@ -41,7 +42,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  screenfull.off('change')
+  if (screenfull.isEnabled) {
+    screenfull.off('change', changeFullShow)
+  }
 })
 
 const clickFull = () => {

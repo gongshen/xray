@@ -4,7 +4,7 @@
       更新日志
     </div>
     <div class="log">
-      <div v-for="(item,key) in dataTimeline" :key="key" class="log-item">
+      <div v-for="(item,key) in dataTimeline" :key="item.from || item.message" class="log-item">
         <div class="flex-1 flex key-box">
           <span class="key" :class="key<3&&'top'">{{ key+1 }}</span>
         </div>

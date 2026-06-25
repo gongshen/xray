@@ -1,16 +1,27 @@
-const viewModules = import.meta.glob('../view/**/*.vue')
-const pluginModules = import.meta.glob('../plugin/**/*.vue')
+import { devWarn } from '@/utils/devLogger'
+
+const normalizeModules = (modules) => {
+  return Object.entries(modules).reduce((result, [key, loader]) => {
+    result[key.replace('../', '')] = loader
+    return result
+  }, {})
+}
+
+const viewModules = normalizeModules(import.meta.glob('../view/**/*.vue'))
+const pluginModules = normalizeModules(import.meta.glob('../plugin/**/*.vue'))
+const fallbackComponent = viewModules['view/error/index.vue']
 
 export const asyncRouterHandle = (asyncRouter) => {
   asyncRouter.forEach(item => {
     if (item.component) {
-      if (item.component.split('/')[0] === 'view') {
+      const moduleGroup = item.component.split('/')[0]
+      if (moduleGroup === 'view') {
         item.component = dynamicImport(viewModules, item.component)
-      } else if (item.component.split('/')[0] === 'plugin') {
+      } else if (moduleGroup === 'plugin') {
         item.component = dynamicImport(pluginModules, item.component)
       }
     } else {
-      delete item['component']
+      delete item.component
     }
     if (item.children) {
       asyncRouterHandle(item.children)
@@ -18,16 +29,11 @@ export const asyncRouterHandle = (asyncRouter) => {
   })
 }
 
-function dynamicImport(
-  dynamicViewsModules,
-  component
-) {
-  const keys = Object.keys(dynamicViewsModules)
-  const matchKeys = keys.filter((key) => {
-    const k = key.replace('../', '')
-    return k === component
-  })
-  const matchKey = matchKeys[0]
+function dynamicImport(dynamicViewsModules, component) {
+  if (!dynamicViewsModules[component]) {
+    devWarn('[asyncRouter] component not found: ' + component)
+    return fallbackComponent
+  }
 
-  return dynamicViewsModules[matchKey]
+  return dynamicViewsModules[component]
 }

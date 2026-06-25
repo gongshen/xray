@@ -48,6 +48,8 @@
     </div>
     <el-dialog v-model="btnVisible" title="分配按钮" destroy-on-close>
       <el-table
+        aria-label="角色菜单权限列表"
+        empty-text="暂无数据"
         ref="btnTableRef"
         :data="btnData"
         row-key="ID"
@@ -198,7 +200,6 @@ const enterDialog = async() => {
 
 const filterNode = (value, data) => {
   if (!value) return true
-  // console.log(data.mate.title)
   return data.meta.title.indexOf(value) !== -1
 }
 
@@ -216,7 +217,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "@/style/button.scss";
+@use "@/style/button.scss" as *;
 .custom-tree-node{
   span+span{
     margin-left: 12px;

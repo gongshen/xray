@@ -5,11 +5,11 @@
       <el-avatar v-else :size="30" :src="noAvatar" alt="默认用户头像" />
     </template>
     <template v-if="picType === 'img'">
-      <img v-if="userStore.userInfo.headerImg" :src="avatar" class="avatar" alt="用户头像">
-      <img v-else :src="noAvatar" class="avatar" alt="默认用户头像">
+      <img v-if="userStore.userInfo.headerImg" :src="avatar" class="avatar" alt="用户头像" decoding="async" loading="lazy">
+      <img v-else :src="noAvatar" class="avatar" alt="默认用户头像" decoding="async" loading="lazy">
     </template>
     <template v-if="picType === 'file'">
-      <img :src="file" class="file" alt="文件预览">
+      <img :src="file" class="file" alt="文件预览" decoding="async" loading="lazy">
     </template>
   </span>
 </template>

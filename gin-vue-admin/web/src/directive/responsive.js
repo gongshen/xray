@@ -7,6 +7,7 @@ import {
 
 const RESPONSIVE_TABLE_KEY = 'responsive-table'
 const RESPONSIVE_FORM_KEY = 'responsive-form'
+const RESPONSIVE_TABLE_LABEL_TIMERS = new WeakMap()
 
 /**
  * Directive to make tables responsive on mobile devices
@@ -18,6 +19,7 @@ const responsiveTable = {
     bindElementResizeHandler(el, RESPONSIVE_TABLE_KEY, () => makeTableResponsive(el))
   },
   unmounted(el) {
+    clearResponsiveTableTimer(el)
     unbindElementResizeHandler(el, RESPONSIVE_TABLE_KEY)
   }
 }
@@ -26,18 +28,29 @@ const responsiveTable = {
  * Helper function to transform tables for mobile view
  * @param {HTMLElement} el - The table element
  */
+function clearResponsiveTableTimer(el) {
+  const timer = RESPONSIVE_TABLE_LABEL_TIMERS.get(el)
+  if (timer) {
+    clearTimeout(timer)
+    RESPONSIVE_TABLE_LABEL_TIMERS.delete(el)
+  }
+}
+
 function makeTableResponsive(el) {
   const screenWidth = document.body.clientWidth
   const isMobile = screenWidth < 768
   
   if (!el || !el.classList.contains('el-table')) return
-  
+
+  clearResponsiveTableTimer(el)
+
   if (isMobile) {
     // Add responsive class
     el.classList.add('mobile-friendly-table')
     
     // Add data-label attributes for mobile card view
-    setTimeout(() => {
+    const labelTimer = setTimeout(() => {
+      RESPONSIVE_TABLE_LABEL_TIMERS.delete(el)
       const headerCells = el.querySelectorAll('th .cell')
       const rows = el.querySelectorAll('tbody tr')
       
@@ -51,6 +64,7 @@ function makeTableResponsive(el) {
         })
       })
     }, 100)
+    RESPONSIVE_TABLE_LABEL_TIMERS.set(el, labelTimer)
   } else {
     el.classList.remove('mobile-friendly-table')
   }

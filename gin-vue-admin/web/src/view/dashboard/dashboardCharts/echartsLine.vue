@@ -3,12 +3,13 @@
     <div class="dashboard-line-title">
       访问趋势
     </div>
-    <div ref="echart" class="dashboard-line">aaaaa</div>
+    <div ref="echart" class="dashboard-line" role="img" aria-label="访问趋势柱状图"></div>
   </div>
 </template>
 <script setup>
-import * as echarts from 'echarts'
 import { nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
+import { loadEcharts } from '@/utils/loadEcharts'
 // import 'echarts/theme/macarons'
 
 const dataAxis = [];
@@ -33,12 +34,27 @@ const data = [
 
 const chart = shallowRef(null)
 const echart = ref(null)
-const initChart = () => {
+let disposeResize = null
+let isUnmounted = false
+
+const initChart = async() => {
+  if (!echart.value) {
+    return
+  }
+
+  const echarts = await loadEcharts()
+  if (!echart.value || isUnmounted) {
+    return
+  }
+
   chart.value = echarts.init(echart.value)
   setOptions()
+  disposeResize = bindWindowEvent(window, 'resize', () => {
+    chart.value?.resize()
+  })
 }
 const setOptions = () => {
-  chart.value.setOption({
+  chart.value?.setOption({
     grid: {
       left: '40',
       right: '20',
@@ -94,10 +110,13 @@ const setOptions = () => {
 
 onMounted(async() => {
   await nextTick()
-  initChart()
+  await initChart()
 })
 
 onUnmounted(() => {
+  isUnmounted = true
+  disposeResize?.()
+  disposeResize = null
   if (!chart.value) {
     return
   }

@@ -36,8 +36,6 @@ import {
   findServer
 } from '@/api/server'
 
-// 自动获取字典
-import { getDictFunc } from '@/utils/format'
 import { useRoute, useRouter } from "vue-router"
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
@@ -87,7 +85,7 @@ const confirmPortChangeReminder = async () => {
       type: 'warning'
     })
     return true
-  } catch (error) {
+  } catch {
     return false
   }
 }

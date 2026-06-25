@@ -15,16 +15,18 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" :icon="$gvaIcons.Search" @click="onSubmit">查询</el-button>
+          <el-button :icon="$gvaIcons.Refresh" @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog">新增字典项</el-button>
+        <el-button type="primary" :icon="$gvaIcons.Plus" @click="openDialog">新增字典项</el-button>
       </div>
       <el-table
+        aria-label="字典项列表"
+        empty-text="暂无数据"
         ref="multipleTable"
         :data="tableData"
         style="width: 100%"
@@ -48,7 +50,7 @@
 
         <el-table-column align="left" label="按钮组">
           <template #default="scope">
-            <el-button type="primary" link icon="edit" @click="updateSysDictionaryDetailFunc(scope.row)">变更</el-button>
+            <el-button type="primary" link :icon="$gvaIcons.Edit" @click="updateSysDictionaryDetailFunc(scope.row)">变更</el-button>
             <el-popover v-model="scope.row.visible" placement="top" width="160">
               <p>确定要删除吗？</p>
               <div style="text-align: right; margin-top: 8px;">
@@ -56,7 +58,7 @@
                 <el-button type="primary" @click="deleteSysDictionaryDetailFunc(scope.row)">确定</el-button>
               </div>
               <template #reference>
-                <el-button type="primary" link icon="delete" @click="scope.row.visible = true">删除</el-button>
+                <el-button type="primary" link :icon="$gvaIcons.Delete" @click="scope.row.visible = true">删除</el-button>
               </template>
             </el-popover>
           </template>
@@ -65,6 +67,7 @@
 
       <div class="gva-pagination">
         <el-pagination
+          aria-label="字典项列表分页"
           :current-page="page"
           :page-size="pageSize"
           :page-sizes="[10, 30, 50, 100]"

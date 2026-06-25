@@ -1,6 +1,6 @@
-@import '@/style/main.scss';
-@import '@/style/base.scss';
-@import '@/style/mobile.scss';
+@use '@/style/main.scss' as *;
+@use '@/style/base.scss' as *;
+@use '@/style/mobile.scss' as *;
 
 #app {
     .el-button {

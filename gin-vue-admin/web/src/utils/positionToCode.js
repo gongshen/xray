@@ -1,12 +1,26 @@
+let disposeDomMouseDown = null
+
 export const initDom = () => {
-  if (import.meta.env.MODE === 'development') {
-    document.onmousedown = function(e) {
-      if (e.shiftKey && e.button === 0) {
-        e.preventDefault()
-        sendRequestToOpenFileInEditor(getFilePath(e))
-      }
+  if (import.meta.env.MODE !== 'development' || disposeDomMouseDown) {
+    return
+  }
+
+  const handleMouseDown = (e) => {
+    if (e.shiftKey && e.button === 0) {
+      e.preventDefault()
+      sendRequestToOpenFileInEditor(getFilePath(e))
     }
   }
+
+  document.addEventListener('mousedown', handleMouseDown)
+  disposeDomMouseDown = () => {
+    document.removeEventListener('mousedown', handleMouseDown)
+    disposeDomMouseDown = null
+  }
+}
+
+export const disposeDom = () => {
+  disposeDomMouseDown?.()
 }
 
 const getFilePath = (e) => {
@@ -22,6 +36,10 @@ const getFilePath = (e) => {
 }
 
 const sendRequestToOpenFileInEditor = (filePath) => {
+  if (!filePath) {
+    return
+  }
+
   const protocol = window.location.protocol
     ? window.location.protocol
     : 'http:'
@@ -29,6 +47,6 @@ const sendRequestToOpenFileInEditor = (filePath) => {
     ? window.location.hostname
     : 'localhost'
   const port = window.location.port ? window.location.port : '80'
-  fetch(`${protocol}//${hostname}:${port}/gvaPositionCode?filePath=${filePath}`)
+  fetch(`${protocol}//${hostname}:${port}/gvaPositionCode?filePath=${encodeURIComponent(filePath)}`)
     .catch(() => {})
 }

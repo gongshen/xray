@@ -87,6 +87,7 @@
       </el-table>
       <div class="gva-pagination" role="navigation" aria-label="流量记录分页">
         <el-pagination
+          aria-label="统计列表分页"
             layout="total, sizes, prev, pager, next, jumper"
             :current-page="page"
             :page-size="pageSize"
@@ -113,9 +114,10 @@ import {
 import { ElMessage } from 'element-plus'
 import { computed, ref, shallowRef, onMounted, nextTick, onUnmounted, watch } from 'vue'
 import { Refresh, Search, TrendCharts } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
 import { useChartData, setChartData } from "./common"
 import { bindWindowEvent } from '@/utils/eventLifecycle.mjs'
+import { devError } from '@/utils/devLogger'
+import { loadEcharts } from '@/utils/loadEcharts'
 import {
   createDefaultTrafficSearchRange,
   formatFlow,
@@ -141,6 +143,8 @@ const searchInfo = ref({ ...initialSearchRange })
 // 图表相关
 const chart = shallowRef(null)
 let disposeResize = null
+let isUnmounted = false
+let tableRequestId = 0
 const echart = ref(null)
 const chartData = useChartData()
 const dateRangeText = computed(() => formatDateRangeText(searchInfo.value))
@@ -177,9 +181,13 @@ const handleCurrentChange = (val) => {
 
 // 查询
 const getTableData = async() => {
+  const requestId = ++tableRequestId
   loading.value = true
   try {
     const table = await getStatList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
+    if (requestId !== tableRequestId || isUnmounted) {
+      return
+    }
     const tableState = normalizeStatTableResponse(table, { page: page.value, pageSize: pageSize.value })
 
     if (tableState.ok) {
@@ -188,24 +196,33 @@ const getTableData = async() => {
       page.value = tableState.page
       pageSize.value = tableState.pageSize
     } else {
-      console.error('getStatList error:', table.msg)
+      devError('getStatList error:', table.msg)
       ElMessage.error(tableState.message || '获取数据失败')
       tableData.value = tableState.list
       total.value = tableState.total
     }
   } catch (error) {
-    console.error('getTableData error:', error)
-    ElMessage.error('网络请求失败')
-    tableData.value = []
-    total.value = 0
+    if (requestId === tableRequestId && !isUnmounted) {
+      devError('getTableData error:', error)
+      ElMessage.error('网络请求失败')
+      tableData.value = []
+      total.value = 0
+    }
   } finally {
-    loading.value = false
+    if (requestId === tableRequestId && !isUnmounted) {
+      loading.value = false
+    }
   }
 }
 
 // 初始化图表
-const initChart = () => {
+const initChart = async() => {
   if (!echart.value) {
+    return
+  }
+
+  const echarts = await loadEcharts()
+  if (!echart.value || isUnmounted) {
     return
   }
 
@@ -247,11 +264,15 @@ onMounted(async () => {
   await setChartData({...searchInfo.value})
   await nextTick()
 
-  initChart()
-  disposeResize = bindWindowEvent(window, 'resize', handleResize)
+  await initChart()
+  if (!isUnmounted) {
+    disposeResize = bindWindowEvent(window, 'resize', handleResize)
+  }
 })
 
 onUnmounted(() => {
+  isUnmounted = true
+  tableRequestId++
   disposeResize?.()
   disposeResize = null
   disposeChart()

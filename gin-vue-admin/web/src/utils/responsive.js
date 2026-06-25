@@ -6,6 +6,7 @@ import {
   bindEmitterHandler,
   bindWindowEvent,
 } from '@/utils/eventLifecycle.mjs'
+import { lockBodyScroll } from '@/utils/bodyScrollLock.mjs'
 
 /**
  * Hook to detect mobile devices and handle responsive behavior
@@ -16,6 +17,7 @@ export function useResponsive() {
   const isMenuVisible = ref(false)
   let disposeResize = null
   let disposeRouteChange = null
+  let releaseBodyScrollLock = null
 
   // Check if current viewport is mobile
   const checkMobile = () => {
@@ -26,6 +28,10 @@ export function useResponsive() {
       isMobile.value = newIsMobile
       emitter.emit('mobileStateChanged', isMobile.value)
     }
+  }
+  const releaseMobileMenuScroll = () => {
+    releaseBodyScrollLock?.()
+    releaseBodyScrollLock = null
   }
 
   // Toggle mobile menu visibility
@@ -38,11 +44,14 @@ export function useResponsive() {
     if (asideElement) {
       if (isMenuVisible.value) {
         asideElement.classList.add('mobile-visible')
-        document.body.style.overflow = 'hidden' // Prevent scrolling when menu is open
+        releaseMobileMenuScroll()
+        releaseBodyScrollLock = lockBodyScroll()
       } else {
         asideElement.classList.remove('mobile-visible')
-        document.body.style.overflow = '' // Restore scrolling
+        releaseMobileMenuScroll()
       }
+    } else if (!isMenuVisible.value) {
+      releaseMobileMenuScroll()
     }
   }
 
@@ -55,9 +64,9 @@ export function useResponsive() {
       const asideElement = document.querySelector('.gva-aside')
       if (asideElement) {
         asideElement.classList.remove('mobile-visible')
-        document.body.style.overflow = '' // Restore scrolling
       }
     }
+    releaseMobileMenuScroll()
   }
 
   // Apply responsive table layout
@@ -80,6 +89,7 @@ export function useResponsive() {
   })
 
   onUnmounted(() => {
+    closeMobileMenu()
     disposeResize?.()
     disposeResize = null
     disposeRouteChange?.()
@@ -112,8 +122,6 @@ export function applyResponsiveTable(tableRef, columns) {
     
     // Add data-label attributes for mobile card view
     const headerCells = tableRef.value.$el.querySelectorAll('th .cell')
-    const bodyCells = tableRef.value.$el.querySelectorAll('tbody .cell')
-    
     headerCells.forEach((headerCell, index) => {
       const label = headerCell.textContent.trim()
       
