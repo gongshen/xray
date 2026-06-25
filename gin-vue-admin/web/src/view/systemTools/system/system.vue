@@ -461,7 +461,7 @@ const email = async() => {
     font-size: 16px;
     box-shadow: -4px 0px 0px 0px #e7e8e8;
   }
-  :deep(.el-input-number__increase){
+  .el-input-number__increase{
     top:5px !important;
   }
   .gva-btn-list{

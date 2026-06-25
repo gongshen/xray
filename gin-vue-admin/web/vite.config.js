@@ -141,6 +141,12 @@ export default async ({
           manualChunks,
         }
       },
+      rolldownOptions: {
+        checks: {
+          invalidAnnotation: false,
+          pluginTimings: false,
+        },
+      },
     },
     esbuild,
     optimizeDeps,

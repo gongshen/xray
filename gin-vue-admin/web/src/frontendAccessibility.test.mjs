@@ -116,6 +116,11 @@ for (const fileUrl of walk(root, (name) => name.endsWith('.vue'))) {
   if (/::v-deep|\/deep\/|>>>/.test(source)) {
     failures.push(`${relative} must use Vue 3 :deep() syntax for deep selectors`)
   }
+  for (const style of source.matchAll(/<style\b([^>]*)>([\s\S]*?)<\/style>/g)) {
+    if (!/\bscoped\b/.test(style[1]) && /:deep\(/.test(style[2])) {
+      failures.push(`${relative}:${lineOf(source, style.index)} non-scoped styles must not use Vue-only :deep() selectors`)
+    }
+  }
   if (/(?:aria-label|empty-text|alt)="[^"]*\?\?[^"]*"/.test(source)) {
     failures.push(`${relative} contains likely mojibake in accessible text`)
   }
