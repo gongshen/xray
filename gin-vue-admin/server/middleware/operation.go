@@ -30,6 +30,36 @@ func init() {
 	}
 }
 
+var operationTargetKeys = map[string]struct{}{
+	"ID":           {},
+	"IDS":          {},
+	"Ids":          {},
+	"apiId":        {},
+	"api_id":       {},
+	"authorityId":  {},
+	"authority_id": {},
+	"email":        {},
+	"id":           {},
+	"ids":          {},
+	"menuId":       {},
+	"menu_id":      {},
+	"name":         {},
+	"nickName":     {},
+	"path":         {},
+	"serverID":     {},
+	"serverId":     {},
+	"server_id":    {},
+	"target":       {},
+	"targets":      {},
+	"userID":       {},
+	"userId":       {},
+	"userName":     {},
+	"user_id":      {},
+	"username":     {},
+	"uuid":         {},
+	"UUID":         {},
+}
+
 func OperationRecord() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var body []byte
@@ -66,16 +96,17 @@ func OperationRecord() gin.HandlerFunc {
 			userId = id
 		}
 		record := system.SysOperationRecord{
-			Ip:     c.ClientIP(),
-			Method: c.Request.Method,
-			Path:   c.Request.URL.Path,
-			Agent:  c.Request.UserAgent(),
-			Body:   string(body),
-			UserID: userId,
+			Ip:      c.ClientIP(),
+			Method:  c.Request.Method,
+			Path:    c.Request.URL.Path,
+			Agent:   c.Request.UserAgent(),
+			Body:    string(body),
+			Targets: extractOperationTargets(c.Request.URL.Query(), body),
+			UserID:  userId,
 		}
 
 		// 上传文件时候 中间件日志进行裁断操作
-		if strings.Contains(c.GetHeader("Content-Type"), "multipart/form-data")  {
+		if strings.Contains(c.GetHeader("Content-Type"), "multipart/form-data") {
 			if len(record.Body) > 1024 {
 				// 截断
 				newBody := respPool.Get().([]byte)
@@ -100,14 +131,14 @@ func OperationRecord() gin.HandlerFunc {
 		record.Latency = latency
 		record.Resp = writer.body.String()
 
-		if strings.Contains(c.Writer.Header().Get("Pragma"), "public")  ||
-			strings.Contains(c.Writer.Header().Get("Expires"), "0")  ||
+		if strings.Contains(c.Writer.Header().Get("Pragma"), "public") ||
+			strings.Contains(c.Writer.Header().Get("Expires"), "0") ||
 			strings.Contains(c.Writer.Header().Get("Cache-Control"), "must-revalidate, post-check=0, pre-check=0") ||
-			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/force-download")  ||
-			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/octet-stream")  ||
-			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/vnd.ms-excel")  ||
-			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/download")  ||
-			strings.Contains(c.Writer.Header().Get("Content-Disposition"), "attachment")  ||
+			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/force-download") ||
+			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/octet-stream") ||
+			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/vnd.ms-excel") ||
+			strings.Contains(c.Writer.Header().Get("Content-Type"), "application/download") ||
+			strings.Contains(c.Writer.Header().Get("Content-Disposition"), "attachment") ||
 			strings.Contains(c.Writer.Header().Get("Content-Transfer-Encoding"), "binary") {
 			if len(record.Resp) > 1024 {
 				// 截断
@@ -132,4 +163,76 @@ type responseBodyWriter struct {
 func (r responseBodyWriter) Write(b []byte) (int, error) {
 	r.body.Write(b)
 	return r.ResponseWriter.Write(b)
+}
+
+func extractOperationTargets(query url.Values, body []byte) string {
+	targets := make(map[string]interface{})
+
+	for key, values := range query {
+		if !isOperationTargetKey(key) {
+			continue
+		}
+		if value, ok := operationQueryTargetValue(values); ok {
+			targets[key] = value
+		}
+	}
+
+	if len(body) > 0 {
+		var payload map[string]interface{}
+		decoder := json.NewDecoder(bytes.NewReader(body))
+		decoder.UseNumber()
+		if err := decoder.Decode(&payload); err == nil {
+			for key, value := range payload {
+				if !isOperationTargetKey(key) || isEmptyOperationTargetValue(value) {
+					continue
+				}
+				targets[key] = value
+			}
+		}
+	}
+
+	if len(targets) == 0 {
+		return ""
+	}
+	data, err := json.Marshal(targets)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+func isOperationTargetKey(key string) bool {
+	_, ok := operationTargetKeys[key]
+	return ok
+}
+
+func operationQueryTargetValue(values []string) (interface{}, bool) {
+	cleaned := make([]string, 0, len(values))
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			cleaned = append(cleaned, value)
+		}
+	}
+	if len(cleaned) == 0 {
+		return nil, false
+	}
+	if len(cleaned) == 1 {
+		return cleaned[0], true
+	}
+	return cleaned, true
+}
+
+func isEmptyOperationTargetValue(value interface{}) bool {
+	switch v := value.(type) {
+	case nil:
+		return true
+	case string:
+		return strings.TrimSpace(v) == ""
+	case []interface{}:
+		return len(v) == 0
+	case map[string]interface{}:
+		return len(v) == 0
+	default:
+		return false
+	}
 }
