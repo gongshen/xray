@@ -10,3 +10,4 @@ log/
 *.tmp
 *.swp
 .DS_Store
+.codex/
