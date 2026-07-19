@@ -270,7 +270,7 @@ import {
 const formData = ref({
         server_id: '',
         user_id: '',
-        alter_id: 64,
+        alter_id: 0,
         })
 
 // 验证规则
